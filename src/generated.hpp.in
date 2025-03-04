@@ -1,0 +1,9 @@
+/**
+ * @file generated.hpp
+ *
+ * @brief Auto-generated header, modified by CMake during build.
+ */
+
+#pragma once
+
+#define PROJECT_VERSION "@PROJECT_VERSION@"
