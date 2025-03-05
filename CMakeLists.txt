@@ -82,6 +82,7 @@ include_directories(${CMAKE_BINARY_DIR}/generated)
 add_library(${PROJECT_NAME}-lib STATIC
   # find src -name "*.cpp" | sort
   src/app.cpp
+  src/core/graphics/debug.cpp
 )
 
 # Include headers relatively to the src directory
