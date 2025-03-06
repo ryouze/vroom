@@ -26,6 +26,7 @@ void run()
     window.setMinimumSize(MINIMUM_WINDOW_SIZE);          // Never go below the base size
     window.setVerticalSyncEnabled(DEFAULT_VSYNC_STATE);  // Enable VSync to reduce CPU usage
     window.requestFocus();                               // Ask OS to switch to this window
+    window.setKeyRepeatEnabled(false);                   // Disable key repeat to avoid multiple events
 
     // Change the cursor of the window (might be useful when hovering over a button)
     // window.setMouseCursor(sf::Cursor::Type::Hand);
@@ -52,6 +53,12 @@ void run()
         return;
     }
 
+    // Player
+    sf::RectangleShape player({50.f, 100.f});
+    player.setFillColor(sf::Color::Green);
+    player.setPosition({window.getSize().x / 2.f - player.getSize().x / 2.f,
+                        window.getSize().y / 2.f - player.getSize().y / 2.f});
+
     // Initialize the main loop
     sf::Clock clock;
 
@@ -60,6 +67,9 @@ void run()
     unsigned fps = 0;
     float cumulative_time = 0.0f;
     bool vsync_enabled = DEFAULT_VSYNC_STATE;
+
+    // Movement speed
+    constexpr float speed = 25.f;
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -77,6 +87,23 @@ void run()
                 const sf::Vector2u new_size = window.getSize();
                 const sf::FloatRect visible_area({0.f, 0.f}, sf::Vector2f(new_size.x, new_size.y));
                 window.setView(sf::View(visible_area));
+            }
+
+            // Key pressed
+            else if (auto key_event = event->getIf<sf::Event::KeyPressed>()) {
+                // Move based on which arrow key was pressed
+                if (key_event->code == sf::Keyboard::Key::Left) {
+                    player.move({-speed, 0.f});
+                }
+                else if (key_event->code == sf::Keyboard::Key::Right) {
+                    player.move({speed, 0.f});
+                }
+                else if (key_event->code == sf::Keyboard::Key::Up) {
+                    player.move({0.f, -speed});
+                }
+                else if (key_event->code == sf::Keyboard::Key::Down) {
+                    player.move({0.f, speed});
+                }
             }
         }
 
@@ -125,6 +152,7 @@ void run()
 
         // Render the graphics
         ImGui::SFML::Render(window);
+        window.draw(player);
         window.display();
     }
 
