@@ -55,6 +55,12 @@ void run()
 
     // Initialize the main loop
     sf::Clock delta_clock;
+
+    // FPS tracking
+    int frame_count = 0;
+    float fps = 0.0f;
+    sf::Clock fps_clock;
+
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
             // Let ImGui handle the event
@@ -78,6 +84,22 @@ void run()
         // Let ImGui update itself
         ImGui::SFML::Update(window, delta_clock.restart());
         ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
+
+        // Update FPS counter
+        ++frame_count;
+        float elapsed = fps_clock.getElapsedTime().asSeconds();
+        if (elapsed >= 1.0f) {  // If a single second has passed
+            fps = frame_count / elapsed;
+            frame_count = 0;
+            fps_clock.restart();
+        }
+
+        // Render FPS in top-left
+        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
+        ImGui::Begin("FPS Counter", nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+        ImGui::Text("FPS: %.1f", static_cast<double>(fps));
+        ImGui::End();
 
         // Clear with custom color
         window.clear(sf::Color(50, 50, 100));
