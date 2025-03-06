@@ -16,14 +16,15 @@
 namespace app {
 
 constexpr sf::Vector2u BASE_WINDOW_SIZE = {800u, 600u};
+constexpr sf::Vector2u MINIMUM_WINDOW_SIZE = BASE_WINDOW_SIZE;
 constexpr float FPS_UPDATE_INTERVAL = 1.0f;
-constexpr bool DEFAULT_VSYNC_STATE = false;
+constexpr bool DEFAULT_VSYNC_STATE = true;
 
 void run()
 {
     // Create SFML window with sane defaults
     auto window = sf::RenderWindow(sf::VideoMode(BASE_WINDOW_SIZE), fmt::format("vroom ({})", PROJECT_VERSION), sf::State::Windowed);
-    window.setMinimumSize(BASE_WINDOW_SIZE);             // Never go below the base size
+    window.setMinimumSize(MINIMUM_WINDOW_SIZE);          // Never go below the base size
     window.setVerticalSyncEnabled(DEFAULT_VSYNC_STATE);  // Enable VSync to reduce CPU usage
     window.requestFocus();                               // Ask OS to switch to this window
 
@@ -61,7 +62,7 @@ void run()
 
     // FPS tracking
     int frame_count = 0;
-    int fps = 0;
+    int fps = -1;
     float cumulative_time = 0.0f;
     bool vsync_enabled = DEFAULT_VSYNC_STATE;
 
