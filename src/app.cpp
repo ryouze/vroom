@@ -15,14 +15,17 @@
 
 namespace app {
 
+constexpr sf::Vector2u BASE_WINDOW_SIZE = {800u, 600u};
+constexpr float FPS_UPDATE_INTERVAL = 1.0f;
+constexpr bool DEFAULT_VSYNC_STATE = false;
+
 void run()
 {
     // Create SFML window with sane defaults
-    constexpr sf::Vector2u BASE_WINDOW_SIZE = {800u, 600u};
     auto window = sf::RenderWindow(sf::VideoMode(BASE_WINDOW_SIZE), fmt::format("vroom ({})", PROJECT_VERSION), sf::State::Windowed);
-    window.setMinimumSize(window.getSize());  // Never go below the base size
-    window.setVerticalSyncEnabled(true);      // Enable VSync to reduce CPU usage
-    window.requestFocus();                    // Ask OS to switch to this window
+    window.setMinimumSize(BASE_WINDOW_SIZE);             // Never go below the base size
+    window.setVerticalSyncEnabled(DEFAULT_VSYNC_STATE);  // Enable VSync to reduce CPU usage
+    window.requestFocus();                               // Ask OS to switch to this window
 
     // Change the cursor of the window (might be useful when hovering over a button)
     // window.setMouseCursor(sf::Cursor::Type::Hand);
@@ -60,7 +63,7 @@ void run()
     int frame_count = 0;
     int fps = 0;
     float cumulative_time = 0.0f;
-    bool vsync_enabled = true;
+    bool vsync_enabled = DEFAULT_VSYNC_STATE;
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -91,7 +94,7 @@ void run()
         ImGui::SFML::Update(window, sf::seconds(dt));
 
         // Recalculate FPS once per second
-        if (cumulative_time >= 1.0f) {
+        if (cumulative_time >= FPS_UPDATE_INTERVAL) {
             fps = static_cast<int>(frame_count / cumulative_time);
             frame_count = 0;
             cumulative_time = 0.0f;
@@ -127,7 +130,7 @@ void run()
         window.display();
     }
 
-        // Manually clean up ImGui
+    // Manually clean up ImGui
     // TODO: Turn this into a RAII class or use a smart pointer
     ImGui::SFML::Shutdown();
 }
