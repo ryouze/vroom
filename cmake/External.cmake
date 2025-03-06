@@ -49,7 +49,6 @@ function(fetch_and_link_external_dependencies target)
   )
   set(IMGUI_DIR ${imgui_SOURCE_DIR})  # Location of ImGui src
   set(IMGUI_SFML_FIND_SFML OFF)       # Don't call "find_package(SFML)"
-  set(IMGUI_SFML_IMGUI_DEMO ON)       # DEBUG, REMOVE LATER
   FetchContent_MakeAvailable(imgui-sfml)
 
   # Link dependencies to the target
