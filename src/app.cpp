@@ -60,6 +60,7 @@ void run()
     int frame_count = 0;
     int fps = 0;
     float cumulative_time = 0.0f;
+    bool vsync_enabled = true;
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -98,11 +99,22 @@ void run()
 
         ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
 
-        // Render a simple FPS counter in the top-left
+        // FPS + VSync GUI (top-left)
         ImGui::SetNextWindowPos(ImVec2(5.f, 5.f), ImGuiCond_Always);
-        ImGui::Begin("FPS Counter", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
-        ImGui::Text("FPS: %d", fps);
+        ImGui::Begin("Performance", nullptr,
+                     ImGuiWindowFlags_NoTitleBar |
+                         ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoMove);
+        {
+            ImGui::Text("FPS: %d", fps);
+
+            // Toggle button for VSync
+            if (ImGui::Button(vsync_enabled ? "VSync: ON" : "VSync: OFF")) {
+                vsync_enabled = !vsync_enabled;
+                window.setVerticalSyncEnabled(vsync_enabled);
+            }
+        }
         ImGui::End();
 
         // Clear with custom color
@@ -115,7 +127,7 @@ void run()
         window.display();
     }
 
-    // Manually clean up ImGui
+        // Manually clean up ImGui
     // TODO: Turn this into a RAII class or use a smart pointer
     ImGui::SFML::Shutdown();
 }
