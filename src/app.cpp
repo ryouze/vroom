@@ -2,6 +2,7 @@
  * @file app.cpp
  */
 
+#include <cmath>     // for std::sqrt, std::cos, std::sin
 #include <optional>  // for std::optional
 
 #include <SFML/Graphics.hpp>
@@ -14,17 +15,46 @@
 
 namespace app {
 
+// Window / UI
 constexpr sf::Vector2u BASE_WINDOW_SIZE = {1280u, 720u};
 constexpr sf::Vector2u MINIMUM_WINDOW_SIZE = BASE_WINDOW_SIZE;
 constexpr float FPS_UPDATE_INTERVAL = 1.0f;
 constexpr bool DEFAULT_VSYNC_STATE = true;
-constexpr float PLAYER_ACCELERATION = 200.f;
-constexpr float PLAYER_DECELERATION = 500.f;
-constexpr float PLAYER_TURN_SPEED = 100.f;
-constexpr float PLAYER_MAX_SPEED = 1500.f;
+
+// Car parameters
+constexpr float CAR_MAX_SPEED = 1500.f;    // clamp max speed
+constexpr float CAR_GAS_ACCEL = 400.f;     // pressing Up
+constexpr float CAR_BRAKE_ACCEL = 1500.f;  // pressing Down
+constexpr float CAR_ENGINE_BRAKE = 400.f;  // friction if coasting
+// (Air drag removed)
+
+// Steering
+constexpr float STEERING_TURN_RATE = 550.f;        // how fast the wheel turns with left/right
+constexpr float STEERING_CENTER_RATE = 450.f;      // how quickly wheel centers if no input
+constexpr float STEERING_MAX_ANGLE = 180.f;        // ±180 deg at wheels
+constexpr float TURN_FACTOR_AT_FULL_SPEED = 0.8f;  // fraction of steering at max speed
+constexpr float TURN_FACTOR_AT_ZERO_SPEED = 1.0f;  // fraction of steering if near 0 speed
 
 void run()
 {
+    const auto vec_length_fixed = [](const sf::Vector2f &v) -> float {
+        return std::sqrt(v.x * v.x + v.y * v.y);
+    };
+
+    const auto approach = [](float value, float target, float amount) -> float {
+        if (value < target) {
+            value += amount;
+            if (value > target)
+                value = target;
+        }
+        else if (value > target) {
+            value -= amount;
+            if (value < target)
+                value = target;
+        }
+        return value;
+    };
+
     // Create SFML window with sane defaults
     auto window = sf::RenderWindow(sf::VideoMode(BASE_WINDOW_SIZE), fmt::format("vroom ({})", PROJECT_VERSION), sf::State::Windowed);
     window.setMinimumSize(MINIMUM_WINDOW_SIZE);          // Never go below the base size
@@ -57,30 +87,40 @@ void run()
         return;
     }
 
-    // Player
-    sf::RectangleShape player({100.f, 50.f});
-    player.setFillColor(sf::Color::Green);
-    player.setOrigin(player.getSize() / 2.f);
-    player.setPosition({window.getSize().x / 2.f - player.getSize().x / 2.f,
-                        window.getSize().y / 2.f - player.getSize().y / 2.f});
+    // Car shape
+    sf::RectangleShape car_shape({100.f, 100.f});
+    car_shape.setOrigin(car_shape.getSize() / 2.f);
+    car_shape.setFillColor(sf::Color::Yellow);
+    car_shape.setPosition({static_cast<float>(window.getSize().x) / 2.f,
+                           static_cast<float>(window.getSize().y) / 2.f});
 
-    // Initialize the main loop
+    // Load texture
+    sf::Texture car_texture;
+    if (!car_texture.loadFromFile("/Users/hikari/dev/github-ryouze/!Old SFML Games/vic/assets/game/cars/Export/Player.png")) {
+        fmt::print("Failed to load car texture\n");
+    }
+    else {
+        car_shape.setTexture(&car_texture);
+    }
+
+    // Track time for each frame
     sf::Clock clock;
-
-    // FPS tracking
     unsigned frame_count = 0;
     unsigned fps = 0;
-    float cumulative_time = 0.0f;
+    float cumulative_time = 0.f;
     bool vsync_enabled = DEFAULT_VSYNC_STATE;
 
-    // Movement variables
-    float speed = 0.f;
-    bool gas = false;
-    bool brake = false;
-    bool left = false;
-    bool right = false;
+    // Car state
+    sf::Vector2f car_velocity(0.f, 0.f);
+    sf::Angle car_heading = sf::degrees(0.f);
+    float car_steering = 0.f;
 
-    sf::Angle angle = sf::degrees(0.f);
+    // Key states
+    bool gas_pressed = false;
+    bool brake_pressed = false;
+    // Original behavior: left key sets right steering and right key sets left steering.
+    bool turning_right = false;
+    bool turning_left = false;
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -99,147 +139,172 @@ void run()
                 const sf::FloatRect visible_area({0.f, 0.f}, sf::Vector2f(new_size.x, new_size.y));
                 window.setView(sf::View(visible_area));
             }
-            // Key pressed
-            else if (auto key_event = event->getIf<sf::Event::KeyPressed>()) {
-                if (key_event->code == sf::Keyboard::Key::Left) {
-                    left = true;
-                }
-                else if (key_event->code == sf::Keyboard::Key::Right) {
-                    right = true;
-                }
-                else if (key_event->code == sf::Keyboard::Key::Up) {
-                    gas = true;
-                }
-                else if (key_event->code == sf::Keyboard::Key::Down) {
-                    brake = true;
+            else if (auto key_press = event->getIf<sf::Event::KeyPressed>()) {
+                switch (key_press->code) {
+                case sf::Keyboard::Key::Up:
+                    gas_pressed = true;
+                    break;
+                case sf::Keyboard::Key::Down:
+                    brake_pressed = true;
+                    break;
+                case sf::Keyboard::Key::Left:
+                    turning_left = true;
+                    break;
+                case sf::Keyboard::Key::Right:
+                    turning_right = true;
+                    break;
+                default:
+                    break;
                 }
             }
-            // Key released
-            else if (auto key_event2 = event->getIf<sf::Event::KeyReleased>()) {
-                if (key_event2->code == sf::Keyboard::Key::Left) {
-                    left = false;
-                }
-                else if (key_event2->code == sf::Keyboard::Key::Right) {
-                    right = false;
-                }
-                else if (key_event2->code == sf::Keyboard::Key::Up) {
-                    gas = false;
-                }
-                else if (key_event2->code == sf::Keyboard::Key::Down) {
-                    brake = false;
+            else if (auto key_release = event->getIf<sf::Event::KeyReleased>()) {
+                switch (key_release->code) {
+                case sf::Keyboard::Key::Up:
+                    gas_pressed = false;
+                    break;
+                case sf::Keyboard::Key::Down:
+                    brake_pressed = false;
+                    break;
+                case sf::Keyboard::Key::Left:
+                    turning_left = false;
+                    break;
+                case sf::Keyboard::Key::Right:
+                    turning_right = false;
+                    break;
+                default:
+                    break;
                 }
             }
         }
 
-        // Get delta time
+        // Delta time
         const float dt = clock.restart().asSeconds();
         cumulative_time += dt;
         ++frame_count;
 
-        // Turn left/right
-        if (left) {
-            angle -= sf::degrees(PLAYER_TURN_SPEED * dt);
+        // 1) Speed & direction
+        const float cur_speed = vec_length_fixed(car_velocity);
+        float forward_accel = 0.f;
+        if (gas_pressed) {
+            forward_accel += CAR_GAS_ACCEL;
         }
-        if (right) {
-            angle += sf::degrees(PLAYER_TURN_SPEED * dt);
+        if (brake_pressed) {
+            forward_accel -= CAR_BRAKE_ACCEL;
+        }
+        if (forward_accel != 0.f) {
+            const float radians = car_heading.asRadians();
+            const sf::Vector2f forward_dir(std::cos(radians), std::sin(radians));
+            car_velocity += forward_dir * (forward_accel * dt);
         }
 
-        // Accelerate or brake
-        if (gas) {
-            speed += PLAYER_ACCELERATION * dt;
-            if (speed > PLAYER_MAX_SPEED) {
-                speed = PLAYER_MAX_SPEED;
-            }
-        }
-        if (brake) {
-            speed -= PLAYER_DECELERATION * dt;
-            if (speed < 0.f) {
-                speed = 0.f;  // no reverse for now
-            }
-        }
-        // Natural deceleration (coasting) if not pressing gas/brake
-        if (!gas && !brake) {
-            speed -= PLAYER_DECELERATION * dt;
-            if (speed < 0.f) {
-                speed = 0.f;
+        // 2) Engine brake if moving but no gas or brake pressed
+        if (!gas_pressed && !brake_pressed && cur_speed > 0.01f) {
+            const float decel = CAR_ENGINE_BRAKE * dt;
+            float new_speed = cur_speed - decel;
+            if (new_speed < 0.f)
+                new_speed = 0.f;
+            if (cur_speed > 0.f) {
+                car_velocity *= (new_speed / cur_speed);
             }
         }
 
-        // Update player rotation and position
-        player.setRotation(angle);
+        // Limit top speed
+        float spd_now = vec_length_fixed(car_velocity);
+        if (spd_now > CAR_MAX_SPEED) {
+            car_velocity *= (CAR_MAX_SPEED / spd_now);
+            spd_now = CAR_MAX_SPEED;
+        }
 
-        // For movement, convert angle to radians
-        float rad = angle.asRadians();
-        float vx = speed * std::cos(rad);
-        float vy = speed * std::sin(rad);
-        player.move({vx * dt, vy * dt});
+        // Lateral velocity correction:
+        // Align the car's velocity with its heading to prevent sliding/drifting
+        {
+            const sf::Vector2f forward_dir(std::cos(car_heading.asRadians()),
+                                           std::sin(car_heading.asRadians()));
+            const float forward_speed = car_velocity.x * forward_dir.x + car_velocity.y * forward_dir.y;
+            car_velocity = forward_dir * forward_speed;
+        }
 
-        // Prevent the car from leaving the screen
-        sf::FloatRect bounds = player.getGlobalBounds();
-        float left_edge = bounds.position.x;
-        float top_edge = bounds.position.y;
-        float width = bounds.size.x;
-        float height = bounds.size.y;
+        // 4) Steering
+        if (turning_right) {
+            car_steering += STEERING_TURN_RATE * dt;
+        }
+        if (turning_left) {
+            car_steering -= STEERING_TURN_RATE * dt;
+        }
+        if (!turning_right && !turning_left) {
+            car_steering = approach(car_steering, 0.f, STEERING_CENTER_RATE * dt);
+        }
+        if (car_steering > STEERING_MAX_ANGLE) {
+            car_steering = STEERING_MAX_ANGLE;
+        }
+        if (car_steering < -STEERING_MAX_ANGLE) {
+            car_steering = -STEERING_MAX_ANGLE;
+        }
+        const float speed_ratio = spd_now / CAR_MAX_SPEED;
+        float turn_factor = (TURN_FACTOR_AT_ZERO_SPEED * (1.f - speed_ratio)) +
+                            (TURN_FACTOR_AT_FULL_SPEED * speed_ratio);
+        if (spd_now < 5.f) {
+            turn_factor *= (spd_now / 5.f);
+        }
+        car_heading += sf::degrees(car_steering * turn_factor * dt);
 
-        // Keep within left edge
+        // 5) Rotate + move the shape
+        car_shape.setRotation(car_heading + sf::degrees(90.f));  // Stupid hack: add +90° to offset texture
+        car_shape.move(car_velocity * dt);
+
+        // 6) Bounds check
+        const sf::FloatRect b = car_shape.getGlobalBounds();
+        const float left_edge = b.position.x;
+        const float top_edge = b.position.y;
+        const float w = b.size.x;
+        const float h = b.size.y;
+        const sf::Vector2u win_size = window.getSize();
+        const float right_edge = left_edge + w;
+        const float bottom_edge = top_edge + h;
         if (left_edge < 0.f) {
-            player.move({-left_edge, 0.f});
+            car_shape.move({-left_edge, 0.f});
         }
-        // Keep within top edge
         if (top_edge < 0.f) {
-            player.move({0.f, -top_edge});
+            car_shape.move({0.f, -top_edge});
         }
-        // Keep within right edge
-        float right_edge = left_edge + width;
-        sf::Vector2u window_size = window.getSize();
-        if (right_edge > window_size.x) {
-            player.move({window_size.x - right_edge, 0.f});
+        if (right_edge > win_size.x) {
+            car_shape.move({win_size.x - right_edge, 0.f});
         }
-        // Keep within bottom edge
-        float bottom_edge = top_edge + height;
-        if (bottom_edge > window_size.y) {
-            player.move({0.f, window_size.y - bottom_edge});
+        if (bottom_edge > win_size.y) {
+            car_shape.move({0.f, win_size.y - bottom_edge});
         }
 
-        // Update ImGui
+        // 7) Update ImGui + Show FPS
         ImGui::SFML::Update(window, sf::seconds(dt));
-
-        // Recalculate FPS once per second
         if (cumulative_time >= FPS_UPDATE_INTERVAL) {
             fps = static_cast<unsigned>(frame_count / cumulative_time);
             frame_count = 0;
-            cumulative_time = 0.0f;
+            cumulative_time = 0.f;
         }
-
-        // ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
         ImGui::ShowMetricsWindow();
-
-        // Performance overlay (top-left corner)
-        constexpr float window_offset = 5.f;
-        ImGui::SetNextWindowPos({window_offset, window_offset}, ImGuiCond_Always);
+        ImGui::SetNextWindowPos({5.f, 5.f}, ImGuiCond_Always);
         ImGui::Begin("Debug Overlay", nullptr,
                      ImGuiWindowFlags_NoTitleBar |
                          ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoMove);
-        ImGui::Text("FPS: %d", fps);
-
-        // Retrieve and display the current window size
-        ImGui::Text("Size: %dx%d", window_size.x, window_size.y);
-
-        // Toggle vsync with a button click
+        ImGui::Text("FPS: %u", fps);
+        ImGui::Text("Velocity: (%.1f, %.1f)",
+                    static_cast<double>(car_velocity.x),
+                    static_cast<double>(car_velocity.y));
+        ImGui::Text("Speed: %.1f", static_cast<double>(vec_length_fixed(car_velocity)));
+        ImGui::Text("Rotation: %.1f deg", static_cast<double>(car_heading.asDegrees()));
+        ImGui::Text("Steering: %.1f deg", static_cast<double>(car_steering));
         if (ImGui::Button(vsync_enabled ? "VSync: ON" : "VSync: OFF")) {
             vsync_enabled = !vsync_enabled;
             window.setVerticalSyncEnabled(vsync_enabled);
         }
         ImGui::End();
 
-        // Clear with custom color
+        // Render frame
         window.clear(sf::Color(50, 50, 100));
-
-        // Render the graphics
         ImGui::SFML::Render(window);
-        window.draw(player);
+        window.draw(car_shape);
         window.display();
     }
 
