@@ -54,12 +54,12 @@ void run()
     const core::graphics::debug::IndicatorAbsolute indicator_absolute(window.getSize());
 
     // Initialize the main loop
-    sf::Clock delta_clock;
+    sf::Clock clock;
 
     // FPS tracking
     int frame_count = 0;
-    float fps = 0.0f;
-    sf::Clock fps_clock;
+    int fps = 0;
+    float cumulative_time = 0.0f;
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -81,24 +81,28 @@ void run()
             }
         }
 
-        // Let ImGui update itself
-        ImGui::SFML::Update(window, delta_clock.restart());
-        ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
-
-        // Update FPS counter
+        // Get delta time from the clock
+        float dt = clock.restart().asSeconds();
+        cumulative_time += dt;
         ++frame_count;
-        float elapsed = fps_clock.getElapsedTime().asSeconds();
-        if (elapsed >= 1.0f) {  // If a single second has passed
-            fps = frame_count / elapsed;
+
+        // Update ImGui
+        ImGui::SFML::Update(window, sf::seconds(dt));
+
+        // Recalculate FPS once per second
+        if (cumulative_time >= 1.0f) {
+            fps = static_cast<int>(frame_count / cumulative_time);
             frame_count = 0;
-            fps_clock.restart();
+            cumulative_time = 0.0f;
         }
 
-        // Render FPS in top-left
-        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
+        ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
+
+        // Render a simple FPS counter in the top-left
+        ImGui::SetNextWindowPos(ImVec2(5.f, 5.f), ImGuiCond_Always);
         ImGui::Begin("FPS Counter", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
-        ImGui::Text("FPS: %.1f", static_cast<double>(fps));
+        ImGui::Text("FPS: %d", fps);
         ImGui::End();
 
         // Clear with custom color
