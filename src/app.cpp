@@ -18,6 +18,10 @@ constexpr sf::Vector2u BASE_WINDOW_SIZE = {1280u, 720u};
 constexpr sf::Vector2u MINIMUM_WINDOW_SIZE = BASE_WINDOW_SIZE;
 constexpr float FPS_UPDATE_INTERVAL = 1.0f;
 constexpr bool DEFAULT_VSYNC_STATE = true;
+constexpr float PLAYER_ACCELERATION = 200.f;
+constexpr float PLAYER_DECELERATION = 500.f;
+constexpr float PLAYER_TURN_SPEED = 100.f;
+constexpr float PLAYER_MAX_SPEED = 1500.f;
 
 void run()
 {
@@ -54,8 +58,9 @@ void run()
     }
 
     // Player
-    sf::RectangleShape player({50.f, 100.f});
+    sf::RectangleShape player({100.f, 50.f});
     player.setFillColor(sf::Color::Green);
+    player.setOrigin(player.getSize() / 2.f);
     player.setPosition({window.getSize().x / 2.f - player.getSize().x / 2.f,
                         window.getSize().y / 2.f - player.getSize().y / 2.f});
 
@@ -68,8 +73,14 @@ void run()
     float cumulative_time = 0.0f;
     bool vsync_enabled = DEFAULT_VSYNC_STATE;
 
-    // Movement speed
-    constexpr float speed = 25.f;
+    // Movement variables
+    float speed = 0.f;
+    bool gas = false;
+    bool brake = false;
+    bool left = false;
+    bool right = false;
+
+    sf::Angle angle = sf::degrees(0.f);
 
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
@@ -88,29 +99,107 @@ void run()
                 const sf::FloatRect visible_area({0.f, 0.f}, sf::Vector2f(new_size.x, new_size.y));
                 window.setView(sf::View(visible_area));
             }
-
             // Key pressed
             else if (auto key_event = event->getIf<sf::Event::KeyPressed>()) {
-                // Move based on which arrow key was pressed
                 if (key_event->code == sf::Keyboard::Key::Left) {
-                    player.move({-speed, 0.f});
+                    left = true;
                 }
                 else if (key_event->code == sf::Keyboard::Key::Right) {
-                    player.move({speed, 0.f});
+                    right = true;
                 }
                 else if (key_event->code == sf::Keyboard::Key::Up) {
-                    player.move({0.f, -speed});
+                    gas = true;
                 }
                 else if (key_event->code == sf::Keyboard::Key::Down) {
-                    player.move({0.f, speed});
+                    brake = true;
+                }
+            }
+            // Key released
+            else if (auto key_event2 = event->getIf<sf::Event::KeyReleased>()) {
+                if (key_event2->code == sf::Keyboard::Key::Left) {
+                    left = false;
+                }
+                else if (key_event2->code == sf::Keyboard::Key::Right) {
+                    right = false;
+                }
+                else if (key_event2->code == sf::Keyboard::Key::Up) {
+                    gas = false;
+                }
+                else if (key_event2->code == sf::Keyboard::Key::Down) {
+                    brake = false;
                 }
             }
         }
 
-        // Get delta time from the clock
+        // Get delta time
         const float dt = clock.restart().asSeconds();
         cumulative_time += dt;
         ++frame_count;
+
+        // Turn left/right
+        if (left) {
+            angle -= sf::degrees(PLAYER_TURN_SPEED * dt);
+        }
+        if (right) {
+            angle += sf::degrees(PLAYER_TURN_SPEED * dt);
+        }
+
+        // Accelerate or brake
+        if (gas) {
+            speed += PLAYER_ACCELERATION * dt;
+            if (speed > PLAYER_MAX_SPEED) {
+                speed = PLAYER_MAX_SPEED;
+            }
+        }
+        if (brake) {
+            speed -= PLAYER_DECELERATION * dt;
+            if (speed < 0.f) {
+                speed = 0.f;  // no reverse for now
+            }
+        }
+        // Natural deceleration (coasting) if not pressing gas/brake
+        if (!gas && !brake) {
+            speed -= PLAYER_DECELERATION * dt;
+            if (speed < 0.f) {
+                speed = 0.f;
+            }
+        }
+
+        // Update player rotation and position
+        player.setRotation(angle);
+
+        // For movement, convert angle to radians
+        float rad = angle.asRadians();
+        float vx = speed * std::cos(rad);
+        float vy = speed * std::sin(rad);
+        player.move({vx * dt, vy * dt});
+
+        // Prevent the car from leaving the screen
+        sf::FloatRect bounds = player.getGlobalBounds();
+        float left_edge = bounds.position.x;
+        float top_edge = bounds.position.y;
+        float width = bounds.size.x;
+        float height = bounds.size.y;
+
+        // Keep within left edge
+        if (left_edge < 0.f) {
+            player.move({-left_edge, 0.f});
+        }
+        // Keep within top edge
+        if (top_edge < 0.f) {
+            player.move({0.f, -top_edge});
+        }
+        // Keep within right edge
+        float right_edge = left_edge + width;
+        sf::Vector2u window_size = window.getSize();
+        if (right_edge > window_size.x) {
+            player.move({window_size.x - right_edge, 0.f});
+        }
+        // Keep within bottom edge
+        float bottom_edge = top_edge + height;
+        if (bottom_edge > window_size.y) {
+            player.move({0.f, window_size.y - bottom_edge});
+        }
 
         // Update ImGui
         ImGui::SFML::Update(window, sf::seconds(dt));
@@ -123,12 +212,11 @@ void run()
         }
 
         // ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
-
         ImGui::ShowMetricsWindow();
 
         // Performance overlay (top-left corner)
         constexpr float window_offset = 5.f;
-        ImGui::SetNextWindowPos(ImVec2(window_offset, window_offset), ImGuiCond_Always);
+        ImGui::SetNextWindowPos({window_offset, window_offset}, ImGuiCond_Always);
         ImGui::Begin("Debug Overlay", nullptr,
                      ImGuiWindowFlags_NoTitleBar |
                          ImGuiWindowFlags_NoResize |
@@ -137,7 +225,6 @@ void run()
         ImGui::Text("FPS: %d", fps);
 
         // Retrieve and display the current window size
-        const sf::Vector2u window_size = window.getSize();
         ImGui::Text("Size: %dx%d", window_size.x, window_size.y);
 
         // Toggle vsync with a button click
