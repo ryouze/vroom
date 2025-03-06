@@ -10,7 +10,6 @@
 #include <imgui.h>
 
 #include "app.hpp"
-#include "core/graphics/debug.hpp"
 #include "generated.hpp"
 
 namespace app {
@@ -53,10 +52,6 @@ void run()
         return;
     }
 
-    // Create debug corner indicators
-    core::graphics::debug::IndicatorRelative indicator_relative(window.getSize());
-    const core::graphics::debug::IndicatorAbsolute indicator_absolute(window.getSize());
-
     // Initialize the main loop
     sf::Clock clock;
 
@@ -82,7 +77,6 @@ void run()
                 const sf::Vector2u new_size = window.getSize();
                 const sf::FloatRect visible_area({0.f, 0.f}, sf::Vector2f(new_size.x, new_size.y));
                 window.setView(sf::View(visible_area));
-                indicator_relative.update(new_size);
             }
         }
 
@@ -125,8 +119,6 @@ void run()
         window.clear(sf::Color(50, 50, 100));
 
         // Render the graphics
-        indicator_relative.draw(window);
-        indicator_absolute.draw(window);
         ImGui::SFML::Render(window);
         window.display();
     }
