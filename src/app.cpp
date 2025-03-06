@@ -14,7 +14,7 @@
 
 namespace app {
 
-constexpr sf::Vector2u BASE_WINDOW_SIZE = {800u, 600u};
+constexpr sf::Vector2u BASE_WINDOW_SIZE = {1280u, 720u};
 constexpr sf::Vector2u MINIMUM_WINDOW_SIZE = BASE_WINDOW_SIZE;
 constexpr float FPS_UPDATE_INTERVAL = 1.0f;
 constexpr bool DEFAULT_VSYNC_STATE = true;
@@ -56,8 +56,8 @@ void run()
     sf::Clock clock;
 
     // FPS tracking
-    int frame_count = 0;
-    int fps = -1;
+    unsigned frame_count = 0;
+    unsigned fps = 0;
     float cumulative_time = 0.0f;
     bool vsync_enabled = DEFAULT_VSYNC_STATE;
 
@@ -81,7 +81,7 @@ void run()
         }
 
         // Get delta time from the clock
-        float dt = clock.restart().asSeconds();
+        const float dt = clock.restart().asSeconds();
         cumulative_time += dt;
         ++frame_count;
 
@@ -90,17 +90,19 @@ void run()
 
         // Recalculate FPS once per second
         if (cumulative_time >= FPS_UPDATE_INTERVAL) {
-            fps = static_cast<int>(frame_count / cumulative_time);
+            fps = static_cast<unsigned>(frame_count / cumulative_time);
             frame_count = 0;
             cumulative_time = 0.0f;
         }
 
-        ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
+        // ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
+
+        ImGui::ShowMetricsWindow();
 
         // Performance overlay (top-left corner)
         constexpr float window_offset = 5.f;
         ImGui::SetNextWindowPos(ImVec2(window_offset, window_offset), ImGuiCond_Always);
-        ImGui::Begin("Performance", nullptr,
+        ImGui::Begin("Debug Overlay", nullptr,
                      ImGuiWindowFlags_NoTitleBar |
                          ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize |
@@ -109,7 +111,7 @@ void run()
 
         // Retrieve and display the current window size
         const sf::Vector2u window_size = window.getSize();
-        ImGui::Text("Window: %dx%d", window_size.x, window_size.y);
+        ImGui::Text("Size: %dx%d", window_size.x, window_size.y);
 
         // Toggle vsync with a button click
         if (ImGui::Button(vsync_enabled ? "VSync: ON" : "VSync: OFF")) {
