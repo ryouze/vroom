@@ -97,21 +97,24 @@ void run()
 
         ImGui::ShowDemoWindow();  // DEBUG: Show the demo window
 
-        // FPS + VSync GUI (top-left)
-        ImGui::SetNextWindowPos(ImVec2(5.f, 5.f), ImGuiCond_Always);
+        // Performance overlay (top-left corner)
+        constexpr float window_offset = 5.f;
+        ImGui::SetNextWindowPos(ImVec2(window_offset, window_offset), ImGuiCond_Always);
         ImGui::Begin("Performance", nullptr,
                      ImGuiWindowFlags_NoTitleBar |
                          ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoMove);
-        {
-            ImGui::Text("FPS: %d", fps);
+        ImGui::Text("FPS: %d", fps);
 
-            // Toggle button for VSync
-            if (ImGui::Button(vsync_enabled ? "VSync: ON" : "VSync: OFF")) {
-                vsync_enabled = !vsync_enabled;
-                window.setVerticalSyncEnabled(vsync_enabled);
-            }
+        // Retrieve and display the current window size
+        const sf::Vector2u window_size = window.getSize();
+        ImGui::Text("Window: %dx%d", window_size.x, window_size.y);
+
+        // Toggle vsync with a button click
+        if (ImGui::Button(vsync_enabled ? "VSync: ON" : "VSync: OFF")) {
+            vsync_enabled = !vsync_enabled;
+            window.setVerticalSyncEnabled(vsync_enabled);
         }
         ImGui::End();
 
