@@ -85,6 +85,11 @@ class TextureManager final {
      */
     [[nodiscard]] std::size_t size() const;
 
+    // Allow move semantics
+    TextureManager(TextureManager &&) = default;
+    TextureManager &operator=(TextureManager &&) = default;
+
+    // Disable copy semantics
     TextureManager(const TextureManager &) = delete;
     TextureManager &operator=(const TextureManager &) = delete;
 
