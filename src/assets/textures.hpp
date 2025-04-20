@@ -8,7 +8,7 @@
 
 #include <cstddef>           // for std::size_t
 #include <initializer_list>  // for std::initializer_list
-#include <memory>            // for std::unique_ptr
+#include <vector>            // for std::vector
 
 #include <SFML/Graphics.hpp>
 
@@ -85,23 +85,14 @@ class TextureManager final {
      */
     [[nodiscard]] std::size_t size() const;
 
-    // Note: The class is using a "std::unique_ptr", which automatically disallows copying, so if you try to copy the class, you'll get a compile-time error.
-    // I.e., there is no need to explicitly delete the copy constructor and assignment operator, as they are implicitly deleted by the "std::unique_ptr".
     TextureManager(const TextureManager &) = delete;
     TextureManager &operator=(const TextureManager &) = delete;
 
   private:
     /**
-     * @brief Array of loaded textures.
-     *
-     * @note The number of textures is fixed at construction time as "this->size_".
+     * @brief Vector of loaded textures.
      */
-    std::unique_ptr<sf::Texture[]> textures_;
-
-    /**
-     * @brief Number (size) of loaded textures (e.g., "4").
-     */
-    const std::size_t size_;
+    std::vector<sf::Texture> textures_;
 };
 
 /**
