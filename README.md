@@ -29,7 +29,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## Known Issues
 
 - The FPS limiter is unreliable due to timing inaccuracies in SFML; this is unfixable.
-  - As a workaround, the default frame rate cap is set to 144 FPS, which balances performance and hardware compatibility. The engine is capable of exceeding 2500 FPS on Apple M1 Pro systems and significantly more on high-end hardware.
+  - As a workaround, the default frame rate cap is set to 144 FPS, which balances performance and hardware compatibility. The engine is capable of exceeding 2,500 FPS on Apple M1 Pro systems and 10,000+ FPS on a desktop PC with a dedicated GPU.
 - Fullscreen mode is not currently supported; the application runs in windowed mode only.
   - This is might be addressed in a future release.
 
@@ -64,8 +64,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 This project has been tested on the following systems:
 
 - macOS 15.3 (Sequoia)
-<!-- - Manjaro 24.0 (Wynsdey)
-- Windows 11 23H2 -->
+- Manjaro 24.0 (Wynsdey)
+- Windows 11 23H2
 
 Automated testing is also performed on the latest versions of macOS, GNU/Linux, and Windows using GitHub Actions.
 
