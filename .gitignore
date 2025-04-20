@@ -2,6 +2,7 @@
 notes/
 
 # Raw assets
+cmake/assets/Sounds/
 cmake/assets/Graphics/
 src/**/*.png
 
