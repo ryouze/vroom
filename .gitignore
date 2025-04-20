@@ -2,7 +2,7 @@
 notes/
 
 # Raw assets
-cmake/assets/
+cmake/assets/Graphics/
 src/**/*.png
 
 # Build directory
