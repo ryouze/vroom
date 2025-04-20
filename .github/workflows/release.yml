@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # If true, cancel the workflow run if any matrix job fails.
+      # If false, continue to run the workflow and complete all matrix jobs, even if one or more jobs fail.
+      fail-fast: true
+
+      matrix:
+        include:
+          - os: macos-latest
+            cpp_compiler: clang++
+            input_name: vroom.app
+            output_name: vroom-macos-arm64.app
+            archive_name: vroom-macos-arm64.tar.gz
+            archive_type: tar
+          - os: ubuntu-latest
+            cpp_compiler: g++
+            input_name: vroom
+            output_name: vroom-linux-x86_64
+            archive_name: vroom-linux-x86_64.tar.gz
+            archive_type: tar
+          - os: windows-latest
+            cpp_compiler: cl
+            input_name: Release/vroom.exe  # Stored in a subdirectory on Windows
+            output_name: vroom-windows-x86_64.exe
+            archive_name: vroom-windows-x86_64.zip
+            archive_type: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set reusable strings
+        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "deps-dir=${{ github.workspace }}/deps" >> "$GITHUB_OUTPUT"
+
+      - name: Cache CMake deps directory
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.strings.outputs.deps-dir }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}-${{ hashFiles('cmake/**') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install GNU/Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev
+
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        # Set the project version to the tag name instead of git commit.
+        # Set "-DCMAKE_C_COMPILER=${{ matrix.c_compiler }}" for C/C++ projects, otherwise use CXX for C++ only projects.
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_BUILD_TYPE=Release
+          -DPROJECT_VERSION="${{ github.ref_name }}"
+          -S ${{ github.workspace }}
+          ${{ runner.os == 'macOS' && '-DCMAKE_OSX_ARCHITECTURES=arm64' || '' }}
+
+      - name: Build
+        # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release --parallel
+
+      - name: Rename binary
+        # Rename the binary to match the platform.
+        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        shell: bash
+        run: |
+          echo "Renaming '${{ matrix.input_name }}' to '${{ matrix.output_name }}'"
+          mv "${{ matrix.input_name }}" "${{ matrix.output_name }}"
+
+      - name: Archive binary
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: ${{ matrix.archive_type }}
+          filename: "${{ matrix.archive_name }}"
+          directory: ${{ steps.strings.outputs.build-output-dir }}
+          path: ${{ matrix.output_name }}
+
+      - name: Release
+        # Upload the binary to the release page.
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ steps.strings.outputs.build-output-dir }}/${{ matrix.archive_name }}

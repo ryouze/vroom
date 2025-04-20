@@ -1,0 +1,106 @@
+/**
+ * @file generated.hpp
+ *
+ * @brief Auto-generated header, modified by CMake during build.
+ */
+
+#pragma once
+
+namespace generated {
+
+// Stringify MSVC version numbers
+#define STRINGIFY2(x) #x
+#define STRINGIFY(x) STRINGIFY2(x)
+
+/**
+ * @brief Project name, inferred from the CMake project name.
+ *
+ * @note This is the same as the executable name.
+ */
+inline constexpr const char *PROJECT_NAME = "@PROJECT_NAME@";
+
+/**
+ * @brief Project version, inferred from the Git tag.
+ */
+inline constexpr const char *PROJECT_VERSION = "@PROJECT_VERSION@";
+
+/**
+ * @brief Compiler configuration: Release, Debug, etc.
+ */
+inline constexpr const char *BUILD_CONFIGURATION = "@CMAKE_BUILD_TYPE@";
+
+/**
+ * @brief Compiler name and version.
+ */
+inline constexpr const char *COMPILER_INFO =
+#if defined(__clang__)
+    "Clang (" __clang_version__ ")";
+#elif defined(__GNUC__)
+    "GCC (" __VERSION__ ")";
+#elif defined(_MSC_VER)
+    "MSVC (" STRINGIFY(_MSC_FULL_VER) ")";
+#else
+    "Unknown";
+#endif
+
+/**
+ * @brief C++ standard: 201703L.
+ */
+inline constexpr long CPP_STANDARD = __cplusplus;
+
+/**
+ * @brief Whether to build shared libraries or not.
+ */
+inline constexpr const char *BUILD_SHARED_LIBS = "@BUILD_SHARED_LIBS@";
+
+/**
+ * @brief Whether to enable stripping of debug symbols for Release builds.
+ */
+inline constexpr const char *STRIP_ENABLED = "@ENABLE_STRIP@";
+
+/**
+ * @brief Whether to enable Link Time Optimization (LTO) for Release builds.
+ */
+inline constexpr const char *LTO_ENABLED = "@CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE@";
+
+/**
+ * @brief Build date in "MMM DD YYYY" format.
+ */
+inline constexpr const char *BUILD_DATE = __DATE__;
+
+/**
+ * @brief Build time in "HH:MM:SS" format.
+ */
+inline constexpr const char *BUILD_TIME = __TIME__;
+
+/**
+ * @brief Operating system: macOS, Linux, Windows, etc.
+ */
+inline constexpr const char *OPERATING_SYSTEM =
+#if defined(__APPLE__)
+    "macOS";
+#elif defined(__linux__)
+    "Linux";
+#elif defined(_WIN32)
+    "Windows";
+#else
+    "Unknown";
+#endif
+
+/**
+ * @brief CPU architecture: x86_64, x86, ARM64, etc.
+ */
+inline constexpr const char *ARCHITECTURE =
+#if defined(__x86_64__) || defined(_M_X64)
+    "x86_64";
+#elif defined(__i386__) || defined(_M_IX86)
+    "x86";
+#elif defined(__arm64__) || defined(_M_ARM64)
+    "ARM64";
+#elif defined(__arm__) || defined(_M_ARM)
+    "ARM";
+#else
+        "Unknown";
+#endif
+
+}  // namespace generated
