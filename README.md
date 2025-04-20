@@ -110,6 +110,8 @@ Follow these steps to build the project:
     cmake ..
     ```
 
+    If the build fails due to the freetype (dependency of SFML), use `cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5`. There is nothing I can do about this myself, it must be fixed in SFML.
+
     Optionally, you can disable compile warnings by setting `ENABLE_COMPILE_FLAGS` to `OFF`:
 
     ```sh
