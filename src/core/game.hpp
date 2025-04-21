@@ -220,6 +220,38 @@ struct TrackTiles final {
 };
 
 /**
+ * @brief Enum that represents the type of a waypoint.
+ */
+enum class WaypointType {
+    /**
+     * @brief Straight line. Can go fast.
+     */
+    Straight,
+
+    /**
+     * @brief Corner. Need to slow down, preferably before the corner.
+     */
+    Corner
+};
+
+/**
+ * @brief Struct that represents a waypoint on the track, i.e., position and type.
+ *
+ * @note This struct is marked as "final" to prevent inheritance.
+ */
+struct Waypoint final {
+    /**
+     * @brief Position of the waypoint.
+     */
+    const sf::Vector2f position;
+
+    /**
+     * @brief Type of the waypoint.
+     */
+    const WaypointType type;
+};
+
+/**
  * @brief Class that manages the race track, including its textures, configuration, positioning, and rendering.
  *
  * On construction, the class builds the track using the provided textures and config.
@@ -275,15 +307,14 @@ class Track final {
      */
     [[nodiscard]] bool is_on_track(const sf::Vector2f &world_position) const;  // TODO: Remove this, let Car class check collisions on its own
 
-    // [[nodiscard]] std::vector<sf::FloatRect> get_bounds() const  // TODO: Store this in a variable to avoid recalculating every frame
-    // {
-    //     std::vector<sf::FloatRect> bounds;
-    //     for (const auto &sprite : this->sprites_) {
-    //         bounds.emplace_back(sprite.getGlobalBounds());
-    //     }
-    //     return bounds;
-    // }
-    // TODO: Add a waypoint system to help AI cars navigate the track
+    /**
+     * @brief Get the waypoints on the track.
+     *
+     * This is used for AI navigation.
+     *
+     * @return Vector of waypoints on the track - positions and types.
+     */
+    [[nodiscard]] std::vector<Waypoint> get_waypoints() const;
 
     /**
      * @brief Draw the track on the provided render target.
@@ -323,6 +354,13 @@ class Track final {
      * @note These are the actual objects displayed on screen.
      */
     std::vector<sf::Sprite> sprites_;
+
+    /**
+     * @brief Vector of waypoints on the track.
+     *
+     * @note This is used for AI navigation.
+     */
+    std::vector<Waypoint> waypoints_;
 
     /**
      * @brief Finish point of the track.

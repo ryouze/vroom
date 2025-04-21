@@ -63,13 +63,6 @@ const sf::Vector2f &Track::get_finish_point() const
     return this->finish_point_;
 }
 
-void Track::draw(sf::RenderTarget &target) const
-{
-    for (const sf::Sprite &sprite : this->sprites_) {
-        target.draw(sprite);
-    }
-}
-
 bool Track::is_on_track(const sf::Vector2f &world_position) const
 {
     for (const auto &sprite : this->sprites_) {
@@ -78,6 +71,18 @@ bool Track::is_on_track(const sf::Vector2f &world_position) const
         }
     }
     return false;
+}
+
+std::vector<Waypoint> Track::get_waypoints() const
+{
+    return this->waypoints_;
+}
+
+void Track::draw(sf::RenderTarget &target) const
+{
+    for (const sf::Sprite &sprite : this->sprites_) {
+        target.draw(sprite);
+    }
 }
 
 void Track::build()
@@ -124,6 +129,7 @@ void Track::build()
     // Create a sprite from a texture, scale, center, position it, and optionally record its position as the finish line
     const auto place_tile = [&](const sf::Texture &texture,
                                 const sf::Vector2f &position,
+                                const bool is_corner,
                                 const bool finish_point = false) {
         // Create a new sprite using the texture
         sf::Sprite &sprite = this->sprites_.emplace_back(texture);  // Emplace, then reference
@@ -137,6 +143,16 @@ void Track::build()
         // Set the position of the sprite to the provided position
         sprite.setPosition(position);
 
+        // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
+        if (is_corner) {
+            this->waypoints_.emplace_back(Waypoint{position, WaypointType::Corner});
+            SPDLOG_DEBUG("Placed corner waypoint at '{}x{}' px!", position.x, position.y);
+        }
+        else {
+            this->waypoints_.emplace_back(Waypoint{position, WaypointType::Straight});
+            SPDLOG_DEBUG("Placed straight waypoint at '{}x{}' px!", position.x, position.y);
+        }
+
         // If it's the finish line, record its position to be used as a spawn point
         // This should be true only once throughout the entire track; you cannot have multiple finish points
         if (finish_point) {
@@ -147,17 +163,17 @@ void Track::build()
     // Place the four corner tiles
     SPDLOG_DEBUG("Placing corner tiles...");
     place_tile(this->tiles_.top_left,
-               {top_left_origin.x + half * tile_size,
-                top_left_origin.y + half * tile_size});
+               {top_left_origin.x + half * tile_size, top_left_origin.y + half * tile_size},
+               true);
     place_tile(this->tiles_.top_right,
-               {top_left_origin.x + total_width - half * tile_size,
-                top_left_origin.y + half * tile_size});
+               {top_left_origin.x + total_width - half * tile_size, top_left_origin.y + half * tile_size},
+               true);
     place_tile(this->tiles_.bottom_right,
-               {top_left_origin.x + total_width - half * tile_size,
-                top_left_origin.y + total_height - half * tile_size});
+               {top_left_origin.x + total_width - half * tile_size, top_left_origin.y + total_height - half * tile_size},
+               true);
     place_tile(this->tiles_.bottom_left,
-               {top_left_origin.x + half * tile_size,
-                top_left_origin.y + total_height - half * tile_size});
+               {top_left_origin.x + half * tile_size, top_left_origin.y + total_height - half * tile_size},
+               true);
     SPDLOG_DEBUG("Corner tiles placed!");
 
     // Determine which top edge tile becomes the finish line (middle tile excluding corners)
@@ -183,10 +199,13 @@ void Track::build()
                        ? this->tiles_.horizontal_finish
                        : this->tiles_.horizontal,
                    {x, top_row_y},
+                   false,
                    is_finish_line);
 
         // Place the bottom edge
-        place_tile(this->tiles_.horizontal, {x, bottom_row_y});
+        place_tile(this->tiles_.horizontal,
+                   {x, bottom_row_y},
+                   false);
     }
     SPDLOG_DEBUG("Top and bottom edge tiles placed, now setting up vertical edges...");
 
@@ -234,29 +253,37 @@ void Track::build()
 
                     // Place entry curves
                     place_tile(top_detour,
-                               {detour_x, top_row_y_detour});
+                               {detour_x, top_row_y_detour},
+                               true);
                     place_tile(top_main,
-                               {main_x, top_row_y_detour});
+                               {main_x, top_row_y_detour},
+                               true);
 
                     // Place straight detour verticals
                     for (std::size_t offset = 1; offset + 1 < height; ++offset) {
                         const float mid_y = top_row_y_detour + static_cast<float>(offset) * tile_size;
-                        place_tile(this->tiles_.vertical, {detour_x, mid_y});
+                        place_tile(this->tiles_.vertical,
+                                   {detour_x, mid_y},
+                                   false);
                         SPDLOG_DEBUG("Placed detour vertical tile at '{}x{}'", detour_x, mid_y);
                     }
 
                     // Place the bottom tiles of the detour segment
                     place_tile(bottom_detour,
-                               {detour_x, bottom_row_y_detour});
+                               {detour_x, bottom_row_y_detour},
+                               true);
                     place_tile(bottom_main,
-                               {main_x, bottom_row_y_detour});
+                               {main_x, bottom_row_y_detour},
+                               true);
 
                     // Advance row pointer beyond detour and insert continuity tile
                     // This is a fix for the real edge not having a vertical tile before the next detour
                     row += height;
                     if (row < this->config_.vertical_count - 1) {
                         const float cont_y = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
-                        place_tile(this->tiles_.vertical, {main_x, cont_y});
+                        place_tile(this->tiles_.vertical,
+                                   {main_x, cont_y},
+                                   false);
                         SPDLOG_DEBUG("Placed continuity vertical tile at '{}x{}'", main_x, cont_y);
                         ++row;
                     }
@@ -267,7 +294,8 @@ void Track::build()
             // No detour: plain vertical
             const float y = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
             place_tile(this->tiles_.vertical,
-                       {main_x, y});
+                       {main_x, y},
+                       false);
             SPDLOG_DEBUG("Placed regular vertical tile at '{}x{}'", main_x, y);
             ++row;
         }
