@@ -254,7 +254,9 @@ void run()
                 onKeyReleased(*released);
         }
 
-        const float delta_time = clock.restart().asSeconds();
+        // Prevent extreme dt values at below 30 FPS by capping to 50 ms
+        const float delta_time = std::min(clock.restart().asSeconds(), 0.05f);
+
         imgui_context.update(delta_time);
         fps_counter.update_and_draw(delta_time);
 
