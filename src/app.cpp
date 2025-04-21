@@ -2,7 +2,7 @@
  * @file app.cpp
  */
 
-#include <algorithm>  // for std::clamp, std::max
+#include <algorithm>  // for std::clamp, std::max, std::min
 #include <array>      // for std::array
 #include <cmath>      // for std::hypot
 #include <cstddef>    // for std::size_t
@@ -11,6 +11,7 @@
 #include <optional>   // for std::optional
 #include <random>     // for std::random_device, std::mt19937
 #include <string>     // for std::string
+#include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>  // Required for some implicit conversions, e.g., "ImGui::Image(minimap_texture.getTexture(), ...);"

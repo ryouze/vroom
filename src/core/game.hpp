@@ -7,7 +7,7 @@
 #pragma once
 
 #include <algorithm>  // for std::clamp, std::min, std::max
-#include <cmath>      // for std::hypot, std::remainder, std::atan2, std::sin, std::cos
+#include <cmath>      // for std::hypot, std::remainder, std::atan2, std::sin, std::cos, std::lerp, std::abs
 #include <cstddef>    // for std::size_t
 #include <numbers>    // for std::numbers
 #include <random>     // for std::mt19937
