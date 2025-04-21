@@ -419,6 +419,9 @@ struct CarConfig final {
 
     /// Speed retention factor on collision bounce (0 = full stop, 1 = keep full speed - it will bounce like a rubber ball, lol)
     float collision_speed_retention_factor = 0.3f;
+
+    /// Minimum speed for collision bounce in pixels per second, preventing cars from bouncing at low speeds
+    float minimal_bounce_speed_pixels_per_second = 50.0f;
 };
 
 /**
@@ -632,8 +635,18 @@ class Car {
 
         // Collision check: if off track, revert and bounce back
         if (!this->track_.is_on_track(this->sprite_.getPosition())) {
+            // Revert to last valid position
             this->sprite_.setPosition(this->last_position_vector_);
+
+            // Reflect velocity and apply configured retention factor
             this->current_velocity_vector_ = -this->current_velocity_vector_ * this->config_.collision_speed_retention_factor;
+
+            // Avoid pinball jitter: stop the car if post‑bounce speed is very low
+            const float speed_after_bounce_pixels_per_second = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
+
+            if (speed_after_bounce_pixels_per_second < this->config_.minimal_bounce_speed_pixels_per_second) {
+                this->current_velocity_vector_ = {0.0f, 0.0f};
+            }
         }
 
         // Reset all input flags after physics step
