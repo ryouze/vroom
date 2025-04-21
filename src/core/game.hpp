@@ -321,6 +321,14 @@ class Track final {
      */
     void draw(sf::RenderTarget &target) const;
 
+    // Disable move semantics
+    Track(Track &&) = delete;
+    Track &operator=(Track &&) = delete;
+
+    // Disable copy semantics
+    Track(const Track &) = delete;
+    Track &operator=(const Track &) = delete;
+
   private:
     /**
      * @brief Build the track using the current configuration and textures.
@@ -473,6 +481,14 @@ class Car {
     {
         target.draw(this->sprite_);
     }
+
+    // Disable move semantics
+    Car(Car &&) = delete;
+    Car &operator=(Car &&) = delete;
+
+    // Disable copy semantics
+    Car(const Car &) = delete;
+    Car &operator=(const Car &) = delete;
 
   protected:
     // Apply throttle acceleration based on heading
