@@ -436,7 +436,7 @@ class Car {
     {
         this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
         this->sprite_.setPosition(initial_position);
-        this->current_heading_angle_ = sf::degrees(0.0f);
+        // this->current_heading_angle_ = sf::degrees(0.0f);
         this->current_velocity_vector_ = {0.0f, 0.0f};
         this->current_steering_wheel_angle_degrees_ = 0.0f;
     }
@@ -451,7 +451,7 @@ class Car {
         this->sprite_.setRotation(sf::degrees(0.0f));
 
         // Physics
-        this->current_heading_angle_ = sf::degrees(0.0f);
+        // this->current_heading_angle_ = sf::degrees(0.0f);
         this->current_velocity_vector_ = {0.0f, 0.0f};
         this->current_steering_wheel_angle_degrees_ = 0.0f;
     }
@@ -479,7 +479,7 @@ class Car {
     void accelerate(const float dt)
     {
         // Convert heading angle to radians for math functions
-        const float heading_radians = this->current_heading_angle_.asRadians();
+        const float heading_radians = this->sprite_.getRotation().asRadians();
 
         // Increase velocity components along heading direction
         this->current_velocity_vector_.x += std::cos(heading_radians) * this->config_.forward_acceleration_pixels_per_second_squared * dt;
@@ -564,8 +564,7 @@ class Car {
         }
 
         // Determine if any throttle or braking input was given
-        const bool any_throttle_or_brake_input_flag =
-            this->is_accelerating || this->is_braking || this->is_handbraking;
+        const bool any_throttle_or_brake_input_flag = this->is_accelerating || this->is_braking || this->is_handbraking;
         // Compute current speed magnitude
         const float current_speed_magnitude = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
 
@@ -583,7 +582,7 @@ class Car {
         }
 
         // Compute forward direction unit vector from heading
-        const float heading_radians = this->current_heading_angle_.asRadians();
+        const float heading_radians = this->sprite_.getRotation().asRadians();
         const sf::Vector2f forward_direction_vector = {std::cos(heading_radians), std::sin(heading_radians)};
 
         // Decompose velocity into forward and lateral components
@@ -622,10 +621,10 @@ class Car {
         }
 
         // Update heading based on steering and turn factor
-        this->current_heading_angle_ += sf::degrees(this->current_steering_wheel_angle_degrees_ * computed_turn_factor * dt);
+        this->sprite_.setRotation(this->sprite_.getRotation() + sf::degrees(this->current_steering_wheel_angle_degrees_ * computed_turn_factor * dt));
 
         // Apply rotation and move sprite by velocity
-        this->sprite_.setRotation(this->current_heading_angle_);
+        // this->sprite_.setRotation(this->current_heading_angle_);
         this->sprite_.move(this->current_velocity_vector_ * dt);
 
         // Collision check: if off track, revert and bounce back
@@ -643,11 +642,11 @@ class Car {
     }
 
     // Protected member variables for subclasses
-    sf::Sprite sprite_;                           ///< Sprites used for rendering
-    std::mt19937 &rng_;                           ///< RNG for physics/AI variation
-    const Track &track_;                          ///< Track for collision checks
-    CarConfig config_;                            ///< Physics and behavior settings
-    sf::Angle current_heading_angle_;             ///< Heading angle in degrees
+    sf::Sprite sprite_;   ///< Sprites used for rendering
+    std::mt19937 &rng_;   ///< RNG for physics/AI variation
+    const Track &track_;  ///< Track for collision checks
+    CarConfig config_;    ///< Physics and behavior settings
+    // sf::Angle current_heading_angle_;             ///< Heading angle in degrees
     sf::Vector2f current_velocity_vector_;        ///< Velocity vector in pixels/s
     float current_steering_wheel_angle_degrees_;  ///< Steering wheel angle
 
@@ -669,17 +668,17 @@ class PlayerCar final : public Car {
   public:
     using Car::Car;
 
-    void set_input(const bool gas_pressed,
-                   const bool brake_pressed,
-                   const bool steer_left_pressed,
-                   const bool steer_right_pressed,
-                   const bool handbrake_pressed)
+    void set_input(const bool gas,
+                   const bool brake,
+                   const bool left,
+                   const bool right,
+                   const bool handbrake)
     {
-        this->is_accelerating = gas_pressed;
-        this->is_braking = brake_pressed;
-        this->is_steering_left = steer_left_pressed;
-        this->is_steering_right = steer_right_pressed;
-        this->is_handbraking = handbrake_pressed;
+        this->is_accelerating = gas;
+        this->is_braking = brake;
+        this->is_steering_left = left;
+        this->is_steering_right = right;
+        this->is_handbraking = handbrake;
     }
 
     void update(const float dt) override
@@ -723,7 +722,7 @@ class AICar final : public Car {
 
         // 3) Steering decision: compute angle difference
         const float desired_heading_radians = std::atan2(vector_to_current_waypoint.y, vector_to_current_waypoint.x);
-        const float current_heading_radians = this->current_heading_angle_.asRadians();
+        const float current_heading_radians = this->sprite_.getRotation().asRadians();
         const float angle_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
 
         this->is_steering_left = (angle_difference_radians < -steering_angle_threshold_radians);
