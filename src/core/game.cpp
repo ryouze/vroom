@@ -93,7 +93,7 @@ void Track::build()
                  this->config_.size_px,
                  this->config_.detour_chance_pct);
 
-    // Reset sprites and pre‑reserve capacity
+    // Reset sprites and reserve capacity
     this->sprites_.clear();
     this->waypoints_.clear();
     const std::size_t base_tile_count =
@@ -112,7 +112,7 @@ void Track::build()
     const float total_width = tile_size * static_cast<float>(this->config_.horizontal_count);
     const float total_height = tile_size * static_cast<float>(this->config_.vertical_count);
 
-    // Top‑left corner position, will be used as a starting point for placing tiles, assuming the track is centered at the origin
+    // Top-left corner position, will be used as a starting point for placing tiles, assuming the track is centered at the origin
     const sf::Vector2f top_left_origin = {-half * total_width,
                                           -half * total_height};
 

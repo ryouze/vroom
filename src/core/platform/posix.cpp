@@ -58,7 +58,7 @@ std::filesystem::path get_home_directory()
         return std::filesystem::path(pwd.pw_dir);
     }
 
-    // Use ret if it is non‑zero; otherwise, no passwd entry (ENOENT)
+    // Use ret if it is non-zero; otherwise, no passwd entry (ENOENT)
     throw std::runtime_error(std::format("Failed to get the home directory on a POSIX system: {}", std::strerror(ret != 0 ? ret : ENOENT)));
 }
 

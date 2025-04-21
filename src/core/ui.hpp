@@ -330,7 +330,7 @@ class Minimap final {
      * @brief Update the minimap and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
      *
      * @param dt Time passed since the previous frame, in seconds.
-     * @param center World‑space position to center the minimap on, such as the player's vehicle.
+     * @param center World-space position to center the minimap on, such as the player's vehicle.
      */
     void update_and_draw(const float dt,
                          const sf::Vector2f &center);
@@ -361,7 +361,7 @@ class Minimap final {
      * @brief Update the minimap texture.
      *
      * @param dt Time passed since the previous frame, in seconds.
-     * @param center World‑space position to center the minimap on, such as the player's vehicle.
+     * @param center World-space position to center the minimap on, such as the player's vehicle.
      *
      * @note This method is called by "update_and_draw()" and is not intended to be called directly. Call this method once each frame. The value of "enabled" does NOT affect this method, use the higher-level "update_and_draw()" method instead.
      */
