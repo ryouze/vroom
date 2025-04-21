@@ -95,13 +95,13 @@ void run()
     std::vector<core::game::Waypoint> waypoints = race_track.get_waypoints();
 
     // Create cars
-    constexpr core::game::CarSettings default_car_settings;
-    core::game::PlayerCar player_car(car_textures[0], default_car_settings, spawn_point);
-    std::array<core::game::AiCar, 4> ai_cars = {
-        core::game::AiCar(car_textures[1], default_car_settings, spawn_point),
-        core::game::AiCar(car_textures[2], default_car_settings, spawn_point),
-        core::game::AiCar(car_textures[3], default_car_settings, spawn_point),
-        core::game::AiCar(car_textures[4], default_car_settings, spawn_point)};
+    constexpr core::game::CarConfig default_car_settings;
+    core::game::PlayerCar player_car(car_textures[0], spawn_point, rng, race_track, default_car_settings);
+    std::array<core::game::AICar, 4> ai_cars = {
+        core::game::AICar(car_textures[1], spawn_point, rng, race_track, default_car_settings),
+        core::game::AICar(car_textures[2], spawn_point, rng, race_track, default_car_settings),
+        core::game::AICar(car_textures[3], spawn_point, rng, race_track, default_car_settings),
+        core::game::AICar(car_textures[4], spawn_point, rng, race_track, default_car_settings)};
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&race_track, &spawn_point, &player_car, &ai_cars]() {
@@ -137,30 +137,6 @@ void run()
     };
 
     reset_waypoints();  // Debug
-
-    // Setup AI waypoints
-    // std::vector<sf::Vector2f> waypoints = track.build_waypoints();
-    // std::array<std::size_t, 4> ai_waypoint_index = {0, 0, 0, 0};
-
-    // Place cars
-    // // Lambda for resetting all cars
-    // auto reset_all_cars = [&]() {
-    //     player.reset();
-    //     for (auto &car : ai_cars)
-    //         car.reset();
-    // };
-    // reset_all_cars(player, ai_cars, track);
-
-    // // Let AI update accelerate/brake logic every 0.3s
-    // for (AiCar &ai : ai_cars) {
-    //     ai.set_update_interval(0.3f);
-    // }
-
-    const auto do_collision = [&](core::game::Car &c) {  // TODO: Move this to Car class
-        if (!race_track.is_on_track(c.get_position())) {
-            c.bounce_back();
-        }
-    };
 
     // Player input states
     struct
@@ -334,11 +310,8 @@ void run()
         else if (current_state == GameState::Playing) [[likely]] {
             player_car.set_input(key_states.gas, key_states.brake, key_states.left, key_states.right, key_states.handbrake);
             player_car.update(delta_time);
-            do_collision(player_car);
-
             for (auto &ai : ai_cars) {
-                // ai.update(delta_time);
-                do_collision(ai);
+                ai.update(delta_time);
             }
 
             const sf::Vector2f vehicle_position = selected_vehicle_pointer->get_position();

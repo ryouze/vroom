@@ -73,7 +73,7 @@ bool Track::is_on_track(const sf::Vector2f &world_position) const
     return false;
 }
 
-std::vector<Waypoint> Track::get_waypoints() const
+const std::vector<Waypoint> &Track::get_waypoints() const
 {
     return this->waypoints_;
 }
