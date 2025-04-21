@@ -120,6 +120,7 @@ void run()
         waypoints = race_track.get_waypoints();
 
         // Debugging purposes
+        waypoint_shapes.clear();
         for (const auto &waypoint : waypoints) {
             sf::RectangleShape shape;
             shape.setSize({50.f, 50.f});
@@ -353,6 +354,9 @@ void run()
             // Clear with game color and draw game objects
             window->clear(window_colors.game);
             draw_game_entities(*window);
+            for (const auto &waypoint_shape : waypoint_shapes) {
+                window->draw(waypoint_shape);
+            }
             minimap.update_and_draw(delta_time, vehicle_position);
         }
 
@@ -516,10 +520,6 @@ void run()
             }
 
             ImGui::End();
-        }
-
-        for (const auto &waypoint_shape : waypoint_shapes) {
-            window->draw(waypoint_shape);
         }
 
         imgui_context.render();

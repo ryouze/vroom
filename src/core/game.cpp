@@ -95,11 +95,13 @@ void Track::build()
 
     // Reset sprites and pre‑reserve capacity
     this->sprites_.clear();
+    this->waypoints_.clear();
     const std::size_t base_tile_count =
         4                                           // Corners
         + 2 * (this->config_.horizontal_count - 2)  // Top and bottom edges
         + 2 * (this->config_.vertical_count - 2);   // Left and right edges
     this->sprites_.reserve(base_tile_count * 2);    // Multiply by 2 for detours
+    this->waypoints_.reserve(base_tile_count * 2);  // Multiply by 2 for detours
     SPDLOG_DEBUG("Reserved capacity for '{}' sprites, now calculating track size...", this->sprites_.capacity());
 
     // Define the half the tile size for centering and positioning
