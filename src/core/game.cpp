@@ -35,11 +35,11 @@ Track::Track(const TrackTiles &tiles,
 
 void Track::set_config(const TrackConfig &config)
 {
-    SPDLOG_DEBUG("Setting new config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_chance_pct='{}'...",
-                 config.horizontal_count,
-                 config.vertical_count,
-                 config.size_px,
-                 config.detour_chance_pct);
+    // SPDLOG_DEBUG("Setting new config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_chance_pct='{}'...",
+    //              config.horizontal_count,
+    //              config.vertical_count,
+    //              config.size_px,
+    //              config.detour_chance_pct);
     // Rebuild only when necessary
     // if (this->config_ != config) [[likely]] {  // Probably likely if the user is calling this method
     //     SPDLOG_DEBUG("Config changed, rebuilding track...");
@@ -59,7 +59,7 @@ void Track::set_config(const TrackConfig &config)
 
 const sf::Vector2f &Track::get_finish_point() const
 {
-    SPDLOG_DEBUG("Returning finish point at '{}x{}' px!", this->finish_point_.x, this->finish_point_.y);
+    // SPDLOG_DEBUG("Returning finish point at ('{}', '{}') px!", this->finish_point_.x, this->finish_point_.y);
     return this->finish_point_;
 }
 
@@ -103,7 +103,7 @@ void Track::build()
         + 2 * (this->config_.vertical_count - 2);   // Left and right edges
     this->sprites_.reserve(base_tile_count * 2);    // Multiply by 2 for detours
     this->waypoints_.reserve(base_tile_count * 2);  // Multiply by 2 for detours
-    SPDLOG_DEBUG("Reserved capacity for '{}' sprites, now calculating track size...", this->sprites_.capacity());
+    // SPDLOG_DEBUG("Reserved capacity for '{}' sprites, now calculating track size...", this->sprites_.capacity());
 
     // Define the half the tile size for centering and positioning
     constexpr float half = 0.5f;
@@ -121,13 +121,13 @@ void Track::build()
     // Then, calculate the scale factor based on the desired tile size and the texture size
     // Unfortunately, "sprite.setScale()" expects a float, so we need to convert the final size to float
     const float scale_factor = tile_size / static_cast<float>(this->tiles_.top_left.getSize().x);
-    SPDLOG_DEBUG("Tile size '{}' px gives total size '{}x{}' px, top-left origin '{}x{}' px, and scale factor '{}x'!",
-                 tile_size,
-                 total_width,
-                 total_height,
-                 top_left_origin.x,
-                 top_left_origin.y,
-                 scale_factor);
+    // SPDLOG_DEBUG("Tile size '{}' px gives total size ('{}', '{}') px, top-left origin ('{}', '{}') px, and scale factor '{}x'!",
+    //              tile_size,
+    //              total_width,
+    //              total_height,
+    //              top_left_origin.x,
+    //              top_left_origin.y,
+    //              scale_factor);
 
     // Create a sprite from a texture, scale, center, position it, and optionally record its position as the finish line
     const auto place_tile = [&](const sf::Texture &texture,
@@ -149,11 +149,11 @@ void Track::build()
         // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
         if (is_corner) {
             this->waypoints_.emplace_back(Waypoint{position, WaypointType::Corner});
-            SPDLOG_DEBUG("Placed corner waypoint at '{}x{}' px!", position.x, position.y);
+            // SPDLOG_DEBUG("Placed corner waypoint at ('{}', '{}') px!", position.x, position.y);
         }
         else {
             this->waypoints_.emplace_back(Waypoint{position, WaypointType::Straight});
-            SPDLOG_DEBUG("Placed straight waypoint at '{}x{}' px!", position.x, position.y);
+            // SPDLOG_DEBUG("Placed straight waypoint at ('{}', '{}') px!", position.x, position.y);
         }
 
         // If it's the finish line, record its position to be used as a spawn point
@@ -164,7 +164,7 @@ void Track::build()
     };
 
     // Place the four corner tiles
-    SPDLOG_DEBUG("Placing corner tiles...");
+    // SPDLOG_DEBUG("Placing corner tiles...");
     place_tile(this->tiles_.top_left,
                {top_left_origin.x + half * tile_size, top_left_origin.y + half * tile_size},
                true);
@@ -177,11 +177,11 @@ void Track::build()
     place_tile(this->tiles_.bottom_left,
                {top_left_origin.x + half * tile_size, top_left_origin.y + total_height - half * tile_size},
                true);
-    SPDLOG_DEBUG("Corner tiles placed!");
+    // SPDLOG_DEBUG("Corner tiles placed!");
 
     // Determine which top edge tile becomes the finish line (middle tile excluding corners)
     const std::size_t finish_tile_idx = 1 + (this->config_.horizontal_count - 2) / 2;
-    SPDLOG_DEBUG("Finish line tile index will be placed at: index '{}' (out of '{}')!", finish_tile_idx, this->config_.horizontal_count - 2);
+    // SPDLOG_DEBUG("Finish line tile index will be placed at: index '{}' (out of '{}')!", finish_tile_idx, this->config_.horizontal_count - 2);
     if (this->config_.horizontal_count % 2 == 0) {
         SPDLOG_WARN("Horizontal tile count '{}' is even, the finish line will be placed at an uneven, right-of-center, index '{}'!", this->config_.horizontal_count, finish_tile_idx);
     }
@@ -191,7 +191,7 @@ void Track::build()
     const float bottom_row_y = top_left_origin.y + total_height - half * tile_size;
 
     // Place the top and bottom edge (straight horizontal line)
-    SPDLOG_DEBUG("Placing top and bottom edge tiles at: top_row_y='{}' and bottom_row_y='{}'...", top_row_y, bottom_row_y);
+    // SPDLOG_DEBUG("Placing top and bottom edge tiles at: top_row_y='{}' and bottom_row_y='{}'...", top_row_y, bottom_row_y);
     for (std::size_t x_index = 1; x_index < this->config_.horizontal_count - 1; ++x_index) {
         const float x = top_left_origin.x + (static_cast<float>(x_index) + half) * tile_size;
 
@@ -210,7 +210,7 @@ void Track::build()
                    {x, bottom_row_y},
                    false);
     }
-    SPDLOG_DEBUG("Top and bottom edge tiles placed, now setting up vertical edges...");
+    // SPDLOG_DEBUG("Top and bottom edge tiles placed, now setting up vertical edges...");
 
     // Bubble sizes allowed for detours
     constexpr std::array<std::size_t, 2> bubble_heights = {3, 4};
@@ -225,13 +225,13 @@ void Track::build()
                                   const sf::Texture &top_main,
                                   const sf::Texture &bottom_detour,
                                   const sf::Texture &bottom_main) {
-        SPDLOG_DEBUG("Processing vertical edge: main_x='{}' detour_x='{}'...", main_x, detour_x);
+        // SPDLOG_DEBUG("Processing vertical edge: main_x='{}' detour_x='{}'...", main_x, detour_x);
 
         // Iterate over the vertical edge, excluding the top and bottom corner tiles
         for (std::size_t row = 1; row < this->config_.vertical_count - 1;) {
             const float roll = detour_chance_distribution(this->rng_);
             const bool want_detour = roll < this->config_.detour_chance_pct;
-            SPDLOG_DEBUG("At row '{}': roll='{:.3f}', want_detour='{}'", row, roll, want_detour);
+            // SPDLOG_DEBUG("At row '{}': roll='{:.3f}', want_detour='{}'", row, roll, want_detour);
 
             if (want_detour) {
                 // Determine which bubble heights fit
@@ -241,7 +241,7 @@ void Track::build()
                         viable.emplace_back(height);
                     }
                 }
-                SPDLOG_DEBUG("Viable detour heights: '{}'", viable.size());
+                // SPDLOG_DEBUG("Viable detour heights: '{}'", viable.size());
 
                 if (!viable.empty()) {
                     // Choose a random bubble height
@@ -249,7 +249,7 @@ void Track::build()
                     const std::size_t height = viable.size() == 1
                                                    ? viable.front()
                                                    : viable[std::uniform_int_distribution<std::size_t>(0, viable.size() - 1)(this->rng_)];
-                    SPDLOG_DEBUG("Chosen detour height: '{}'", height);
+                    // SPDLOG_DEBUG("Chosen detour height: '{}'", height);
 
                     const float top_row_y_detour = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
                     const float bottom_row_y_detour = top_row_y_detour + static_cast<float>(height - 1) * tile_size;
@@ -268,7 +268,7 @@ void Track::build()
                         place_tile(this->tiles_.vertical,
                                    {detour_x, mid_y},
                                    false);
-                        SPDLOG_DEBUG("Placed detour vertical tile at '{}x{}'", detour_x, mid_y);
+                        // SPDLOG_DEBUG("Placed detour vertical tile at ('{}', '{}')", detour_x, mid_y);
                     }
 
                     // Place the bottom tiles of the detour segment
@@ -287,7 +287,7 @@ void Track::build()
                         place_tile(this->tiles_.vertical,
                                    {main_x, cont_y},
                                    false);
-                        SPDLOG_DEBUG("Placed continuity vertical tile at '{}x{}'", main_x, cont_y);
+                        // SPDLOG_DEBUG("Placed continuity vertical tile at ('{}', '{}')", main_x, cont_y);
                         ++row;
                     }
                     continue;
@@ -299,13 +299,13 @@ void Track::build()
             place_tile(this->tiles_.vertical,
                        {main_x, y},
                        false);
-            SPDLOG_DEBUG("Placed regular vertical tile at '{}x{}'", main_x, y);
+            // SPDLOG_DEBUG("Placed regular vertical tile at ('{}', '{}')", main_x, y);
             ++row;
         }
     };
 
     // Process the right edge (detours to the right)
-    SPDLOG_DEBUG("Processing right vertical edge...");
+    // SPDLOG_DEBUG("Processing right vertical edge...");
     const float right_main_x = top_left_origin.x + total_width - half * tile_size;
     const float right_detour_x = right_main_x + tile_size;
     process_edge(right_main_x,
@@ -316,7 +316,7 @@ void Track::build()
                  this->tiles_.top_left);
 
     // Process the left edge (detours to the left)
-    SPDLOG_DEBUG("Processing left vertical edge...");
+    // SPDLOG_DEBUG("Processing left vertical edge...");
     const float left_main_x = top_left_origin.x + half * tile_size;
     const float left_detour_x = left_main_x - tile_size;
     process_edge(left_main_x,
@@ -327,11 +327,11 @@ void Track::build()
                  this->tiles_.top_right);
 
     // Pre-cache collision bounds for all sprites
-    SPDLOG_DEBUG("Pre-caching collision bounds for all sprites...");
+    // SPDLOG_DEBUG("Pre-caching collision bounds for all sprites...");
     for (const auto &sprite : this->sprites_) {
         this->collision_bounds_.emplace_back(sprite.getGlobalBounds());
     }
-    SPDLOG_DEBUG("Collision bounds cached!");
+    // SPDLOG_DEBUG("Collision bounds cached!");
 
     // Fit storage to the actual sprite count
     this->sprites_.shrink_to_fit();

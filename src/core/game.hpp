@@ -241,12 +241,12 @@ enum class WaypointType {
  */
 struct Waypoint final {
     /**
-     * @brief Position of the waypoint.
+     * @brief Position of the waypoint (e.g., "{100.f, 200.f}").
      */
     const sf::Vector2f position;
 
     /**
-     * @brief Type of the waypoint.
+     * @brief Type of the waypoint (e.g., "Straight" or "Corner").
      */
     const WaypointType type;
 };

@@ -107,7 +107,7 @@ std::unique_ptr<sf::RenderWindow> create_window()
     // Enable anti-aliasing (fallback to the closest valid match if unsupported)
     sf::ContextSettings custom_settings;
     custom_settings.antiAliasingLevel = default_config::antialiasing_samples;
-    SPDLOG_DEBUG("Requesting '{}x{}' resolution and '{}x' anti-aliasing...", default_config::default_width_px, default_config::default_height_px, default_config::antialiasing_samples);
+    SPDLOG_DEBUG("Requesting ('{}', '{}') resolution and '{}x' anti-aliasing...", default_config::default_width_px, default_config::default_height_px, default_config::antialiasing_samples);
 
     // Create a new SFML window
     std::unique_ptr<sf::RenderWindow> window = std::make_unique<sf::RenderWindow>(
@@ -123,7 +123,7 @@ std::unique_ptr<sf::RenderWindow> create_window()
 
     // Set minimum allowed window size
     window->setMinimumSize(sf::Vector2u{default_config::minimum_width_px, default_config::minimum_height_px});
-    SPDLOG_DEBUG("Set minimum window size to '{}x{}'!", default_config::minimum_width_px, default_config::minimum_height_px);
+    SPDLOG_DEBUG("Set minimum window size to ('{}', '{}')!", default_config::minimum_width_px, default_config::minimum_height_px);
 
     // Set FPS limit
     window->setFramerateLimit(default_config::fps_limit);

@@ -311,7 +311,7 @@ FpsCounter::FpsCounter(sf::RenderTarget &window,
       frames_(0),
       fps_(144)  // Default value, will overwritten immediately by internal calculations
 {
-    SPDLOG_DEBUG("FPS counter created at corner '{}', set pivot point to '{}x{}' successfully, exiting constructor!",
+    SPDLOG_DEBUG("FPS counter created at corner '{}', set pivot point to ('{}', '{}') successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
                  this->pivot_.x,
                  this->pivot_.y);
@@ -373,7 +373,7 @@ Speedometer::Speedometer(sf::RenderTarget &window,
       pivot_(compute_pivot(corner)),
       offset_(compute_offset(this->pivot_))
 {
-    SPDLOG_DEBUG("Speedometer created at corner '{}', set pivot point to '{}x{}' and padding offset to '{}x{}' px successfully, exiting constructor!",
+    SPDLOG_DEBUG("Speedometer created at corner '{}', set pivot point to ('{}', '{}') and padding offset to ('{}', '{}') px successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
                  this->pivot_.x,
                  this->pivot_.y,
@@ -432,7 +432,7 @@ Minimap::Minimap(sf::RenderTarget &window,
     this->view_.setSize(this->capture_size_);  // Set how much of the world to capture (zoom factor, basicallly)
     this->render_texture_.setSmooth(true);     // Enable bilinear filtering for the texture
 
-    SPDLOG_DEBUG("Minimap created at corner '{}', set pivot point to '{}x{}' and padding offset to '{}x{}' px successfully, exiting constructor!",
+    SPDLOG_DEBUG("Minimap created at corner '{}', set pivot point to ('{}', '{}') and padding offset to ('{}', '{}') px successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
                  this->pivot_.x,
                  this->pivot_.y,

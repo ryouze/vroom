@@ -350,7 +350,7 @@ class Minimap final {
     // void set_resolution(const sf::Vector2u &new_resolution)
     // {
     //     if (!this->render_texture_.resize(new_resolution)) [[unlikely]] {
-    //         throw std::runtime_error(std::format("Failed to resize minimap render texture to '{}x{}'",
+    //         throw std::runtime_error(std::format("Failed to resize minimap render texture to ('{}', '{}')",
     //                                              new_resolution.x,
     //                                              new_resolution.y));
     //     }
