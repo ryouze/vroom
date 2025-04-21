@@ -14,7 +14,7 @@
 
 namespace core::game {
 
-Track::Track(const TrackTiles &tiles,
+Track::Track(const Textures &tiles,
              std::mt19937 &rng,
              const TrackConfig &config)
     : tiles_(tiles),
@@ -73,7 +73,7 @@ bool Track::is_on_track(const sf::Vector2f &world_position) const
     return false;
 }
 
-const std::vector<Waypoint> &Track::get_waypoints() const
+const std::vector<TrackWaypoint> &Track::get_waypoints() const
 {
     return this->waypoints_;
 }
@@ -148,11 +148,11 @@ void Track::build()
 
         // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
         if (is_corner) {
-            this->waypoints_.emplace_back(Waypoint{position, WaypointType::Corner});
+            this->waypoints_.emplace_back(TrackWaypoint{position, TrackWaypoint::Type::Corner});
             // SPDLOG_DEBUG("Placed corner waypoint at ('{}', '{}') px!", position.x, position.y);
         }
         else {
-            this->waypoints_.emplace_back(Waypoint{position, WaypointType::Straight});
+            this->waypoints_.emplace_back(TrackWaypoint{position, TrackWaypoint::Type::Straight});
             // SPDLOG_DEBUG("Placed straight waypoint at ('{}', '{}') px!", position.x, position.y);
         }
 

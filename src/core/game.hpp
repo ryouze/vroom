@@ -131,115 +131,26 @@ struct TrackConfig final {
 };
 
 /**
- * @brief Lightweight struct that holds references to the texture tiles used to build the track.
- *
- * This struct serves as a strongly-typed parameter for the "Track" class and holds references to textures.
- * The caller is responsible for ensuring that these textures remain valid for the lifetime of the "Track" instance.
- * It is assumed that all textures are square and of the same size (e.g., 256x256) for uniform scaling.
- *
- * @note This struct is marked as "final" to prevent inheritance.
- */
-struct TrackTiles final {
-    /**
-     * @brief Top-left curve texture.
-     *
-     * In ASCII:
-     * ```
-     * XXX
-     * X
-     * X
-     * ```
-     */
-    const sf::Texture &top_left;
-
-    /**
-     * @brief Top-right curve texture.
-     *
-     * In ASCII:
-     * ```
-     * XXX
-     *   X
-     *   X
-     */
-    const sf::Texture &top_right;
-
-    /**
-     * @brief Bottom-right curve texture.
-     *
-     * In ASCII:
-     * ```
-     *   X
-     *   X
-     * XXX
-     */
-    const sf::Texture &bottom_right;
-
-    /**
-     * @brief Bottom-left curve texture.
-     *
-     * In ASCII:
-     * ```
-     * X
-     * X
-     * XXX
-     */
-    const sf::Texture &bottom_left;
-
-    /**
-     * @brief [┃] Vertical road texture.
-     *
-     * In ASCII:
-     * ```
-     *  X
-     *  X
-     *  X
-     */
-    const sf::Texture &vertical;
-
-    /**
-     * @brief [━] Horizontal road texture.
-     *
-     * In ASCII:
-     * ```
-     *
-     * XXX
-     *
-     */
-    const sf::Texture &horizontal;
-
-    /**
-     * @brief [━] Horizontal finish line texture.
-     *
-     * In ASCII:
-     * ```
-     *
-     * XXX
-     *
-     */
-    const sf::Texture &horizontal_finish;
-};
-
-/**
- * @brief Enum that represents the type of a waypoint.
- */
-enum class WaypointType {
-    /**
-     * @brief Straight line. Can go fast.
-     */
-    Straight,
-
-    /**
-     * @brief Corner. Need to slow down, preferably before the corner.
-     */
-    Corner
-};
-
-/**
  * @brief Struct that represents a waypoint on the track, i.e., position and type.
  *
  * @note This struct is marked as "final" to prevent inheritance.
  */
-struct Waypoint final {
+struct TrackWaypoint final {
+    /**
+     * @brief Enum that represents the type of a waypoint.
+     */
+    enum class Type {
+        /**
+         * @brief Straight line. Can go fast.
+         */
+        Straight,
+
+        /**
+         * @brief Corner. Need to slow down, preferably before the corner.
+         */
+        Corner
+    };
+
     /**
      * @brief Position of the waypoint (e.g., "{100.f, 200.f}").
      */
@@ -248,7 +159,7 @@ struct Waypoint final {
     /**
      * @brief Type of the waypoint (e.g., "Straight" or "Corner").
      */
-    WaypointType type;
+    Type type;
 };
 
 /**
@@ -261,6 +172,93 @@ struct Waypoint final {
 class Track final {
   public:
     /**
+     * @brief Parameter struct for the track textures. Holds references to the textures used to build the track.
+     *
+     * The caller is responsible for ensuring that these textures remain valid for the lifetime of the "Track" instance.
+     * It is assumed that all textures are square and of the same size (e.g., 256x256) for uniform scaling.
+     *
+     * @note This struct is marked as "final" to prevent inheritance.
+     */
+    struct Textures final {
+        /**
+         * @brief Top-left curve texture.
+         *
+         * In ASCII:
+         * ```
+         * XXX
+         * X
+         * X
+         * ```
+         */
+        const sf::Texture &top_left;
+
+        /**
+         * @brief Top-right curve texture.
+         *
+         * In ASCII:
+         * ```
+         * XXX
+         *   X
+         *   X
+         */
+        const sf::Texture &top_right;
+
+        /**
+         * @brief Bottom-right curve texture.
+         *
+         * In ASCII:
+         * ```
+         *   X
+         *   X
+         * XXX
+         */
+        const sf::Texture &bottom_right;
+
+        /**
+         * @brief Bottom-left curve texture.
+         *
+         * In ASCII:
+         * ```
+         * X
+         * X
+         * XXX
+         */
+        const sf::Texture &bottom_left;
+
+        /**
+         * @brief [┃] Vertical road texture.
+         *
+         * In ASCII:
+         * ```
+         *  X
+         *  X
+         *  X
+         */
+        const sf::Texture &vertical;
+
+        /**
+         * @brief [━] Horizontal road texture.
+         *
+         * In ASCII:
+         * ```
+         *
+         * XXX
+         *
+         */
+        const sf::Texture &horizontal;
+
+        /**
+         * @brief [━] Horizontal finish line texture.
+         *
+         * In ASCII:
+         * ```
+         *
+         * XXX
+         *
+         */
+        const sf::Texture &horizontal_finish;
+    };
+    /**
      * @brief Construct a new Track object.
      *
      * On construction, the track is built using the provided textures and config.
@@ -269,7 +267,7 @@ class Track final {
      * @param rng Instance of a random number generator (e.g., std::mt19937) used for generating random detours.
      * @param config Configuration struct containing the track configuration (default: "TrackConfig()").
      */
-    explicit Track(const TrackTiles &tiles,
+    explicit Track(const Textures &tiles,
                    std::mt19937 &rng,
                    const TrackConfig &config = TrackConfig());  // Use default config
 
@@ -314,7 +312,7 @@ class Track final {
      *
      * @return Vector of waypoints on the track - positions and types.
      */
-    [[nodiscard]] const std::vector<Waypoint> &get_waypoints() const;
+    [[nodiscard]] const std::vector<TrackWaypoint> &get_waypoints() const;
 
     /**
      * @brief Draw the track on the provided render target.
@@ -336,7 +334,7 @@ class Track final {
     /**
      * @brief Lightweight struct holding references to texture tiles.
      */
-    const TrackTiles &tiles_;
+    const Textures &tiles_;
 
     /**
      * @brief Random number generator.
@@ -360,7 +358,7 @@ class Track final {
      *
      * @note This is used for AI navigation.
      */
-    std::vector<Waypoint> waypoints_;
+    std::vector<TrackWaypoint> waypoints_;
 
     /**
      * @brief Collision bounds for the track, based on the sprites.
@@ -715,8 +713,8 @@ class AICar final : public Car {
             next_index = 1;  // Wrap around, skip spawn point at 0
         }
 
-        const Waypoint &current_waypoint = waypoints[current_index];
-        const Waypoint &next_waypoint = waypoints[next_index];
+        const TrackWaypoint &current_waypoint = waypoints[current_index];
+        const TrackWaypoint &next_waypoint = waypoints[next_index];
 
         // 2) Compute vector and distance to current waypoint
         const sf::Vector2f current_position = this->sprite_.getPosition();
@@ -736,11 +734,11 @@ class AICar final : public Car {
         const float required_stopping_distance = (current_speed_magnitude * current_speed_magnitude) / (2.0f * this->config_.brake_deceleration_pixels_per_second_squared);
 
         // 5) Decide whether to brake for current or next corner
-        const bool should_brake_for_current_corner = (current_waypoint.type == WaypointType::Corner) && (distance_to_current_waypoint <= required_stopping_distance + corner_braking_extra_margin);
+        const bool should_brake_for_current_corner = (current_waypoint.type == TrackWaypoint::Type::Corner) && (distance_to_current_waypoint <= required_stopping_distance + corner_braking_extra_margin);
 
         const sf::Vector2f vector_to_next_waypoint = next_waypoint.position - current_position;
         const float distance_to_next_waypoint = std::hypot(vector_to_next_waypoint.x, vector_to_next_waypoint.y);
-        const bool should_prebrake_for_next_corner = (next_waypoint.type == WaypointType::Corner) && (distance_to_next_waypoint <= required_stopping_distance + next_corner_prebraking_extra_margin);
+        const bool should_prebrake_for_next_corner = (next_waypoint.type == TrackWaypoint::Type::Corner) && (distance_to_next_waypoint <= required_stopping_distance + next_corner_prebraking_extra_margin);
 
         if (should_brake_for_current_corner || should_prebrake_for_next_corner) {
             this->is_braking = true;

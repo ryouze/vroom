@@ -31,23 +31,6 @@
 namespace assets::textures {
 
 /**
- * @brief Struct that represents a single embedded texture.
- *
- * @note This struct is marked as "final" to prevent inheritance.
- */
-struct EmbeddedTexture final {
-    /**
-     * @brief Pointer to the texture data in memory.
-     */
-    const unsigned char *data;
-
-    /**
-     * @brief Size (in bytes) of the texture data.
-     */
-    std::size_t size;
-};
-
-/**
  * @brief Class that loads and manages embedded SFML textures.
  *
  * On construction, the class loads a set of textures from memory and stores them for later retrieval.
@@ -56,6 +39,23 @@ struct EmbeddedTexture final {
  */
 class TextureManager final {
   public:
+    /**
+     * @brief Parameter struct for a single embedded texture. Holds pointer to the texture data and its size.
+     *
+     * @note This struct is marked as "final" to prevent inheritance.
+     */
+    struct EmbeddedTexture final {
+        /**
+         * @brief Pointer to the texture data in memory.
+         */
+        const unsigned char *data;
+
+        /**
+         * @brief Size (in bytes) of the texture data.
+         */
+        std::size_t size;
+    };
+
     /**
      * @brief Construct a new TextureManager object.
      *

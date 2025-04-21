@@ -92,7 +92,7 @@ void run()
     sf::Vector2f spawn_point = race_track.get_finish_point();
 
     // AI waypoints (need to be overwritten on reset)
-    std::vector<core::game::Waypoint> waypoints = race_track.get_waypoints();
+    std::vector<core::game::TrackWaypoint> waypoints = race_track.get_waypoints();
 
     // Create cars
     constexpr core::game::CarConfig default_car_settings;
@@ -126,7 +126,7 @@ void run()
             shape.setSize({50.f, 50.f});
             shape.setOrigin(shape.getLocalBounds().getCenter());
             shape.setPosition(waypoint.position);
-            if (waypoint.type == core::game::WaypointType::Corner) {
+            if (waypoint.type == core::game::TrackWaypoint::Type::Corner) {
                 shape.setFillColor(sf::Color::Red);
             }
             else {
