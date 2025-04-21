@@ -363,6 +363,13 @@ class Track final {
     std::vector<Waypoint> waypoints_;
 
     /**
+     * @brief Collision bounds for the track, based on the sprites.
+     *
+     * @note This is used for collision detection.
+     */
+    std::vector<sf::FloatRect> collision_bounds_;
+
+    /**
      * @brief Finish point of the track.
      *
      * This is the position of the finish line tile. It can be used as a spawn point for cars.

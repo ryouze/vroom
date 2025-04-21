@@ -65,8 +65,8 @@ const sf::Vector2f &Track::get_finish_point() const
 
 bool Track::is_on_track(const sf::Vector2f &world_position) const
 {
-    for (const auto &sprite : this->sprites_) {
-        if (sprite.getGlobalBounds().contains(world_position)) {
+    for (const auto &bounds : this->collision_bounds_) {
+        if (bounds.contains(world_position)) {
             return true;
         }
     }
@@ -96,6 +96,7 @@ void Track::build()
     // Reset sprites and reserve capacity
     this->sprites_.clear();
     this->waypoints_.clear();
+    this->collision_bounds_.clear();
     const std::size_t base_tile_count =
         4                                           // Corners
         + 2 * (this->config_.horizontal_count - 2)  // Top and bottom edges
@@ -325,8 +326,17 @@ void Track::build()
                  this->tiles_.bottom_left,
                  this->tiles_.top_right);
 
+    // Pre-cache collision bounds for all sprites
+    SPDLOG_DEBUG("Pre-caching collision bounds for all sprites...");
+    for (const auto &sprite : this->sprites_) {
+        this->collision_bounds_.emplace_back(sprite.getGlobalBounds());
+    }
+    SPDLOG_DEBUG("Collision bounds cached!");
+
     // Fit storage to the actual sprite count
     this->sprites_.shrink_to_fit();
+    this->waypoints_.shrink_to_fit();
+    this->collision_bounds_.shrink_to_fit();
     SPDLOG_DEBUG("Track consisting of '{}' tiles built successfully!", this->sprites_.size());
 }
 
