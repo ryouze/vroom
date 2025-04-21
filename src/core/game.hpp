@@ -440,13 +440,12 @@ class Car {
         : sprite_(texture),
           rng_(rng),
           track_(track),
-          config_(config)
+          config_(config),
+          current_velocity_vector_(0.0f, 0.0f),
+          current_steering_wheel_angle_degrees_(0.0f)
     {
         this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
         this->sprite_.setPosition(initial_position);
-        // this->current_heading_angle_ = sf::degrees(0.0f);
-        this->current_velocity_vector_ = {0.0f, 0.0f};
-        this->current_steering_wheel_angle_degrees_ = 0.0f;
     }
 
     virtual ~Car() = default;
