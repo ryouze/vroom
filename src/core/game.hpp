@@ -580,67 +580,55 @@ class Car {
         }
 
         // Determine if any throttle or braking input was given
-        const bool any_throttle_or_brake_input_flag = this->is_accelerating || this->is_braking || this->is_handbraking;
-        // Compute current speed magnitude
-        const float current_speed_magnitude = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
+        constexpr float negligible_speed_threshold = 0.01f;
+        const bool any_throttle_or_brake_input_flag = (this->is_accelerating || this->is_braking || this->is_handbraking);
+        const float current_velocity_magnitude_before_engine_brake = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
 
         // If no throttle/brake input and still moving, apply engine brake
-        if (!any_throttle_or_brake_input_flag && current_speed_magnitude > 0.01f) {
-            const float speed_after_engine_brake = current_speed_magnitude - this->config_.engine_braking_pixels_per_second_squared * dt;
-            const float clamped_speed_after_engine_brake = std::max(speed_after_engine_brake, 0.0f);
-            this->current_velocity_vector_ *= (clamped_speed_after_engine_brake / current_speed_magnitude);
+        if (!any_throttle_or_brake_input_flag && current_velocity_magnitude_before_engine_brake > negligible_speed_threshold) {
+            const float speed_magnitude_after_engine_brake = current_velocity_magnitude_before_engine_brake - this->config_.engine_braking_pixels_per_second_squared * dt;
+            const float clamped_speed_magnitude_after_engine_brake = std::max(speed_magnitude_after_engine_brake, 0.0f);
+            this->current_velocity_vector_ *= (clamped_speed_magnitude_after_engine_brake / current_velocity_magnitude_before_engine_brake);
         }
 
         // Clamp to maximum speed if exceeded
-        if (current_speed_magnitude > this->config_.maximum_speed_pixels_per_second) {
-            const float speed_clamp_ratio = this->config_.maximum_speed_pixels_per_second / current_speed_magnitude;
-            this->current_velocity_vector_ *= speed_clamp_ratio;
+        const float current_velocity_magnitude_before_speed_limit = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
+        if (current_velocity_magnitude_before_speed_limit > this->config_.maximum_speed_pixels_per_second) {
+            const float speed_limit_ratio = this->config_.maximum_speed_pixels_per_second / current_velocity_magnitude_before_speed_limit;
+            this->current_velocity_vector_ *= speed_limit_ratio;
         }
 
-        // Compute forward direction unit vector from heading
-        const float heading_radians = this->sprite_.getRotation().asRadians();
-        const sf::Vector2f forward_direction_vector = {std::cos(heading_radians), std::sin(heading_radians)};
+        // Recompute actual current speed for turn factor
+        const float current_velocity_magnitude_after_forces = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
 
-        // Decompose velocity into forward and lateral components
-        const float forward_speed_component = forward_direction_vector.x * this->current_velocity_vector_.x + forward_direction_vector.y * this->current_velocity_vector_.y;
-        const sf::Vector2f forward_velocity_vector = forward_direction_vector * forward_speed_component;
+        // Lateral slip damping
+        const float slip_damping_coefficient_for_frame = std::clamp(this->config_.side_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
+        const float current_heading_radians = this->sprite_.getRotation().asRadians();
+        const sf::Vector2f forward_unit_vector{std::cos(current_heading_radians), std::sin(current_heading_radians)};
+        const float forward_speed_magnitude = forward_unit_vector.x * this->current_velocity_vector_.x + forward_unit_vector.y * this->current_velocity_vector_.y;
+        const sf::Vector2f forward_velocity_vector = forward_unit_vector * forward_speed_magnitude;
         const sf::Vector2f lateral_velocity_vector = this->current_velocity_vector_ - forward_velocity_vector;
-
-        // Apply side slip damping
-        const float side_slip_damping_factor = std::clamp(this->config_.side_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
-        this->current_velocity_vector_ = forward_velocity_vector + lateral_velocity_vector * (1.0f - side_slip_damping_factor);
+        this->current_velocity_vector_ = forward_velocity_vector + lateral_velocity_vector * (1.0f - slip_damping_coefficient_for_frame);
 
         // Center steering wheel if no steering input
         if (!this->is_steering_left && !this->is_steering_right) {
-            const float centering_amount = this->config_.steering_centering_rate_degrees_per_second * dt;
-            if (this->current_steering_wheel_angle_degrees_ > centering_amount) {
-                this->current_steering_wheel_angle_degrees_ -= centering_amount;
-            }
-            else if (
-                this->current_steering_wheel_angle_degrees_ < -centering_amount) {
-                this->current_steering_wheel_angle_degrees_ += centering_amount;
-            }
-            else {
-                this->current_steering_wheel_angle_degrees_ = 0.0f;
-            }
+            const float steering_centering_degrees_per_second = this->config_.steering_centering_rate_degrees_per_second;
+            const float steering_interpolation_ratio = (current_velocity_magnitude_after_forces > 0.0f && this->current_steering_wheel_angle_degrees_ != 0.0f) ? std::clamp(steering_centering_degrees_per_second * dt / std::abs(this->current_steering_wheel_angle_degrees_), 0.0f, 1.0f) : 1.0f;
+            this->current_steering_wheel_angle_degrees_ = std::lerp(this->current_steering_wheel_angle_degrees_, 0.0f, steering_interpolation_ratio);
         }
 
-        // Clamp steering wheel angle to allowed range
+        // SClamp steering wheel angle to allowed range
         this->current_steering_wheel_angle_degrees_ = std::clamp(this->current_steering_wheel_angle_degrees_, -this->config_.maximum_steering_wheel_angle_degrees, this->config_.maximum_steering_wheel_angle_degrees);
 
-        // Compute turn factor interpolation based on speed ratio
-        const float speed_ratio = (current_speed_magnitude > 0.0f) ? (current_speed_magnitude / this->config_.maximum_speed_pixels_per_second) : 0.0f;
-        float computed_turn_factor = this->config_.turn_factor_at_zero_speed * (1.0f - speed_ratio) + this->config_.turn_factor_at_full_speed * speed_ratio;
-        if (current_speed_magnitude < 5.0f) {
-            // Further reduce steering at very low speed
-            computed_turn_factor *= (current_speed_magnitude / 5.0f);
+        // Compute turn factor based on speed
+        const float speed_ratio_between_current_and_max = (current_velocity_magnitude_after_forces > 0.0f) ? (current_velocity_magnitude_after_forces / this->config_.maximum_speed_pixels_per_second) : 0.0f;
+        float current_turn_factor = this->config_.turn_factor_at_zero_speed * (1.0f - speed_ratio_between_current_and_max) + this->config_.turn_factor_at_full_speed * speed_ratio_between_current_and_max;
+        if (current_velocity_magnitude_after_forces < 5.0f) {
+            current_turn_factor *= (current_velocity_magnitude_after_forces / 5.0f);
         }
 
-        // Update heading based on steering and turn factor
-        this->sprite_.setRotation(this->sprite_.getRotation() + sf::degrees(this->current_steering_wheel_angle_degrees_ * computed_turn_factor * dt));
-
-        // Apply rotation and move sprite by velocity
-        // this->sprite_.setRotation(this->current_heading_angle_);
+        // Apply rotation and translation
+        this->sprite_.setRotation(this->sprite_.getRotation() + sf::degrees(this->current_steering_wheel_angle_degrees_ * current_turn_factor * dt));
         this->sprite_.move(this->current_velocity_vector_ * dt);
 
         // Collision check: if off track, revert and bounce back
