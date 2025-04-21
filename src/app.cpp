@@ -88,8 +88,11 @@ void run()
          .horizontal_finish = road_textures[6]},
         rng);
 
-    // Initial spawn point
+    // Initial spawn point (need to be overwritten on reset)
     sf::Vector2f spawn_point = race_track.get_finish_point();
+
+    // AI waypoints (need to be overwritten on reset)
+    std::vector<core::game::Waypoint> waypoints = race_track.get_waypoints();
 
     // Create cars
     constexpr core::game::CarSettings default_car_settings;
@@ -109,6 +112,30 @@ void run()
             ai_car.reset(spawn_point);
         }
     };
+
+    std::vector<sf::RectangleShape> waypoint_shapes;  // Debugging purposes
+
+    // Function to reset the waypoints
+    const auto reset_waypoints = [&waypoints, &race_track, &waypoint_shapes]() {
+        waypoints = race_track.get_waypoints();
+
+        // Debugging purposes
+        for (const auto &waypoint : waypoints) {
+            sf::RectangleShape shape;
+            shape.setSize({50.f, 50.f});
+            shape.setOrigin(shape.getLocalBounds().getCenter());
+            shape.setPosition(waypoint.position);
+            if (waypoint.type == core::game::WaypointType::Corner) {
+                shape.setFillColor(sf::Color::Red);
+            }
+            else {
+                shape.setFillColor(sf::Color::Green);
+            }
+            waypoint_shapes.emplace_back(shape);
+        }
+    };
+
+    reset_waypoints();  // Debug
 
     // Setup AI waypoints
     // std::vector<sf::Vector2f> waypoints = track.build_waypoints();
@@ -367,6 +394,7 @@ void run()
                     ImGui::TextUnformatted("Hacks:");
                     if (ImGui::Button("Reset All")) {
                         reset_cars();
+                        reset_waypoints();
                         // Change to playing for instant visual feedback
                         current_state = GameState::Playing;
                     }
@@ -397,6 +425,7 @@ void run()
                         const core::game::TrackConfig new_config{static_cast<std::size_t>(track_width_int), static_cast<std::size_t>(track_height_int), static_cast<std::size_t>(tile_size_px), detour_chance_float};  // Rebuild
                         // Reset all cars to the new track spawn point
                         race_track.set_config(new_config);
+                        reset_waypoints();
                         reset_cars();
                     }
                     ImGui::Spacing();
@@ -487,6 +516,10 @@ void run()
             }
 
             ImGui::End();
+        }
+
+        for (const auto &waypoint_shape : waypoint_shapes) {
+            window->draw(waypoint_shape);
         }
 
         imgui_context.render();
