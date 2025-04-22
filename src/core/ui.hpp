@@ -343,7 +343,7 @@ class Minimap final {
     bool enabled;
 
     /**
-     * @brief Refresh interval in seconds; values ≤ 0 refresh every frame (default: 0.1 s).
+     * @brief Refresh interval in seconds; values ≤ 0 refresh every frame (default: 0.1 s).
      */
     float refresh_interval;
 
