@@ -204,7 +204,7 @@ void run()
     const sf::ContextSettings &window_settings = window->getSettings();
 
     // List of vehicles
-    const std::array<core::game::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
+    const std::array<core::game::BaseCar *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
 
     // Vehicle names
     static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "AI 1", "AI 2", "AI 3", "AI 4"};
@@ -266,7 +266,7 @@ void run()
         window_size_f = core::misc::to_vector2f(window_size_u);
 
         // Currently selected vehicle
-        core::game::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
+        core::game::BaseCar *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
         // Handle each GameState
         // Menu state

@@ -436,13 +436,13 @@ struct CarConfig final {
  * 3) Call draw() each frame to render.
  * 4) Call reset() when respawning to reset state.
  */
-class Car {
+class BaseCar {
   public:
-    explicit Car(const sf::Texture &texture,
-                 const sf::Vector2f &initial_position,
-                 std::mt19937 &rng,
-                 const Track &track,
-                 const CarConfig &config = CarConfig())
+    explicit BaseCar(const sf::Texture &texture,
+                     const sf::Vector2f &initial_position,
+                     std::mt19937 &rng,
+                     const Track &track,
+                     const CarConfig &config = CarConfig())
         : sprite_(texture),
           rng_(rng),
           track_(track),
@@ -454,7 +454,7 @@ class Car {
         this->sprite_.setPosition(initial_position);
     }
 
-    // virtual ~Car() = default;
+    // virtual ~BaseCar() = default;
 
     // Shared way to reset everything, useful when respawning
     void reset(const sf::Vector2f &position)
@@ -491,12 +491,12 @@ class Car {
     }
 
     // Disable move semantics
-    Car(Car &&) = delete;
-    Car &operator=(Car &&) = delete;
+    BaseCar(BaseCar &&) = delete;
+    BaseCar &operator=(BaseCar &&) = delete;
 
     // Disable copy semantics
-    Car(const Car &) = delete;
-    Car &operator=(const Car &) = delete;
+    BaseCar(const BaseCar &) = delete;
+    BaseCar &operator=(const BaseCar &) = delete;
 
   protected:
     // Apply throttle acceleration based on heading
@@ -688,13 +688,13 @@ class Car {
 };
 
 /**
- * @brief Player‐controlled car class. Inherits shared physics from Car.
+ * @brief Player‐controlled car class. Inherits shared physics from BaseCar.
  *
  * Before calling update(), set input flags via set_input().
  */
-class PlayerCar final : public Car {
+class PlayerCar final : public BaseCar {
   public:
-    using Car::Car;
+    using BaseCar::BaseCar;
 
     void set_input(const bool gas,
                    const bool brake,
@@ -713,15 +713,15 @@ class PlayerCar final : public Car {
 /**
  * @brief AI‐driven car: follows waypoints and slows for corners.
  */
-class AICar final : public Car {
+class AICar final : public BaseCar {
   public:
-    using Car::Car;
+    using BaseCar::BaseCar;
 
     // Must also reset the current waypoint index
     void reset(const sf::Vector2f &position)
     {
         // Call base class reset to handle sprite and physics
-        Car::reset(position);
+        BaseCar::reset(position);
         this->current_waypoint_index_ = 1;  // Reset to first waypoint
     }
 
