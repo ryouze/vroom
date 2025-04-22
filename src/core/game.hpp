@@ -421,7 +421,10 @@ struct CarConfig final {
     float collision_speed_retention_factor = 0.3f;
 
     /// Minimum speed for collision bounce in pixels per second, preventing cars from bouncing at low speeds
-    float minimal_bounce_speed_pixels_per_second = 50.0f;
+    float collision_minimal_bounce_speed_pixels_per_second = 50.0f;
+
+    // Maximum random bounce angle in degrees, only applied if above "collision_minimal_bounce_speed_pixels_per_second"
+    float collision_random_bounce_max_degrees = 5.0f;
 };
 
 /**
@@ -643,9 +646,13 @@ class Car {
 
             // Avoid pinball jitter: stop the car if post‑bounce speed is very low
             const float speed_after_bounce_pixels_per_second = std::hypot(this->current_velocity_vector_.x, this->current_velocity_vector_.y);
-
-            if (speed_after_bounce_pixels_per_second < this->config_.minimal_bounce_speed_pixels_per_second) {
+            if (speed_after_bounce_pixels_per_second < this->config_.collision_minimal_bounce_speed_pixels_per_second) {
                 this->current_velocity_vector_ = {0.0f, 0.0f};
+            }
+            else {
+                // Apply a tiny random yaw‐kick
+                std::uniform_real_distribution<float> bounce_rotation_jitter_dist_{-this->config_.collision_random_bounce_max_degrees, this->config_.collision_random_bounce_max_degrees};
+                this->sprite_.rotate(sf::degrees(bounce_rotation_jitter_dist_(this->rng_)));
             }
         }
 
@@ -665,6 +672,8 @@ class Car {
     // sf::Angle current_heading_angle_;             ///< Heading angle in degrees
     sf::Vector2f current_velocity_vector_;        ///< Velocity vector in pixels/s
     float current_steering_wheel_angle_degrees_;  ///< Steering wheel angle
+    // Jitter distribution producing a value in [-1.0, +1.0]
+    std::uniform_real_distribution<float> bounce_jitter_dist_{-1.0f, 1.0f};
 
     bool is_accelerating = false;    ///< True if throttle input is active
     bool is_braking = false;         ///< True if brake input is active
