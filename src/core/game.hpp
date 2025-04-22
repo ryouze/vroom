@@ -454,7 +454,7 @@ class Car {
         this->sprite_.setPosition(initial_position);
     }
 
-    virtual ~Car() = default;
+    // virtual ~Car() = default;
 
     // Shared way to reset everything, useful when respawning
     void reset(const sf::Vector2f &position)
@@ -479,8 +479,11 @@ class Car {
         return this->current_velocity_vector_;
     }
 
-    // Generic, to be overridden way to update the car, based on whether it's a player (keyboard input) or AI (waypoints)
-    virtual void update(const float dt) = 0;
+    // Can be overridden way to update the car
+    void update(const float dt)
+    {
+        this->handle_physics(dt);
+    }
 
     void draw(sf::RenderTarget &target) const
     {
@@ -705,11 +708,6 @@ class PlayerCar final : public Car {
         this->is_steering_right = right;
         this->is_handbraking = handbrake;
     }
-
-    void update(const float dt) override
-    {
-        this->handle_physics(dt);
-    }
 };
 
 /**
@@ -719,7 +717,15 @@ class AICar final : public Car {
   public:
     using Car::Car;
 
-    void update(const float dt) override
+    // Must also reset the current waypoint index
+    void reset(const sf::Vector2f &position)
+    {
+        // Call base class reset to handle sprite and physics
+        Car::reset(position);
+        this->current_waypoint_index_ = 1;  // Reset to first waypoint
+    }
+
+    void update(const float dt)
     {
         // Tweakable AI navigation parameters
         constexpr float waypoint_reach_distance = 10.0f;
@@ -731,7 +737,7 @@ class AICar final : public Car {
         const auto &waypoints = this->track_.get_waypoints();
 
         // Determine current and next waypoint indices, wrapping if needed
-        const std::size_t current_index = this->current_target_waypoint_index_;
+        const std::size_t current_index = this->current_waypoint_index_;
         std::size_t next_index = current_index + 1;
         if (next_index >= waypoints.size()) {
             next_index = 1;  // Wrap around, skip spawn point at 0
@@ -779,7 +785,7 @@ class AICar final : public Car {
             if (advance_index >= waypoints.size()) {
                 advance_index = 1;
             }
-            this->current_target_waypoint_index_ = advance_index;
+            this->current_waypoint_index_ = advance_index;
         }
 
         // 7) Perform shared physics update
@@ -788,7 +794,7 @@ class AICar final : public Car {
 
   private:
     /// Index of the current target waypoint (start at 1 to skip spawn point)
-    std::size_t current_target_waypoint_index_ = 1;
+    std::size_t current_waypoint_index_ = 1;
 };
 
 }  // namespace core::game
