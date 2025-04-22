@@ -564,9 +564,6 @@ class Car {
     // Shared physics update: input processing, velocity clamping, steering behavior, movement, and collision response
     void handle_physics(const float dt)
     {
-        // Store last position in case of collision revert
-        this->last_position_vector_ = this->sprite_.getPosition();
-
         // Apply inputs: accelerate, brake, handbrake, steer left/right
         if (this->is_accelerating) {
             this->accelerate(dt);
@@ -662,6 +659,9 @@ class Car {
         this->is_handbraking = false;
         this->is_steering_left = false;
         this->is_steering_right = false;
+
+        // Store last position in case of collision revert on the next frame
+        this->last_position_vector_ = this->sprite_.getPosition();
     }
 
     // Protected member variables for subclasses
