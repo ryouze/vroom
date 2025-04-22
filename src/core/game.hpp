@@ -384,47 +384,105 @@ class Track final {
 };
 
 struct CarConfig final {
-    /// Throttle acceleration in pixels per second squared
-    float forward_acceleration_pixels_per_second_squared = 700.0f;
+    /**
+     * @brief The rate at  expressed in pixels per second squared.
+     *
+     * Higher values make the car accelerate more quickly when the gas pedal is pressed.
+     */
+    float throttle_acceleration_rate_pixels_per_second_squared = 700.0f;
 
-    /// Brake deceleration in pixels per second squared
-    float brake_deceleration_pixels_per_second_squared = 950.0f;
+    /**
+     * @brief The rate at which applying the foot brake decreases the car's velocity, expressed in pixels per second squared.
+     *
+     * Larger values cause the car to slow down more aggressively under normal braking.
+     */
+    float brake_deceleration_rate_pixels_per_second_squared = 950.0f;
 
-    /// Handbrake deceleration in pixels per second squared
-    float handbrake_deceleration_pixels_per_second_squared = 2200.0f;
+    /**
+     * @brief The rate at which applying the hand brake (emergency brake) decelerates the car, in pixels per second squared.
+     *
+     * This is significantly stronger than the regular brake, enabling rapid stops or drifts.
+     */
+    float handbrake_deceleration_rate_pixels_per_second_squared = 2200.0f;
 
-    /// Passive engine braking in pixels per second squared
-    float engine_braking_pixels_per_second_squared = 80.0f;
+    /**
+     * @brief The passive deceleration applied by engine drag when no input is given, in pixels per second squared.
+     *
+     * Lower values allow the car to coast longer before coming to a stop.
+     */
+    float engine_braking_rate_pixels_per_second_squared = 80.0f;
 
-    /// Maximum allowed speed in pixels per second
-    float maximum_speed_pixels_per_second = 2500.0f;
+    /**
+     * @brief The maximum forward speed the car may attain, in pixels per second.
+     *
+     * Velocities above this threshold are clamped to prevent unrealistic top speeds.
+     */
+    float maximum_movement_pixels_per_second = 2500.0f;
 
-    /// Steering turn rate in degrees per second when input held
+    /**
+     * @brief The angular turn rate applied to the car's orientation when steering input is held, in degrees per second.
+     *
+     * Higher values permit sharper turns at a given speed.
+     */
     float steering_turn_rate_degrees_per_second = 520.0f;
 
-    /// Steering centering rate in degrees per second when releasing input
-    float steering_centering_rate_degrees_per_second = 580.0f;
+    /**
+     * @brief The rate at which the steering wheel returns to center when no steering input is active, in degrees per second.
+     *
+     * Higher values cause the car to self-straighten more rapidly.
+     */
+    float steering_autocenter_rate_degrees_per_second = 580.0f;
 
-    /// Maximum steering wheel angle in degrees
-    float maximum_steering_wheel_angle_degrees = 180.0f;
+    /**
+     * @brief The maximum allowed steering wheel angle, in degrees.
+     *
+     * This determines the furthest angle the wheels (and thus the car) can turn from its forward axis.
+     */
+    float maximum_steering_angle_degrees = 180.0f;
 
-    /// Turn factor at zero speed (full steering responsiveness)
-    float turn_factor_at_zero_speed = 1.0f;
+    /**
+     * @brief Multiplier for steering effectiveness at zero speed (full responsiveness).
+     *
+     * A value of 1.0 gives maximum steering authority when stationary.
+     *
+     * @details You can't technically move the car at zero speed, but that's the easiest way to explain it.
+     */
+    float steering_sensitivity_at_zero_speed = 1.0f;
 
-    /// Turn factor at full speed (reduced steering responsiveness)
-    float turn_factor_at_full_speed = 0.8f;
+    /**
+     * @brief Multiplier for steering effectiveness at maximum speed (reduced responsiveness).
+     *
+     * Values below 1.0 simulate less agile handling at high velocity.
+     */
+    float steering_sensitivity_at_maximum_speed = 0.8f;
 
-    /// Side slip damping coefficient per second
-    float side_slip_damping_coefficient_per_second = 12.0f;
+    /**
+     * @brief Lateral slip damping coefficient per second.
+     *
+     * Higher values reduce sideways sliding more aggressively, promoting stable handling in turns.
+     */
+    float lateral_slip_damping_coefficient_per_second = 12.0f;
 
-    /// Speed retention factor on collision bounce (0 = full stop, 1 = keep full speed - it will bounce like a rubber ball, lol)
-    float collision_speed_retention_factor = 0.5f;
+    /**
+     * @brief Fraction of velocity retained after a collision bounce.
+     *
+     * 0.0 means a full stop on impact; 1.0 means a perfectly elastic bounce.
+     */
+    float collision_velocity_retention_ratio = 0.5f;
 
-    /// Minimum speed for collision bounce in pixels per second, preventing cars from bouncing at low speeds
-    float collision_minimal_bounce_speed_pixels_per_second = 50.0f;
+    /**
+     * @brief Minimum speed required (in pixels per second) for a bounce to occur.
+     *
+     * Below this threshold, collisions will simply halt the car to avoid jitter.
+     */
+    float collision_minimum_bounce_speed_pixels_per_second = 50.0f;
 
-    // Maximum random bounce angle in degrees, only applied if above "collision_minimal_bounce_speed_pixels_per_second"
-    float collision_random_bounce_max_degrees = 15.0f;
+    /**
+     * @brief Maximum random angle offset (in degrees) applied to the car's rebound direction on collision.
+     *
+     * Higher values create more unpredictable bounces, which might be unrealistic and ugly.
+     */
+    float collision_maximum_random_bounce_angle_degrees = 15.0f;
 };
 
 class BaseCar {
@@ -438,7 +496,7 @@ class BaseCar {
           rng_(rng),
           track_(track),
           config_(config),
-          collision_jitter_dist_(-config_.collision_random_bounce_max_degrees, config_.collision_random_bounce_max_degrees),
+          collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
           last_position_(initial_position),
           velocity_(0.0f, 0.0f),
           steering_wheel_angle_(0.0f),
@@ -529,8 +587,8 @@ class BaseCar {
         const float heading_angle_radians = this->sprite_.getRotation().asRadians();
 
         // Increase velocity components along heading direction
-        this->velocity_.x += std::cos(heading_angle_radians) * this->config_.forward_acceleration_pixels_per_second_squared * dt;
-        this->velocity_.y += std::sin(heading_angle_radians) * this->config_.forward_acceleration_pixels_per_second_squared * dt;
+        this->velocity_.x += std::cos(heading_angle_radians) * this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt;
+        this->velocity_.y += std::sin(heading_angle_radians) * this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt;
     }
 
     /**
@@ -547,7 +605,7 @@ class BaseCar {
             const float unit_velocity_x = this->velocity_.x / speed_magnitude_pixels_per_second;
             const float unit_velocity_y = this->velocity_.y / speed_magnitude_pixels_per_second;
             // Compute speed reduction this frame
-            const float maximum_reduction_pixels_per_second = this->config_.brake_deceleration_pixels_per_second_squared * dt;
+            const float maximum_reduction_pixels_per_second = this->config_.brake_deceleration_rate_pixels_per_second_squared * dt;
             const float actual_reduction_pixels_per_second = std::min(maximum_reduction_pixels_per_second, speed_magnitude_pixels_per_second);
             // Subtract reduction along velocity direction
             this->velocity_.x -= unit_velocity_x * actual_reduction_pixels_per_second;
@@ -565,7 +623,7 @@ class BaseCar {
             const float unit_velocity_x = this->velocity_.x / speed_magnitude_pixels_per_second;
             const float unit_velocity_y = this->velocity_.y / speed_magnitude_pixels_per_second;
             // Get new speed after applying handbrake
-            const float reduced_speed_pixels_per_second = speed_magnitude_pixels_per_second - this->config_.handbrake_deceleration_pixels_per_second_squared * dt;
+            const float reduced_speed_pixels_per_second = speed_magnitude_pixels_per_second - this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
             if (reduced_speed_pixels_per_second < 0.1f) {
                 // If almost stopped, zero velocity
                 this->velocity_ = {0.0f, 0.0f};
@@ -622,7 +680,7 @@ class BaseCar {
 
         // Step 3: Apply engine braking when no input is active
         if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && initial_speed_pixels_per_second > 0.01f) {
-            const float engine_brake_amount = this->config_.engine_braking_pixels_per_second_squared * dt;
+            const float engine_brake_amount = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
             const float reduced_speed = (initial_speed_pixels_per_second > engine_brake_amount) ? (initial_speed_pixels_per_second - engine_brake_amount) : 0.0f;
             const float engine_brake_scale = reduced_speed / initial_speed_pixels_per_second;
             this->velocity_.x *= engine_brake_scale;
@@ -631,7 +689,7 @@ class BaseCar {
 
         // Step 4: Enforce maximum speed limit
         const float speed_after_brake = this->compute_speed_pixels_per_second();
-        const float maximum_speed = this->config_.maximum_speed_pixels_per_second;
+        const float maximum_speed = this->config_.maximum_movement_pixels_per_second;
         if (speed_after_brake > maximum_speed) {
             const float maximum_speed_scale = maximum_speed / speed_after_brake;
             this->velocity_.x *= maximum_speed_scale;
@@ -647,14 +705,14 @@ class BaseCar {
         const float forward_speed_component = forward_unit_vector.x * this->velocity_.x + forward_unit_vector.y * this->velocity_.y;
         const sf::Vector2f forward_velocity_vector = forward_unit_vector * forward_speed_component;
         const sf::Vector2f lateral_velocity_vector = this->velocity_ - forward_velocity_vector;
-        const float slip_damping_ratio = 1.0f - std::clamp(this->config_.side_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
+        const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
         this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
 
         // Step 7: Center steering wheel if no steering input is active
         constexpr float steering_angle_epsilon_degrees = 0.1f;
         if (!this->is_steering_left_ && !this->is_steering_right_) {
             if (pre_slip_speed_pixels_per_second > 0.0f && std::abs(this->steering_wheel_angle_) > steering_angle_epsilon_degrees) {
-                const float centering_rate = this->config_.steering_centering_rate_degrees_per_second;
+                const float centering_rate = this->config_.steering_autocenter_rate_degrees_per_second;
                 const float centering_interp = std::clamp(centering_rate * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
                 this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_interp);
             }
@@ -664,11 +722,11 @@ class BaseCar {
         }
 
         // Step 8: Clamp steering wheel angle to allowed range
-        this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_wheel_angle_degrees, this->config_.maximum_steering_wheel_angle_degrees);
+        this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
 
         // Step 9: Compute turn factor based on current speed
         const float speed_ratio = std::clamp(pre_slip_speed_pixels_per_second / maximum_speed, 0.0f, 1.0f);
-        const float turn_factor_at_current_speed = this->config_.turn_factor_at_zero_speed * (1.0f - speed_ratio) + this->config_.turn_factor_at_full_speed * speed_ratio;
+        const float turn_factor_at_current_speed = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
 
         // Step 10: Apply rotation from steering and move sprite by velocity
         this->sprite_.rotate(sf::degrees(this->steering_wheel_angle_ * turn_factor_at_current_speed * dt));
@@ -680,11 +738,11 @@ class BaseCar {
             // Revert to last valid position
             this->sprite_.setPosition(this->last_position_);
             // Reflect and dampen velocity
-            this->velocity_ = -this->velocity_ * this->config_.collision_speed_retention_factor;
+            this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
 
             // Compute post‐bounce speed
             const float post_bounce_speed = this->compute_speed_pixels_per_second();
-            if (post_bounce_speed < this->config_.collision_minimal_bounce_speed_pixels_per_second) {
+            if (post_bounce_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
                 this->velocity_ = {0.0f, 0.0f};
             }
             else {
@@ -821,7 +879,7 @@ class AICar final : public BaseCar {
         const float current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
 
         // 12) Compute stopping distance needed at current speed using standard kinematic formula
-        const float required_stopping_distance = (current_speed * current_speed) / (2.0f * this->config_.brake_deceleration_pixels_per_second_squared);
+        const float required_stopping_distance = (current_speed * current_speed) / (2.0f * this->config_.brake_deceleration_rate_pixels_per_second_squared);
 
         // 13) Compute vector and distance to the next waypoint for pre‑braking checks
         const sf::Vector2f vector_to_next_waypoint = next_waypoint.position - car_position;
