@@ -2,11 +2,12 @@
  * @file app.cpp
  */
 
-#include <algorithm>  // for std::clamp, std::max, std::min
+#include <algorithm>  // for std::clamp, std::max
 #include <array>      // for std::array
 #include <cmath>      // for std::hypot
 #include <cstddef>    // for std::size_t
 #include <format>     // for std::format
+#include <limits>     // for std::numeric_limits
 #include <memory>     // for std::unique_ptr
 #include <optional>   // for std::optional
 #include <random>     // for std::random_device, std::mt19937
@@ -255,8 +256,10 @@ void run()
                 onKeyReleased(*released);
         }
 
-        // Prevent extreme dt values at below 30 FPS by capping to 50 ms
-        const float delta_time = std::min(clock.restart().asSeconds(), 0.05f);
+        // Prevent extreme dt values at below 10 FPS by clamping between 0.001 and 0.1 seconds
+        constexpr float min_delta_time = std::numeric_limits<float>::epsilon();
+        constexpr float max_delta_time = 0.1f;
+        const float delta_time = std::clamp(clock.restart().asSeconds(), min_delta_time, max_delta_time);
 
         imgui_context.update(delta_time);
         fps_counter.update_and_draw(delta_time);

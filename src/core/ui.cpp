@@ -324,10 +324,7 @@ void FpsCounter::update_and_draw(const float dt)
         return;
     }
 
-    // Skip bad deltas
-    if (dt <= 0.0f) [[unlikely]] {
-        return;
-    }
+    // The dt is already clamped to [0.001, 0.1] in the main loop, so we can safely use it here
 
     this->update(dt);
     this->draw();
@@ -448,10 +445,7 @@ void Minimap::update_and_draw(const float dt,
         return;
     }
 
-    // Skip bad deltas
-    if (dt <= 0.0f) [[unlikely]] {
-        return;
-    }
+    // The dt is already clamped to [0.001, 0.1] in the main loop, so we can safely use it here
 
     this->update(dt, center);
     this->draw();
