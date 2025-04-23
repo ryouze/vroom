@@ -535,7 +535,6 @@ class BaseCar {
         this->sprite_.setPosition(world_position);
     }
 
-    // TODO: Check if this is needed if we have other virtual functions
     /**
      * @brief Destroy theBase Car object.
      *
@@ -919,6 +918,9 @@ class PlayerCar final : public BaseCar {
     // Inherit the constructor from BaseCar
     using BaseCar::BaseCar;
 
+    // Ensure compilation fails if BaseCar's destructor ever stops being virtual
+    ~PlayerCar() override = default;
+
     /**
      * @brief Set the input flags for the car.
      *
@@ -954,6 +956,9 @@ class AICar final : public BaseCar {
   public:
     // Inherit the constructor from BaseCar
     using BaseCar::BaseCar;
+
+    // Ensure compilation fails if BaseCar's destructor ever stops being virtual
+    ~AICar() override = default;
 
     /**
      * @brief Reset the car's position, rotation, velocity, and steering to initial state.
