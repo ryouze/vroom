@@ -529,8 +529,7 @@ class BaseCar {
           collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
           last_position_(world_position),
           velocity_(0.0f, 0.0f),
-          steering_wheel_angle_(0.0f),
-          speed_magnitude_pixels_per_second_(0.0f)
+          steering_wheel_angle_(0.0f)
     {
         // Center the sprite origin for correct rotation and positioning
         this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
@@ -581,11 +580,29 @@ class BaseCar {
         return this->velocity_;
     }
 
-    // TODO: Refactor speed caching, so this function will actually return the correct speed
-    // [[nodiscard]] float get_speed() const
-    // {
-    //     return this->speed_magnitude_pixels_per_second_;
-    // }
+    /**
+     * @brief Get the current speed of the car based on the current velocity vector.
+     *
+     * @return Speed magnitude in pixels per second (e.g., "100.f").
+     *
+     * @note This calculates the scalar speed from the velocity vector.
+     */
+    [[nodiscard]] float get_speed() const
+    {
+        return std::hypot(this->velocity_.x, this->velocity_.y);
+    }
+
+    /**
+     * @brief Get current steering wheel angle.
+     *
+     * This is the angle of the steering wheel in degrees, which is used to determine the car's turning radius.
+     *
+     * @return Steering wheel angle in degrees (e.g., "-180.f", "30.f", "180.f").
+     */
+    [[nodiscard]] float get_steering_angle() const
+    {
+        return this->steering_wheel_angle_;
+    }
 
     /**
      * @brief Update the car's physics state over a time interval.
@@ -662,18 +679,6 @@ class BaseCar {
 
   private:
     /**
-     * @brief Return the current speed magnitude of the car based on the member "velocity_" vector.
-     *
-     * This calculates the scalar speed from the velocity vector components.
-     *
-     * @return Speed magnitude in pixels per second (e.g., "100.f").
-     */
-    [[nodiscard]] float compute_speed_pixels_per_second() const
-    {
-        return std::hypot(this->velocity_.x, this->velocity_.y);
-    }
-
-    /**
      * @brief Apply forward acceleration based on current heading.
      *
      * @param dt Time passed since the previous frame, in seconds.
@@ -696,7 +701,7 @@ class BaseCar {
     void brake(const float dt)
     {
         // Compute current speed magnitude
-        const float speed_magnitude_pixels_per_second = std::hypot(this->velocity_.x, this->velocity_.y);
+        const float speed_magnitude_pixels_per_second = this->get_speed();
 
         // Only brake if moving above a tiny threshold
         if (speed_magnitude_pixels_per_second > 0.01f) {
@@ -719,7 +724,7 @@ class BaseCar {
      */
     void handbrake(const float dt)
     {
-        const float speed_magnitude_pixels_per_second = std::hypot(this->velocity_.x, this->velocity_.y);
+        const float speed_magnitude_pixels_per_second = this->get_speed();
         if (speed_magnitude_pixels_per_second > 0.01f) {
             const float unit_velocity_x = this->velocity_.x / speed_magnitude_pixels_per_second;
             const float unit_velocity_y = this->velocity_.y / speed_magnitude_pixels_per_second;
@@ -785,12 +790,10 @@ class BaseCar {
             this->steer_right(dt);
         }
 
-        // Step 2: Compute and cache current speed in pixels per second
-        this->speed_magnitude_pixels_per_second_ = this->compute_speed_pixels_per_second();
-        const float initial_speed_pixels_per_second = this->speed_magnitude_pixels_per_second_;
-
+        // Step 2: Compute the current speed in pixels per second
         // Step 3: Apply engine braking when no input is active
-        if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && initial_speed_pixels_per_second > 0.01f) {
+        if (const float initial_speed_pixels_per_second = this->get_speed();
+            !this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && initial_speed_pixels_per_second > 0.01f) {
             const float engine_brake_amount = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
             const float reduced_speed = (initial_speed_pixels_per_second > engine_brake_amount) ? (initial_speed_pixels_per_second - engine_brake_amount) : 0.0f;
             const float engine_brake_scale = reduced_speed / initial_speed_pixels_per_second;
@@ -799,16 +802,15 @@ class BaseCar {
         }
 
         // Step 4: Enforce maximum speed limit
-        const float speed_after_brake = this->compute_speed_pixels_per_second();
-        const float maximum_speed = this->config_.maximum_movement_pixels_per_second;
-        if (speed_after_brake > maximum_speed) {
-            const float maximum_speed_scale = maximum_speed / speed_after_brake;
+        if (const float speed_after_brake = this->get_speed();
+            speed_after_brake > this->config_.maximum_movement_pixels_per_second) {
+            const float maximum_speed_scale = this->config_.maximum_movement_pixels_per_second / speed_after_brake;
             this->velocity_.x *= maximum_speed_scale;
             this->velocity_.y *= maximum_speed_scale;
         }
 
         // Step 5: Record speed before slip damping
-        const float pre_slip_speed_pixels_per_second = this->compute_speed_pixels_per_second();
+        const float pre_slip_speed_pixels_per_second = this->get_speed();
 
         // Step 6: Apply side slip damping to reduce lateral velocity
         const float heading_radians = this->sprite_.getRotation().asRadians();
@@ -836,7 +838,7 @@ class BaseCar {
         this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
 
         // Step 9: Compute turn factor based on current speed
-        const float speed_ratio = std::clamp(pre_slip_speed_pixels_per_second / maximum_speed, 0.0f, 1.0f);
+        const float speed_ratio = std::clamp(pre_slip_speed_pixels_per_second / this->config_.maximum_movement_pixels_per_second, 0.0f, 1.0f);
         const float turn_factor_at_current_speed = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
 
         // Step 10: Apply rotation from steering and move sprite by velocity
@@ -852,8 +854,8 @@ class BaseCar {
             this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
 
             // Compute post‐bounce speed
-            const float post_bounce_speed = this->compute_speed_pixels_per_second();
-            if (post_bounce_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
+            if (const float post_bounce_speed = this->get_speed();
+                post_bounce_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
                 this->velocity_ = {0.0f, 0.0f};
             }
             else {
@@ -906,12 +908,6 @@ class BaseCar {
      * Positive values turn the car right, negative values turn it left.
      */
     float steering_wheel_angle_;
-
-    // TODO: Improve caching of this.
-    /**
-     * @brief Cached scalar speed magnitude in pixels per second.
-     */
-    float speed_magnitude_pixels_per_second_;
 };
 
 /**
@@ -990,9 +986,7 @@ class AICar final : public BaseCar {
         this->current_waypoint_index_number_ = 1;
     }
 
-
-
-         /**
+    /**
      * @brief Update the AI car's steering and throttle/brake decisions based on waypoints over a time interval, then update the car's physics state.
      *
      * @param dt Time passed since the previous frame, in seconds.
@@ -1041,9 +1035,7 @@ class AICar final : public BaseCar {
         this->is_steering_right_ = (heading_difference_radians > steering_threshold_radians);
 
         // 11) Compute current speed magnitude (pixels per second)
-        // TODO: Make it use the cached speed value instead of recomputing it here
-        const auto velocity = this->get_velocity();
-        const float current_speed = std::hypot(velocity.x, velocity.y);
+        const float current_speed = this->get_speed();
 
         // 12) Compute stopping distance needed at current speed using standard kinematic formula
         const float required_stopping_distance = (current_speed * current_speed) / (2.0f * this->config_.brake_deceleration_rate_pixels_per_second_squared);
