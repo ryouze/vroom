@@ -258,6 +258,7 @@ class Track final {
          */
         const sf::Texture &horizontal_finish;
     };
+
     /**
      * @brief Construct a new Track object.
      *
@@ -318,6 +319,8 @@ class Track final {
      * @brief Draw the track on the provided render target.
      *
      * @param target Target window where the track will be drawn.
+     *
+     * @note Call this once per frame.
      */
     void draw(sf::RenderTarget &target) const;
 
@@ -588,16 +591,20 @@ class BaseCar {
      * @brief Update the car's physics state over a time interval.
      *
      * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note Call this method once per frame before calling "draw()". It will call the internal "apply_physics_step()" function to apply all the physics calculations, such as acceleration, slip, collision, etc.
      */
     virtual void update(const float dt)
     {
-        this->handle_physics(dt);
+        this->apply_physics_step(dt);
     }
 
     /**
      * @brief Draw the car on the provided render target.
      *
      * @param target Target window where the car will be drawn.
+     *
+     * @note Call this once per frame, after "update()".
      */
     void draw(sf::RenderTarget &target) const
     {
@@ -751,13 +758,15 @@ class BaseCar {
     }
 
     /**
-     * @brief Core physics handler combining all forces, slip, and collisions.
+     * @brief Apply physics step to the car - combines all forces, slip, and collisions.
      *
      * This processeds the member input flags, then runs the entire physics pipeline.
      *
      * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note Always call this as the final step in the update loop from "update()", before drawing the car via "draw()".
      */
-    void handle_physics(const float dt)
+    void apply_physics_step(const float dt)
     {
         // Step 1: Apply input forces
         if (this->is_accelerating_) {
@@ -930,6 +939,8 @@ class PlayerCar final : public BaseCar {
      * @param left True to steer left; false to stop steering left.
      * @param right True to steer right; false to stop steering right.
      * @param handbrake True to apply the handbrake; false to release.
+     *
+     * @note Call this once per frame, before "update()", so that the physics engine can process the inputs.
      */
     void set_input(const bool gas,
                    const bool brake,
@@ -979,10 +990,14 @@ class AICar final : public BaseCar {
         this->current_waypoint_index_number_ = 1;
     }
 
-    /**
-     * @brief Update the AI car's steering and throttle/brake decisions based on waypoints.
+
+
+         /**
+     * @brief Update the AI car's steering and throttle/brake decisions based on waypoints over a time interval, then update the car's physics state.
      *
      * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note Call this method once per frame before calling "draw()". It will perform AI calculations to determine the best steering and throttle/brake inputs based on the current track and waypoints, then call the base class "update()" method to apply the physics calculations.
      */
     void update(const float dt) override
     {
