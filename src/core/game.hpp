@@ -516,7 +516,6 @@ class BaseCar {
         : sprite_(texture),
           track_(track),
           config_(config),
-          velocity_(0.0f, 0.0f),
           is_accelerating_(false),
           is_braking_(false),
           is_handbraking_(false),
@@ -526,6 +525,7 @@ class BaseCar {
           rng_(rng),
           collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
           last_position_(world_position),
+          velocity_(0.0f, 0.0f),
           steering_wheel_angle_(0.0f),
           speed_magnitude_pixels_per_second_(0.0f)
     {
@@ -614,127 +614,6 @@ class BaseCar {
 
   protected:
     /**
-     * @brief Core physics handler combining all forces, slip, and collisions.
-     *
-     * This processeds the member input flags, then runs the entire physics pipeline.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     */
-    void handle_physics(const float dt)
-    {
-        // Step 1: Apply input forces
-        if (this->is_accelerating_) {
-            this->accelerate(dt);
-        }
-        if (this->is_braking_) {
-            this->brake(dt);
-        }
-        if (this->is_handbraking_) {
-            this->handbrake(dt);
-        }
-        if (this->is_steering_left_) {
-            this->steer_left(dt);
-        }
-        if (this->is_steering_right_) {
-            this->steer_right(dt);
-        }
-
-        // Step 2: Compute and cache current speed in pixels per second
-        this->speed_magnitude_pixels_per_second_ = this->compute_speed_pixels_per_second();
-        const float initial_speed_pixels_per_second = this->speed_magnitude_pixels_per_second_;
-
-        // Step 3: Apply engine braking when no input is active
-        if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && initial_speed_pixels_per_second > 0.01f) {
-            const float engine_brake_amount = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
-            const float reduced_speed = (initial_speed_pixels_per_second > engine_brake_amount) ? (initial_speed_pixels_per_second - engine_brake_amount) : 0.0f;
-            const float engine_brake_scale = reduced_speed / initial_speed_pixels_per_second;
-            this->velocity_.x *= engine_brake_scale;
-            this->velocity_.y *= engine_brake_scale;
-        }
-
-        // Step 4: Enforce maximum speed limit
-        const float speed_after_brake = this->compute_speed_pixels_per_second();
-        const float maximum_speed = this->config_.maximum_movement_pixels_per_second;
-        if (speed_after_brake > maximum_speed) {
-            const float maximum_speed_scale = maximum_speed / speed_after_brake;
-            this->velocity_.x *= maximum_speed_scale;
-            this->velocity_.y *= maximum_speed_scale;
-        }
-
-        // Step 5: Record speed before slip damping
-        const float pre_slip_speed_pixels_per_second = this->compute_speed_pixels_per_second();
-
-        // Step 6: Apply side slip damping to reduce lateral velocity
-        const float heading_radians = this->sprite_.getRotation().asRadians();
-        const sf::Vector2f forward_unit_vector{std::cos(heading_radians), std::sin(heading_radians)};
-        const float forward_speed_component = forward_unit_vector.x * this->velocity_.x + forward_unit_vector.y * this->velocity_.y;
-        const sf::Vector2f forward_velocity_vector = forward_unit_vector * forward_speed_component;
-        const sf::Vector2f lateral_velocity_vector = this->velocity_ - forward_velocity_vector;
-        const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
-        this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
-
-        // Step 7: Center steering wheel if no steering input is active
-        constexpr float steering_angle_epsilon_degrees = 0.1f;
-        if (!this->is_steering_left_ && !this->is_steering_right_) {
-            if (pre_slip_speed_pixels_per_second > 0.0f && std::abs(this->steering_wheel_angle_) > steering_angle_epsilon_degrees) {
-                const float centering_rate = this->config_.steering_autocenter_rate_degrees_per_second;
-                const float centering_interp = std::clamp(centering_rate * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
-                this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_interp);
-            }
-            else {
-                this->steering_wheel_angle_ = 0.0f;
-            }
-        }
-
-        // Step 8: Clamp steering wheel angle to allowed range
-        this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
-
-        // Step 9: Compute turn factor based on current speed
-        const float speed_ratio = std::clamp(pre_slip_speed_pixels_per_second / maximum_speed, 0.0f, 1.0f);
-        const float turn_factor_at_current_speed = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
-
-        // Step 10: Apply rotation from steering and move sprite by velocity
-        this->sprite_.rotate(sf::degrees(this->steering_wheel_angle_ * turn_factor_at_current_speed * dt));
-        this->sprite_.move(this->velocity_ * dt);
-
-        // Step 11: Detect collision and apply bounce with random jitter
-        const sf::Vector2f current_position = this->sprite_.getPosition();
-        if (!this->track_.is_on_track(current_position)) {
-            // Revert to last valid position
-            this->sprite_.setPosition(this->last_position_);
-            // Reflect and dampen velocity
-            this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
-
-            // Compute post‐bounce speed
-            const float post_bounce_speed = this->compute_speed_pixels_per_second();
-            if (post_bounce_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
-                this->velocity_ = {0.0f, 0.0f};
-            }
-            else {
-                // Apply a small random yaw jitter to the physics velocity
-                const float jitter_degrees = this->collision_jitter_dist_(this->rng_);
-                const float jitter_radians = sf::degrees(jitter_degrees).asRadians();
-                const float jitter_cosine = std::cos(jitter_radians);
-                const float jitter_sine = std::sin(jitter_radians);
-                const sf::Vector2f old_velocity = this->velocity_;
-                this->velocity_.x = old_velocity.x * jitter_cosine - old_velocity.y * jitter_sine;
-                this->velocity_.y = old_velocity.x * jitter_sine + old_velocity.y * jitter_cosine;
-
-                // Also rotate sprite visually by the same jitter
-                this->sprite_.rotate(sf::degrees(jitter_degrees));
-            }
-        }
-
-        // Step 12: Reset input flags and store last valid position
-        this->is_accelerating_ = false;
-        this->is_braking_ = false;
-        this->is_handbraking_ = false;
-        this->is_steering_left_ = false;
-        this->is_steering_right_ = false;
-        this->last_position_ = this->sprite_.getPosition();
-    }
-
-    /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      */
     sf::Sprite sprite_;
@@ -748,11 +627,6 @@ class BaseCar {
      * @brief Configuration of the car.
      */
     const CarConfig config_;
-
-    /**
-     * @brief Current velocity of the car in pixels per second.
-     */
-    sf::Vector2f velocity_;
 
     /**
      * @brief Set to true to accelerate the car.
@@ -877,6 +751,127 @@ class BaseCar {
     }
 
     /**
+     * @brief Core physics handler combining all forces, slip, and collisions.
+     *
+     * This processeds the member input flags, then runs the entire physics pipeline.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     */
+    void handle_physics(const float dt)
+    {
+        // Step 1: Apply input forces
+        if (this->is_accelerating_) {
+            this->accelerate(dt);
+        }
+        if (this->is_braking_) {
+            this->brake(dt);
+        }
+        if (this->is_handbraking_) {
+            this->handbrake(dt);
+        }
+        if (this->is_steering_left_) {
+            this->steer_left(dt);
+        }
+        if (this->is_steering_right_) {
+            this->steer_right(dt);
+        }
+
+        // Step 2: Compute and cache current speed in pixels per second
+        this->speed_magnitude_pixels_per_second_ = this->compute_speed_pixels_per_second();
+        const float initial_speed_pixels_per_second = this->speed_magnitude_pixels_per_second_;
+
+        // Step 3: Apply engine braking when no input is active
+        if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && initial_speed_pixels_per_second > 0.01f) {
+            const float engine_brake_amount = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
+            const float reduced_speed = (initial_speed_pixels_per_second > engine_brake_amount) ? (initial_speed_pixels_per_second - engine_brake_amount) : 0.0f;
+            const float engine_brake_scale = reduced_speed / initial_speed_pixels_per_second;
+            this->velocity_.x *= engine_brake_scale;
+            this->velocity_.y *= engine_brake_scale;
+        }
+
+        // Step 4: Enforce maximum speed limit
+        const float speed_after_brake = this->compute_speed_pixels_per_second();
+        const float maximum_speed = this->config_.maximum_movement_pixels_per_second;
+        if (speed_after_brake > maximum_speed) {
+            const float maximum_speed_scale = maximum_speed / speed_after_brake;
+            this->velocity_.x *= maximum_speed_scale;
+            this->velocity_.y *= maximum_speed_scale;
+        }
+
+        // Step 5: Record speed before slip damping
+        const float pre_slip_speed_pixels_per_second = this->compute_speed_pixels_per_second();
+
+        // Step 6: Apply side slip damping to reduce lateral velocity
+        const float heading_radians = this->sprite_.getRotation().asRadians();
+        const sf::Vector2f forward_unit_vector{std::cos(heading_radians), std::sin(heading_radians)};
+        const float forward_speed_component = forward_unit_vector.x * this->velocity_.x + forward_unit_vector.y * this->velocity_.y;
+        const sf::Vector2f forward_velocity_vector = forward_unit_vector * forward_speed_component;
+        const sf::Vector2f lateral_velocity_vector = this->velocity_ - forward_velocity_vector;
+        const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
+        this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
+
+        // Step 7: Center steering wheel if no steering input is active
+        constexpr float steering_angle_epsilon_degrees = 0.1f;
+        if (!this->is_steering_left_ && !this->is_steering_right_) {
+            if (pre_slip_speed_pixels_per_second > 0.0f && std::abs(this->steering_wheel_angle_) > steering_angle_epsilon_degrees) {
+                const float centering_rate = this->config_.steering_autocenter_rate_degrees_per_second;
+                const float centering_interp = std::clamp(centering_rate * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
+                this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_interp);
+            }
+            else {
+                this->steering_wheel_angle_ = 0.0f;
+            }
+        }
+
+        // Step 8: Clamp steering wheel angle to allowed range
+        this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
+
+        // Step 9: Compute turn factor based on current speed
+        const float speed_ratio = std::clamp(pre_slip_speed_pixels_per_second / maximum_speed, 0.0f, 1.0f);
+        const float turn_factor_at_current_speed = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
+
+        // Step 10: Apply rotation from steering and move sprite by velocity
+        this->sprite_.rotate(sf::degrees(this->steering_wheel_angle_ * turn_factor_at_current_speed * dt));
+        this->sprite_.move(this->velocity_ * dt);
+
+        // Step 11: Detect collision and apply bounce with random jitter
+        const sf::Vector2f current_position = this->sprite_.getPosition();
+        if (!this->track_.is_on_track(current_position)) {
+            // Revert to last valid position
+            this->sprite_.setPosition(this->last_position_);
+            // Reflect and dampen velocity
+            this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
+
+            // Compute post‐bounce speed
+            const float post_bounce_speed = this->compute_speed_pixels_per_second();
+            if (post_bounce_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
+                this->velocity_ = {0.0f, 0.0f};
+            }
+            else {
+                // Apply a small random yaw jitter to the physics velocity
+                const float jitter_degrees = this->collision_jitter_dist_(this->rng_);
+                const float jitter_radians = sf::degrees(jitter_degrees).asRadians();
+                const float jitter_cosine = std::cos(jitter_radians);
+                const float jitter_sine = std::sin(jitter_radians);
+                const sf::Vector2f old_velocity = this->velocity_;
+                this->velocity_.x = old_velocity.x * jitter_cosine - old_velocity.y * jitter_sine;
+                this->velocity_.y = old_velocity.x * jitter_sine + old_velocity.y * jitter_cosine;
+
+                // Also rotate sprite visually by the same jitter
+                this->sprite_.rotate(sf::degrees(jitter_degrees));
+            }
+        }
+
+        // Step 12: Reset input flags and store last valid position
+        this->is_accelerating_ = false;
+        this->is_braking_ = false;
+        this->is_handbraking_ = false;
+        this->is_steering_left_ = false;
+        this->is_steering_right_ = false;
+        this->last_position_ = this->sprite_.getPosition();
+    }
+
+    /**
      * @brief Random number generator.
      */
     std::mt19937 &rng_;
@@ -892,12 +887,18 @@ class BaseCar {
     sf::Vector2f last_position_;
 
     /**
+     * @brief Current velocity of the car in pixels per second.
+     */
+    sf::Vector2f velocity_;
+
+    /**
      * @brief Current steering wheel angle in degrees.
      *
      * Positive values turn the car right, negative values turn it left.
      */
     float steering_wheel_angle_;
 
+    // TODO: Improve caching of this.
     /**
      * @brief Cached scalar speed magnitude in pixels per second.
      */
@@ -1025,7 +1026,9 @@ class AICar final : public BaseCar {
         this->is_steering_right_ = (heading_difference_radians > steering_threshold_radians);
 
         // 11) Compute current speed magnitude (pixels per second)
-        const float current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
+        // TODO: Make it use the cached speed value instead of recomputing it here
+        const auto velocity = this->get_velocity();
+        const float current_speed = std::hypot(velocity.x, velocity.y);
 
         // 12) Compute stopping distance needed at current speed using standard kinematic formula
         const float required_stopping_distance = (current_speed * current_speed) / (2.0f * this->config_.brake_deceleration_rate_pixels_per_second_squared);
@@ -1058,7 +1061,7 @@ class AICar final : public BaseCar {
         }
 
         // 18) Finally, call the shared physics handler to apply movement, rotation, and collisions
-        this->handle_physics(dt);
+        BaseCar::update(dt);
     }
 
   private:
