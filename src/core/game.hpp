@@ -15,6 +15,10 @@
 
 #include <SFML/Graphics.hpp>
 
+#ifndef NDEBUG  // Debug, remove later
+#include <imgui.h>
+#endif
+
 namespace core::game {
 
 /**
@@ -99,10 +103,14 @@ struct TrackConfig final {
      */
     std::size_t horizontal_count = 7;
 
-    /**
-     * @brief Number of vertical tiles, i.e., height (e.g., "6").
-     */
+/**
+ * @brief Number of vertical tiles, i.e., height (e.g., "6").
+ */
+#ifndef NDEBUG  // Debug, remove later
+    std::size_t vertical_count = 7;
+#else
     std::size_t vertical_count = 12;
+#endif
 
     /**
      * @brief Size of each tile in pixels (e.g., "256").
@@ -118,7 +126,11 @@ struct TrackConfig final {
      *
      * @note Set to "0.0" for no detours.
      */
+#ifndef NDEBUG  // Debug, remove later
+    float detour_chance_pct = 0.0f;
+#else
     float detour_chance_pct = 0.4f;
+#endif
 
     // /**
     //  * @brief Default three-way comparison operator.
@@ -503,42 +515,62 @@ struct CarConfig final {
 class BaseCar {
   public:
     /**
-     * @brief Construct a newBase Car object.
+     * @brief Enum that represents the current gear of the car.
      *
-     * @param texture Reference to the SFML texture used for the car sprite.
-     * @param world_position Starting position of the car in world coordinates (pixels).
+     * The simplest possible gearbox with three gears: Forward, Neutral, and Backward.
+     */
+    enum class Gear {
+        /**
+         * @brief Normal: Go forward when holding the gas pedal and brake when holding the brake pedal.
+         */
+        Forward,
+
+        /**
+         * @brief Flip: Go backward when pressing the brake pedal and brake when pressing the gas pedal.
+         *
+         * @note This doesn't really make sense IRL, but it's the easiest to implement and it works that way in most arcade racing games, such as this one.
+         */
+        Backward,
+    };
+
+    /**
+     * @brief Construct a new BaseCar object.
+     *
+     * @param texture Reference to the SFML texture used for the car sprite. This is expected to be around 71x131 pixels.
      * @param rng Reference to a random number generator used for random decision making (e.g., collision bounces).
-     * @param track Reference to the race track object for boundary and waypoint information.
+     * @param track Reference to the race track object for boundary, spawnpoint and waypoint information.
      * @param config Configuration parameters controlling acceleration, braking, steering, and collision behavior.
+     *
+     * @note This uses the internal track reference to place the car at the track's spawn point.
      */
     explicit BaseCar(const sf::Texture &texture,
-                     const sf::Vector2f &world_position,
                      std::mt19937 &rng,
                      const Track &track,
                      const CarConfig &config = CarConfig())  // Use default config
         : sprite_(texture),
           track_(track),
           config_(config),
-          is_accelerating_(false),
-          is_braking_(false),
-          is_handbraking_(false),
-          is_steering_left_(false),
-          is_steering_right_(false),
           // Private
           rng_(rng),
           collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
-          last_position_(world_position),
+          last_position_(this->track_.get_finish_point()),  // Get spawn point from the track
           velocity_(0.0f, 0.0f),
+          gear_(Gear::Forward),
+          is_accelerating_(false),
+          is_braking_(false),
+          is_steering_left_(false),
+          is_steering_right_(false),
+          is_handbraking_(false),
           steering_wheel_angle_(0.0f)
     {
         // Center the sprite origin for correct rotation and positioning
         this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
-        // Set initial position of the car sprite
-        this->sprite_.setPosition(world_position);
+        // Set initial position of the car sprite based on the spawn point from the track, as set in the initializer list
+        this->sprite_.setPosition(this->last_position_);
     }
 
     /**
-     * @brief Destroy theBase Car object.
+     * @brief Destroy the BaseCar object.
      *
      * Virtual destructor to ensure proper cleanup in derived classes.
      */
@@ -549,13 +581,14 @@ class BaseCar {
      *
      * This is useful when rebuilding the track or resetting the game.
      *
-     * @param world_position World coordinates (pixels) to which the car will be moved and reset.
+     * @note This uses the internal track reference to place the car at the track's spawn point.
      */
-    virtual void reset(const sf::Vector2f &world_position)
+    virtual void reset()
     {
-        this->sprite_.setPosition(world_position);
+        const sf::Vector2f spawn_point = this->track_.get_finish_point();
+        this->sprite_.setPosition(spawn_point);
         this->sprite_.setRotation(sf::degrees(0.0f));
-        this->last_position_ = world_position;
+        this->last_position_ = spawn_point;
         this->velocity_ = {0.0f, 0.0f};
         this->steering_wheel_angle_ = 0.0f;
     }
@@ -574,6 +607,8 @@ class BaseCar {
      * @brief Get the current velocity of the car.
      *
      * @return Vector containing the car's velocity in pixels per second.
+     *
+     * @note If you want to display speed in a car's speedometer sense, use "get_speed()" instead. This is the raw velocity vector for physics calculations.
      */
     [[nodiscard]] sf::Vector2f get_velocity() const
     {
@@ -585,11 +620,21 @@ class BaseCar {
      *
      * @return Speed magnitude in pixels per second (e.g., "100.f").
      *
-     * @note This calculates the scalar speed from the velocity vector.
+     * @note This calculates the scalar speed from the velocity vector before returning it, making it a bit more expensive than simply returning the velocity vector via "get_velocity()".
      */
     [[nodiscard]] float get_speed() const
     {
         return std::hypot(this->velocity_.x, this->velocity_.y);
+    }
+
+    /**
+     * @brief Get the current gear of the car.
+     *
+     * @return Current gear of the car (e.g., "Forward", "Neutral", "Backward").
+     */
+    [[nodiscard]] Gear get_gear() const
+    {
+        return this->gear_;
     }
 
     /**
@@ -602,6 +647,56 @@ class BaseCar {
     [[nodiscard]] float get_steering_angle() const
     {
         return this->steering_wheel_angle_;
+    }
+
+    /**
+     * @brief Apply gas to the car immediately.
+     *
+     * @note Call this every frame to accelerate the car. Do not call it to stop gas.
+     */
+    virtual void gas()
+    {
+        this->is_accelerating_ = true;
+    }
+
+    /**
+     * @brief Apply left foot brake to the car immediately.
+     *
+     * @note Call this every frame to decelerate the car. Do not call it to stop braking.
+     */
+    virtual void brake()
+    {
+        this->is_braking_ = true;
+    }
+
+    /**
+     * @brief Apply left steering to the car with steering wheel emulation (turn the steering wheel left over time until it reaches the maximum angle, at which point it will stay at that angle).
+     *
+     * @note Call this every frame to steer left. Do not call it to stop steering left and return to center over time.
+     */
+    void steer_left()
+    {
+        this->is_steering_left_ = true;
+    }
+
+    /**
+     * @brief Apply right steering to the car with steering wheel emulation (turn the steering wheel right over time until it reaches the maximum angle, at which point it will stay at that angle).
+     *
+     * @note Call this every frame to steer right. Do not call it to stop steering right and return to center over time.
+     */
+    void steer_right()
+    {
+        this->is_steering_right_ = true;
+    }
+
+    /**
+     * @brief Apply handbrake (emergency brake) to the car immediately.
+     *
+     * @note Call this every frame to decelerate the car. Do not call it to stop handbraking.
+     */
+    void handbrake()
+    {
+        this->is_handbraking_ = true;
     }
 
     /**
@@ -638,6 +733,18 @@ class BaseCar {
 
   protected:
     /**
+     * @brief Set the car's gear.
+     *
+     * @param gear Gear to set (e.g., "Forward", "Neutral", "Backward").
+     *
+     * @note This is set explicitly by derived classes that implement their own gear logic. For the player, automatic gear shifting when holding the brake for X amount of time makes sense. For AI, it might be better to always use "Forward" gear, unless it is explicitly trying to reverse out of a wall after crashing.
+     */
+    void set_gear(const Gear gear)
+    {
+        this->gear_ = gear;
+    }
+
+    /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      */
     sf::Sprite sprite_;
@@ -652,116 +759,7 @@ class BaseCar {
      */
     const CarConfig config_;
 
-    /**
-     * @brief Set to true to accelerate the car.
-     */
-    bool is_accelerating_;
-
-    /**
-     * @brief Set to true to apply the foot brake..
-     */
-    bool is_braking_;
-
-    /**
-     * @brief Set to true to apply the handbrake (emergency brake).
-     */
-    bool is_handbraking_;
-
-    /**
-     * @brief Set to true to turn the steering wheel left.
-     */
-    bool is_steering_left_;
-
-    /**
-     * @brief Set to true to turn the steering wheel right.
-     */
-    bool is_steering_right_;
-
   private:
-    /**
-     * @brief Apply forward acceleration based on current heading.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     */
-    void accelerate(const float dt)
-    {
-        // Convert heading angle to radians for math functions
-        const float heading_angle_radians = this->sprite_.getRotation().asRadians();
-
-        // Increase velocity components along heading direction
-        this->velocity_.x += std::cos(heading_angle_radians) * this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt;
-        this->velocity_.y += std::sin(heading_angle_radians) * this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt;
-    }
-
-    /**
-     * @brief Apply foot brake deceleration until stopping.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     */
-    void brake(const float dt)
-    {
-        // Compute current speed magnitude
-        const float speed_magnitude_pixels_per_second = this->get_speed();
-
-        // Only brake if moving above a tiny threshold
-        if (speed_magnitude_pixels_per_second > 0.01f) {
-            // Unit direction of current velocity
-            const float unit_velocity_x = this->velocity_.x / speed_magnitude_pixels_per_second;
-            const float unit_velocity_y = this->velocity_.y / speed_magnitude_pixels_per_second;
-            // Compute speed reduction this frame
-            const float maximum_reduction_pixels_per_second = this->config_.brake_deceleration_rate_pixels_per_second_squared * dt;
-            const float actual_reduction_pixels_per_second = std::min(maximum_reduction_pixels_per_second, speed_magnitude_pixels_per_second);
-            // Subtract reduction along velocity direction
-            this->velocity_.x -= unit_velocity_x * actual_reduction_pixels_per_second;
-            this->velocity_.y -= unit_velocity_y * actual_reduction_pixels_per_second;
-        }
-    }
-
-    /**
-     * @brief Apply handbrake (emergency brake) deceleration.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     */
-    void handbrake(const float dt)
-    {
-        const float speed_magnitude_pixels_per_second = this->get_speed();
-        if (speed_magnitude_pixels_per_second > 0.01f) {
-            const float unit_velocity_x = this->velocity_.x / speed_magnitude_pixels_per_second;
-            const float unit_velocity_y = this->velocity_.y / speed_magnitude_pixels_per_second;
-            // Get new speed after applying handbrake
-            const float reduced_speed_pixels_per_second = speed_magnitude_pixels_per_second - this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
-            if (reduced_speed_pixels_per_second < 0.1f) {
-                // If almost stopped, zero velocity
-                this->velocity_ = {0.0f, 0.0f};
-            }
-            else {
-                // Otherwise reduce speed but keep direction
-                this->velocity_.x = unit_velocity_x * reduced_speed_pixels_per_second;
-                this->velocity_.y = unit_velocity_y * reduced_speed_pixels_per_second;
-            }
-        }
-    }
-
-    /**
-     * @brief Turn the steering wheel left by decreasing the angle.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     */
-    void steer_left(const float dt)
-    {
-        this->steering_wheel_angle_ -= this->config_.steering_turn_rate_degrees_per_second * dt;
-    }
-
-    /**
-     * @brief Turn the steering wheel right by increasing the angle.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     */
-    void steer_right(const float dt)
-    {
-        this->steering_wheel_angle_ += this->config_.steering_turn_rate_degrees_per_second * dt;
-    }
-
     /**
      * @brief Apply physics step to the car - combines all forces, slip, and collisions.
      *
@@ -773,113 +771,146 @@ class BaseCar {
      */
     void apply_physics_step(const float dt)
     {
-        // Step 1: Apply input forces
+        constexpr float stopped_speed_threshold = 0.01f;             // Car counts as stopped below this speed
+        constexpr float steering_autocenter_epsilon_degrees = 0.1f;  // Steering snaps to zero inside this range
+        constexpr float minimum_speed_for_rotation = 1.0f;           // Absolute forward speed required for sprite rotation
+
+        // Cancel opposite steering inputs
+        if (this->is_steering_left_ && this->is_steering_right_) {
+            this->is_steering_left_ = false;
+            this->is_steering_right_ = false;
+        }
+
+        // Compute forward unit vector from current heading
+        const float heading_angle_radians = this->sprite_.getRotation().asRadians();
+        const sf::Vector2f forward_unit_vector = {std::cos(heading_angle_radians), std::sin(heading_angle_radians)};
+
+        // Storage for current speed
+        float current_speed = this->get_speed();
+
+        // Apply gas throttle along forward axis
         if (this->is_accelerating_) {
-            this->accelerate(dt);
-        }
-        if (this->is_braking_) {
-            this->brake(dt);
-        }
-        if (this->is_handbraking_) {
-            this->handbrake(dt);
-        }
-        if (this->is_steering_left_) {
-            this->steer_left(dt);
-        }
-        if (this->is_steering_right_) {
-            this->steer_right(dt);
+            this->velocity_ += forward_unit_vector * (this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt);
+            current_speed = this->get_speed();
         }
 
-        // Step 2: Compute the current speed in pixels per second
-        // Step 3: Apply engine braking when no input is active
-        if (const float initial_speed_pixels_per_second = this->get_speed();
-            !this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && initial_speed_pixels_per_second > 0.01f) {
-            const float engine_brake_amount = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
-            const float reduced_speed = (initial_speed_pixels_per_second > engine_brake_amount) ? (initial_speed_pixels_per_second - engine_brake_amount) : 0.0f;
-            const float engine_brake_scale = reduced_speed / initial_speed_pixels_per_second;
-            this->velocity_.x *= engine_brake_scale;
-            this->velocity_.y *= engine_brake_scale;
+        // Apply foot brake deceleration
+        if (this->is_braking_ && current_speed > stopped_speed_threshold) {
+            const float brake_reduction = std::min(this->config_.brake_deceleration_rate_pixels_per_second_squared * dt, current_speed);
+            const sf::Vector2f velocity_unit_vector = this->velocity_ / current_speed;
+            this->velocity_ -= velocity_unit_vector * brake_reduction;
+            current_speed -= brake_reduction;
         }
 
-        // Step 4: Enforce maximum speed limit
-        if (const float speed_after_brake = this->get_speed();
-            speed_after_brake > this->config_.maximum_movement_pixels_per_second) {
-            const float maximum_speed_scale = this->config_.maximum_movement_pixels_per_second / speed_after_brake;
-            this->velocity_.x *= maximum_speed_scale;
-            this->velocity_.y *= maximum_speed_scale;
+        // Apply handbrake deceleration
+        if (this->is_handbraking_ && current_speed > stopped_speed_threshold) {
+            const float new_speed = current_speed - this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
+            if (new_speed < 0.1f) {
+                this->velocity_ = {0.0f, 0.0f};
+                current_speed = 0.0f;
+            }
+            else {
+                const sf::Vector2f velocity_unit_vector = this->velocity_ / current_speed;
+                this->velocity_ = velocity_unit_vector * new_speed;
+                current_speed = new_speed;
+            }
         }
 
-        // Step 5: Record speed before slip damping
-        const float pre_slip_speed_pixels_per_second = this->get_speed();
+        // Apply passive engine drag when no controls are active
+        if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && current_speed > stopped_speed_threshold) {
+            const float drag = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
+            const float speed_after_drag = std::max(current_speed - drag, 0.0f);
+            const float drag_scale = (current_speed > 0.0f) ? speed_after_drag / current_speed : 0.0f;
+            this->velocity_.x *= drag_scale;
+            this->velocity_.y *= drag_scale;
+            current_speed = speed_after_drag;
+        }
 
-        // Step 6: Apply side slip damping to reduce lateral velocity
-        const float heading_radians = this->sprite_.getRotation().asRadians();
-        const sf::Vector2f forward_unit_vector{std::cos(heading_radians), std::sin(heading_radians)};
-        const float forward_speed_component = forward_unit_vector.x * this->velocity_.x + forward_unit_vector.y * this->velocity_.y;
-        const sf::Vector2f forward_velocity_vector = forward_unit_vector * forward_speed_component;
+        // Cap speed to configured maximum
+        if (current_speed > this->config_.maximum_movement_pixels_per_second) {
+            const float max_speed_scale = this->config_.maximum_movement_pixels_per_second / current_speed;
+            this->velocity_.x *= max_speed_scale;
+            this->velocity_.y *= max_speed_scale;
+            current_speed = this->config_.maximum_movement_pixels_per_second;
+        }
+
+        // Separate velocity into forward and lateral components
+        const float signed_forward_speed = forward_unit_vector.x * this->velocity_.x + forward_unit_vector.y * this->velocity_.y;
+        const sf::Vector2f forward_velocity_vector = forward_unit_vector * signed_forward_speed;
         const sf::Vector2f lateral_velocity_vector = this->velocity_ - forward_velocity_vector;
+
+        // Dampen lateral slip for arcade feel
         const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
         this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
 
-        // Step 7: Center steering wheel if no steering input is active
-        constexpr float steering_angle_epsilon_degrees = 0.1f;
+        // Update steering wheel angle from input
+        if (this->is_steering_left_) {
+            this->steering_wheel_angle_ -= this->config_.steering_turn_rate_degrees_per_second * dt;
+        }
+        if (this->is_steering_right_) {
+            this->steering_wheel_angle_ += this->config_.steering_turn_rate_degrees_per_second * dt;
+        }
+
+        // Auto center steering wheel when no steering input is active
         if (!this->is_steering_left_ && !this->is_steering_right_) {
-            if (pre_slip_speed_pixels_per_second > 0.0f && std::abs(this->steering_wheel_angle_) > steering_angle_epsilon_degrees) {
-                const float centering_rate = this->config_.steering_autocenter_rate_degrees_per_second;
-                const float centering_interp = std::clamp(centering_rate * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
-                this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_interp);
+            if (std::abs(this->steering_wheel_angle_) > steering_autocenter_epsilon_degrees && current_speed > 0.0f) {
+                const float centering_factor = std::clamp(this->config_.steering_autocenter_rate_degrees_per_second * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
+                this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_factor);
             }
             else {
                 this->steering_wheel_angle_ = 0.0f;
             }
         }
 
-        // Step 8: Clamp steering wheel angle to allowed range
+        // Clamp steering wheel angle to physical limits
         this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
 
-        // Step 9: Compute turn factor based on current speed
-        const float speed_ratio = std::clamp(pre_slip_speed_pixels_per_second / this->config_.maximum_movement_pixels_per_second, 0.0f, 1.0f);
-        const float turn_factor_at_current_speed = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
+        // Rotate sprite if moving forward or backward faster than threshold
+        if (std::abs(signed_forward_speed) > minimum_speed_for_rotation) {
+            const float speed_ratio = std::clamp(current_speed / this->config_.maximum_movement_pixels_per_second, 0.0f, 1.0f);
+            const float steering_sensitivity = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
+            const float direction_sign = (signed_forward_speed >= 0.0f) ? 1.0f : -1.0f;
+            // Flip steering when reversing
+            this->sprite_.rotate(sf::degrees(direction_sign * this->steering_wheel_angle_ * steering_sensitivity * dt));
+        }
 
-        // Step 10: Apply rotation from steering and move sprite by velocity
-        this->sprite_.rotate(sf::degrees(this->steering_wheel_angle_ * turn_factor_at_current_speed * dt));
+        // Move sprite according to velocity
         this->sprite_.move(this->velocity_ * dt);
 
-        // Step 11: Detect collision and apply bounce with random jitter
-        const sf::Vector2f current_position = this->sprite_.getPosition();
-        if (!this->track_.is_on_track(current_position)) {
-            // Revert to last valid position
+        // Handle collision with track boundaries
+        if (!this->track_.is_on_track(this->sprite_.getPosition())) {
             this->sprite_.setPosition(this->last_position_);
-            // Reflect and dampen velocity
+            // Restore last legal position
             this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
-
-            // Compute post‐bounce speed
-            if (const float post_bounce_speed = this->get_speed();
-                post_bounce_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
+            current_speed = this->get_speed();
+            // If below minimum speed, stop the car completely to avoid jitter
+            if (current_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
                 this->velocity_ = {0.0f, 0.0f};
             }
+            // Otherwise, bounce it randomly
+            // This is a simple approximation of a bounce, not a real physics simulation; we use a random angle to make the bounce direction unpredictable
+            // TODO: Make the angle scale with speed; low speed = barely any {-max:max} angle, high speed = very high {-max,max} angle
             else {
-                // Apply a small random yaw jitter to the physics velocity
-                const float jitter_degrees = this->collision_jitter_dist_(this->rng_);
-                const float jitter_radians = sf::degrees(jitter_degrees).asRadians();
-                const float jitter_cosine = std::cos(jitter_radians);
-                const float jitter_sine = std::sin(jitter_radians);
-                const sf::Vector2f old_velocity = this->velocity_;
-                this->velocity_.x = old_velocity.x * jitter_cosine - old_velocity.y * jitter_sine;
-                this->velocity_.y = old_velocity.x * jitter_sine + old_velocity.y * jitter_cosine;
-
-                // Also rotate sprite visually by the same jitter
-                this->sprite_.rotate(sf::degrees(jitter_degrees));
+                const float random_jitter_degrees = this->collision_jitter_dist_(this->rng_);
+                const float random_jitter_radians = sf::degrees(random_jitter_degrees).asRadians();
+                const float cosine_jitter = std::cos(random_jitter_radians);
+                const float sine_jitter = std::sin(random_jitter_radians);
+                const sf::Vector2f original_velocity = this->velocity_;
+                this->velocity_.x = original_velocity.x * cosine_jitter - original_velocity.y * sine_jitter;
+                this->velocity_.y = original_velocity.x * sine_jitter + original_velocity.y * cosine_jitter;
+                this->sprite_.rotate(sf::degrees(random_jitter_degrees));
             }
         }
 
-        // Step 12: Reset input flags and store last valid position
+        // Store last legal position for next frame
+        this->last_position_ = this->sprite_.getPosition();
+
+        // Reset control flags for next frame
         this->is_accelerating_ = false;
         this->is_braking_ = false;
-        this->is_handbraking_ = false;
         this->is_steering_left_ = false;
         this->is_steering_right_ = false;
-        this->last_position_ = this->sprite_.getPosition();
+        this->is_handbraking_ = false;
     }
 
     /**
@@ -903,7 +934,39 @@ class BaseCar {
     sf::Vector2f velocity_;
 
     /**
-     * @brief Current steering wheel angle in degrees.
+     * @brief Current gear of the car.
+     *
+     * This is used to determine the car's behavior when gas and brake are pressed.
+     */
+    Gear gear_;
+
+    /**
+     * @brief Set to true via "gas()" to accelerate the car.
+     */
+    bool is_accelerating_;
+
+    /**
+     * @brief Set to true via "brake()" to apply the foot brake.
+     */
+    bool is_braking_;
+
+    /**
+     * @brief Set to true via "steer_left()" to turn the steering wheel left.
+     */
+    bool is_steering_left_;
+
+    /**
+     * @brief Set to true via "steer_right()" to turn the steering wheel right.
+     */
+    bool is_steering_right_;
+
+    /**
+     * @brief Set to true via "handbrake()" to apply the handbrake (emergency brake).
+     */
+    bool is_handbraking_;
+
+    /**
+     * @brief Current steering wheel angle in degrees. This emulates a steering wheel via "steer_left()" and "steer_right()". If they are not called, the steering wheel will return to center over time.
      *
      * Positive values turn the car right, negative values turn it left.
      */
@@ -913,7 +976,7 @@ class BaseCar {
 /**
  * @brief Player-controlled car class.
  *
- * Inherits core physics and rendering from BaseCar, provides a simple interface to set throttle, braking, steering, and handbrake inputs directly from user controls.
+ * Inherits core physics and rendering from BaseCar.
  *
  * On construction, it runs the base class constructor.
  *
@@ -927,29 +990,28 @@ class PlayerCar final : public BaseCar {
     // Ensure compilation fails if BaseCar's destructor ever stops being virtual
     ~PlayerCar() override = default;
 
-    /**
-     * @brief Set the input flags for the car.
-     *
-     * @param gas True to apply throttle; false to release.
-     * @param brake True to apply foot brake; false to release.
-     * @param left True to steer left; false to stop steering left.
-     * @param right True to steer right; false to stop steering right.
-     * @param handbrake True to apply the handbrake; false to release.
-     *
-     * @note Call this once per frame, before "update()", so that the physics engine can process the inputs.
-     */
-    void set_input(const bool gas,
-                   const bool brake,
-                   const bool left,
-                   const bool right,
-                   const bool handbrake)
+    // TODO: Override this to implement switching to reverse when holding for X amount of time
+    // We probably need to store "dt" from "update()" in a member variable to do this?
+    void gas() override
     {
-        this->is_accelerating_ = gas;
-        this->is_braking_ = brake;
-        this->is_steering_left_ = left;
-        this->is_steering_right_ = right;
-        this->is_handbraking_ = handbrake;
+        BaseCar::gas();
+
+        // If below minimum speed and holding the gas for long enough, switch to forward gear
     }
+
+    void brake() override
+    {
+        BaseCar::brake();
+
+        // If below minimum speed and holding the brake for long enough, switch to reverse gear
+    }
+
+  private:
+    // Minimum speed at which we allow the car to switch gears
+    static constexpr float minimum_speed_for_gear_switch = 5.f;
+
+    // Time to wait in seconds before switching to reverse gear, must be holding the gas or brake pedal for that
+    static constexpr float time_to_switch_to_reverse = 0.5f;
 };
 /**
  * @brief AI-controlled car class.
@@ -973,14 +1035,12 @@ class AICar final : public BaseCar {
      *
      * This is useful when rebuilding the track or resetting the game.
      *
-     * @param world_position World coordinates (pixels) to which the car will be moved and reset.
-     *
-     * @note This also resets the current AI waypoint index to 1, skipping the spawn point (index 0) to prevent issues.
+     * @note This uses the internal track reference to get the current spawn point. This also resets the current AI waypoint index to 1, skipping the spawn point (index 0) to prevent issues.
      */
-    void reset(const sf::Vector2f &world_position) override
+    void reset() override
     {
         // Call base class reset to handle sprite and physics
-        BaseCar::reset(world_position);
+        BaseCar::reset();
 
         // Must also reset the current waypoint index, but ignore the spawn point (index 0)
         this->current_waypoint_index_number_ = 1;
@@ -996,10 +1056,10 @@ class AICar final : public BaseCar {
     void update(const float dt) override
     {
         // Define how close the car must be to a waypoint before we mark it "reached"
-        constexpr float waypoint_reach_distance_pixels = 10.0f;
+        static constexpr float waypoint_reach_distance_pixels = 10.0f;
 
         // Define the minimum heading difference (in radians) needed to trigger a steer command
-        constexpr float steering_threshold_radians = 0.02f;
+        static constexpr float steering_threshold_radians = 0.02f;
 
         // 1) Retrieve the list of waypoints from the track
         const auto &waypoints = this->track_.get_waypoints();
@@ -1031,8 +1091,14 @@ class AICar final : public BaseCar {
         const float heading_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
 
         // 10) Decide steering direction based on whether the heading error exceeds threshold
-        this->is_steering_left_ = (heading_difference_radians < -steering_threshold_radians);
-        this->is_steering_right_ = (heading_difference_radians > steering_threshold_radians);
+        bool steering_left = (heading_difference_radians < -steering_threshold_radians);
+        bool steering_right = (heading_difference_radians > steering_threshold_radians);
+        if (steering_left) {
+            this->steer_left();
+        }
+        else if (steering_right) {
+            this->steer_right();
+        }
 
         // 11) Compute current speed magnitude (pixels per second)
         const float current_speed = this->get_speed();
@@ -1053,19 +1119,54 @@ class AICar final : public BaseCar {
         const bool should_prebrake_next = (next_waypoint.type == TrackWaypoint::Type::Corner) && (distance_to_next_waypoint <= required_stopping_distance + 15.0f);
 
         // 16) Apply brake or throttle based on corner logic
-        if (should_brake_current || should_prebrake_next) {
-            this->is_braking_ = true;
-            this->is_accelerating_ = false;
+        bool brake_or_gas = (should_brake_current || should_prebrake_next);
+        if (brake_or_gas) {
+            this->brake();
         }
         else {
-            this->is_accelerating_ = true;
-            this->is_braking_ = false;
+            this->gas();
         }
 
         // 17) If we have reached (or passed) the current waypoint, advance to the next
         if (distance_to_current_waypoint < waypoint_reach_distance_pixels) {
             this->current_waypoint_index_number_ = next_index;
         }
+
+#ifndef NDEBUG  // Debug, remove later
+        // Create bare minimum ImGui window for debugging the current car
+        // This must be before the physics update, because it resets the input flags
+        const ImGuiViewport *vp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 10.0f, vp->WorkPos.y + 10.0f), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImVec2(400.0f, 480.0f), ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.60f);
+        if (ImGui::Begin(
+                "AI Debugging",
+                nullptr,
+                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse |
+                    ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoMove)) {
+            ImGui::TextUnformatted("Physics:");
+            ImGui::BulletText("Speed                       : %.0f px/s", static_cast<double>(this->get_speed()));
+            ImGui::BulletText("Rotation                    : %.0f deg", static_cast<double>(this->sprite_.getRotation().asDegrees()));
+            ImGui::BulletText("Steering Wheel Angle        : %.0f deg", static_cast<double>(this->get_steering_angle()));
+            ImGui::Separator();
+            ImGui::TextUnformatted("Input:");
+            ImGui::BulletText("Accelerating                : %s", brake_or_gas ? "OFF" : "ON");
+            ImGui::BulletText("Braking                     : %s", brake_or_gas ? "ON" : "OFF");
+            ImGui::BulletText("Steering Left               : %s", steering_left ? "ON" : "OFF");
+            ImGui::BulletText("Steering Right              : %s", steering_right ? "ON" : "OFF");
+            ImGui::Separator();
+            ImGui::TextUnformatted("AI:");
+            ImGui::BulletText("Current Waypoint Index      : %zu / %zu", this->current_waypoint_index_number_, waypoints.size());
+            ImGui::BulletText("Current Waypoint Type       : %s", current_waypoint.type == TrackWaypoint::Type::Corner ? "Corner" : "Straight");
+            ImGui::BulletText("Next Waypoint Type          : %s", next_waypoint.type == TrackWaypoint::Type::Corner ? "Corner" : "Straight");
+            ImGui::BulletText("Distance to Current Waypoint: %.0f px", static_cast<double>(distance_to_current_waypoint));
+            ImGui::BulletText("Distance to Next Waypoint   : %.0f px", static_cast<double>(distance_to_next_waypoint));
+            ImGui::BulletText("Stopping Distance Required  : %.0f px", static_cast<double>(required_stopping_distance));
+            ImGui::BulletText("Brake for Current Corner    : %s", should_brake_current ? "YES" : "NO");
+            ImGui::BulletText("Pre-Brake for Next Corner   : %s", should_prebrake_next ? "YES" : "NO");
+        }
+        ImGui::End();
+#endif
 
         // 18) Finally, call the shared physics handler to apply movement, rotation, and collisions
         BaseCar::update(dt);
