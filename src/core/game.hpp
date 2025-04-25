@@ -734,7 +734,7 @@ class BaseCar {
      *
      * @note Call this once per frame, after "update()".
      */
-    void draw(sf::RenderTarget &target) const
+    virtual void draw(sf::RenderTarget &target) const  // TODO: Remove this later virtual after AI is done and doesn't need debug shapes
     {
         target.draw(this->sprite_);
     }
@@ -1048,6 +1048,9 @@ class AICar final : public BaseCar {
         : BaseCar(texture, rng, track, config),
           current_waypoint_index_number_(this->track_.get_finish_waypoint_index() + 1)  // Start at the finish waypoint index + 1
     {
+        // Setup debug shape
+        this->debug_shape_.setFillColor(sf::Color::Green);
+        this->debug_shape_.setOrigin(this->debug_shape_.getLocalBounds().getCenter());
     }
 
     // Ensure compilation fails if BaseCar's destructor ever stops being virtual
@@ -1069,6 +1072,15 @@ class AICar final : public BaseCar {
         this->current_waypoint_index_number_ = this->track_.get_finish_waypoint_index() + 1;
     }
 
+    void draw(sf::RenderTarget &target) const override
+    {
+        // Draw the debug shape
+        target.draw(this->debug_shape_);
+
+        // Draw the base class sprite
+        BaseCar::draw(target);
+    }
+
     /**
      * @brief Update the AI car's steering and throttle/brake decisions based on waypoints over a time interval, then update the car's physics state.
      *
@@ -1078,12 +1090,6 @@ class AICar final : public BaseCar {
      */
     void update(const float dt) override
     {
-        // Define how close the car must be to a waypoint before we mark it "reached"
-        static constexpr float waypoint_reach_distance_pixels = 200.0f;
-
-        // Define the minimum heading difference (in radians) needed to trigger a steer command
-        static constexpr float steering_threshold_radians = 0.02f;
-
         // 1) Retrieve the list of waypoints from the track
         const auto &waypoints = this->track_.get_waypoints();
 
@@ -1097,6 +1103,9 @@ class AICar final : public BaseCar {
         // 4) Get references to the current and next waypoint objects for easy access
         const TrackWaypoint &current_waypoint = waypoints[current_index];
         const TrackWaypoint &next_waypoint = waypoints[next_index];
+
+        // Debug: set position of the debug shape to target waypoint
+        this->debug_shape_.setPosition(current_waypoint.position);
 
         // 5) Read the car’s current position in world pixels
         const sf::Vector2f car_position = this->sprite_.getPosition();
@@ -1115,8 +1124,8 @@ class AICar final : public BaseCar {
         const float heading_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
 
         // 10) Decide steering direction based on whether the heading error exceeds threshold
-        bool steering_left = (heading_difference_radians < -steering_threshold_radians);
-        bool steering_right = (heading_difference_radians > steering_threshold_radians);
+        bool steering_left = (heading_difference_radians < -steering_threshold_radians_);
+        bool steering_right = (heading_difference_radians > steering_threshold_radians_);
         if (steering_left) {
             this->steer_left();
         }
@@ -1152,7 +1161,7 @@ class AICar final : public BaseCar {
         }
 
         // 17) If we have reached (or passed) the current waypoint, advance to the next
-        if (distance_to_current_waypoint < waypoint_reach_distance_pixels) {
+        if (distance_to_current_waypoint < waypoint_reach_distance_pixels_) {
             this->current_waypoint_index_number_ = next_index;
         }
 
@@ -1197,6 +1206,17 @@ class AICar final : public BaseCar {
     }
 
   private:
+    // TODO: Make these scale with track tile size, because smaller tiles = waypoints more close together
+
+    // Define how close the car must be to a waypoint before we mark it "reached"
+    static constexpr float waypoint_reach_distance_pixels_ = 250.0f;
+
+    // Define the minimum heading difference (in radians) needed to trigger a steer command
+    static constexpr float steering_threshold_radians_ = 0.10f;
+
+    // Debug shape for visualization
+    sf::CircleShape debug_shape_{waypoint_reach_distance_pixels_};  // TODO: Remove this later
+
     /**
      * @brief Index of the current target waypoint.
      */
