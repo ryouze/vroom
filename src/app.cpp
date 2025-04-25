@@ -400,7 +400,7 @@ void run()
                     int track_width_int = static_cast<int>(track_config.horizontal_count);
                     int track_height_int = static_cast<int>(track_config.vertical_count);
                     int tile_size_px = static_cast<int>(track_config.size_px);
-                    float detour_chance_float = track_config.detour_chance_pct;
+                    float detour_chance_float = track_config.detour_probability;
                     bool config_changed = false;
                     if (ImGui::SliderInt("Width (tiles)", &track_width_int, 3, 30)) {
                         config_changed = true;

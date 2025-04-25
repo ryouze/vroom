@@ -23,11 +23,11 @@ Track::Track(const Textures &tiles,
       finish_point_(0.f, 0.f),
       finish_waypoint_index_(0)
 {
-    SPDLOG_DEBUG("Creating Track with config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_chance_pct='{}'...",
+    SPDLOG_DEBUG("Creating Track with config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
                  this->config_.horizontal_count,
                  this->config_.vertical_count,
                  this->config_.size_px,
-                 this->config_.detour_chance_pct);
+                 this->config_.detour_probability);
 
     // Build the track on construction
     this->build();
@@ -42,11 +42,11 @@ Track::Track(const Textures &tiles,
 
 void Track::set_config(const TrackConfig &config)
 {
-    // SPDLOG_DEBUG("Setting new config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_chance_pct='{}'...",
+    // SPDLOG_DEBUG("Setting new config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
     //              config.horizontal_count,
     //              config.vertical_count,
     //              config.size_px,
-    //              config.detour_chance_pct);
+    //              config.detour_probability);
     // Rebuild only when necessary
     // if (this->config_ != config) [[likely]] {  // Probably likely if the user is calling this method
     //     SPDLOG_DEBUG("Config changed, rebuilding track...");
@@ -94,11 +94,11 @@ void Track::draw(sf::RenderTarget &target) const
 
 void Track::build()
 {
-    SPDLOG_DEBUG("Starting build with: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_chance_pct='{}'...",
+    SPDLOG_DEBUG("Starting build with: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
                  this->config_.horizontal_count,
                  this->config_.vertical_count,
                  this->config_.size_px,
-                 this->config_.detour_chance_pct);
+                 this->config_.detour_probability);
 
     // Reset everything
     this->sprites_.clear();
@@ -148,11 +148,11 @@ void Track::build()
         // Create a new sprite using the texture
         sf::Sprite &sprite = this->sprites_.emplace_back(texture);  // Emplace, then reference
 
-        // Scale the sprite to the desired size
-        sprite.setScale({scale_factor, scale_factor});
-
         // Set the origin to the center of the sprite, for easier positioning
         sprite.setOrigin(sprite.getLocalBounds().getCenter());
+
+        // Scale the sprite to the desired size
+        sprite.setScale({scale_factor, scale_factor});
 
         // Set the position of the sprite to the provided position
         sprite.setPosition(position);
@@ -186,7 +186,7 @@ void Track::build()
                                        const sf::Texture &bottom_detour,
                                        const sf::Texture &bottom_main) {
         for (std::size_t row = 1; row < this->config_.vertical_count - 1;) {
-            if (detour_dist(this->rng_) < this->config_.detour_chance_pct) {
+            if (detour_dist(this->rng_) < this->config_.detour_probability) {
                 // Determine which bubble heights fit
                 std::vector<std::size_t> viable;
                 for (std::size_t height : bubble_heights) {
@@ -258,7 +258,7 @@ void Track::build()
                                      const sf::Texture &top_detour,
                                      const sf::Texture &top_main) {
         for (std::size_t row = this->config_.vertical_count - 2; row > 0;) {
-            if (detour_dist(this->rng_) < this->config_.detour_chance_pct) {
+            if (detour_dist(this->rng_) < this->config_.detour_probability) {
                 // Determine which bubble heights fit
                 std::vector<std::size_t> viable;
                 for (std::size_t height : bubble_heights) {

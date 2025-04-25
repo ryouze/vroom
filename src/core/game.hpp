@@ -127,9 +127,9 @@ struct TrackConfig final {
      * @note Set to "0.0" for no detours.
      */
 #ifndef NDEBUG  // Debug, remove later
-    float detour_chance_pct = 0.0f;
+    float detour_probability = 0.0f;
 #else
-    float detour_chance_pct = 0.4f;
+    float detour_probability = 0.4f;
 #endif
 
     // /**
