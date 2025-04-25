@@ -157,17 +157,19 @@ void Track::build()
         // Set the position of the sprite to the provided position
         sprite.setPosition(position);
 
+        // If it's the finish line, record its position to be used as a spawn point
+        // This should be true only once throughout the entire track; you cannot have multiple finish points
+        if (is_finish) {
+            this->finish_point_ = position;
+            // Use the waypoint size BEFORE emplacing to get the current index
+            this->finish_waypoint_index_ = this->waypoints_.size();
+        }
+
         // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
         this->waypoints_.emplace_back(TrackWaypoint{position,
                                                     is_corner
                                                         ? TrackWaypoint::Type::Corner
                                                         : TrackWaypoint::Type::Straight});
-
-        // If it's the finish line, record its position to be used as a spawn point
-        // This should be true only once throughout the entire track; you cannot have multiple finish points
-        if (is_finish) {
-            this->finish_point_ = position;
-        }
     };
 
     // Define bubble sizes allowed for detours
@@ -391,21 +393,6 @@ void Track::build()
     // Pre-cache collision bounds for all sprites
     for (const auto &sprite : this->sprites_) {
         this->collision_bounds_.emplace_back(sprite.getGlobalBounds());
-    }
-
-    // Set finish waypoint index based on the finish point's position
-    // TODO: Find a way to do this without iterating over the entire vector, perhaps by setting it somewhere earlier
-    bool found = false;
-    for (std::size_t idx = 0; idx < this->waypoints_.size(); ++idx) {
-        if (this->waypoints_[idx].position == this->finish_point_) {
-            // SPDLOG_DEBUG("Set finish waypoint index to '{}'", idx);
-            this->finish_waypoint_index_ = idx;
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        throw std::runtime_error("Finish waypoint not found in the waypoints vector!");
     }
 
     // Shrink containers
