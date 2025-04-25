@@ -408,7 +408,7 @@ void run()
                     if (ImGui::SliderInt("Height (tiles)", &track_height_int, 3, 30)) {
                         config_changed = true;
                     }
-                    if (ImGui::SliderInt("Size (px)", &tile_size_px, 128, 2048)) {
+                    if (ImGui::SliderInt("Size (px)", &tile_size_px, 256, 2048)) {
                         config_changed = true;
                     }
                     if (ImGui::SliderFloat("Detour Chance (%)", &detour_chance_float, 0.0f, 1.0f)) {
