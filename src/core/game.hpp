@@ -91,7 +91,7 @@ inline constexpr float PX_TO_KPH = 0.1008f;
 }  // namespace units
 
 /**
- * @brief Struct that represents the configurable parameters of the track.
+ * @brief Struct that represents the configurable parameters of the track. Invalid values will be clamped to reasonable defaults.
  *
  * @note This struct is marked as "final" to prevent inheritance.
  */
@@ -295,6 +295,8 @@ class Track final {
      * @brief Set the configuration of the track and rebuild it.
      *
      * @param config New configuration for the track.
+     *
+     * @note No check is performed to see if the new configuration is different from the current one. The calling code is responsible for that.
      */
     void set_config(const TrackConfig &config);
 
@@ -325,7 +327,7 @@ class Track final {
      *
      * @return Finish point's position in world coordinates (e.g., "{100.f, 200.f}").
      */
-    [[nodiscard]] const sf::Vector2f &get_finish_point_position() const;
+    [[nodiscard]] const sf::Vector2f &get_finish_position() const;
 
     /**
      * @brief Get the index of the finish waypoint in the waypoints vector.
@@ -334,7 +336,7 @@ class Track final {
      *
      * @return Finish index of the waypoint in the waypoints vector (e.g., "2").
      */
-    [[nodiscard]] std::size_t get_finish_waypoint_index() const;
+    [[nodiscard]] std::size_t get_finish_index() const;
 
     /**
      * @brief Draw the track on the provided render target.
@@ -358,6 +360,8 @@ class Track final {
      * @brief Build the track using the current configuration and textures.
      *
      * Random detours are added for the left and right edges of the track based on the configuration.
+     *
+     * The finish point and waypoints are also calculated during this process.
      *
      * @note This is marked as private, because we only want to build the track on construction and explicit config changes.
      */
@@ -411,7 +415,7 @@ class Track final {
      *
      * @note This is used for AI navigation - since the first waypoint is not at the finish point (it's at least 1 tile later), we need to know where the finish point is to start the car there, to prevent it from doing an U-turn to the waypoint before the finish point.
      */
-    std::size_t finish_waypoint_index_;
+    std::size_t finish_index_;
 };
 
 /**
@@ -569,7 +573,7 @@ class BaseCar {
           // Private
           rng_(rng),
           collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
-          last_position_(this->track_.get_finish_point_position()),  // Get spawn point from the track
+          last_position_(this->track_.get_finish_position()),  // Get spawn point from the track
           velocity_(0.0f, 0.0f),
           gear_(Gear::Forward),
           is_accelerating_(false),
@@ -601,7 +605,7 @@ class BaseCar {
      */
     virtual void reset()
     {
-        const sf::Vector2f spawn_point = this->track_.get_finish_point_position();
+        const sf::Vector2f spawn_point = this->track_.get_finish_position();
         this->sprite_.setPosition(spawn_point);
         this->sprite_.setRotation(sf::degrees(0.0f));
         this->last_position_ = spawn_point;
@@ -1046,7 +1050,7 @@ class AICar final : public BaseCar {
                    const Track &track,
                    const CarConfig &config = CarConfig())  // Use default config
         : BaseCar(texture, rng, track, config),
-          current_waypoint_index_number_(this->track_.get_finish_waypoint_index() + 1)  // Start at the finish waypoint index + 1
+          current_waypoint_index_number_(this->track_.get_finish_index() + 1)  // Start at the finish waypoint index + 1
     {
         // Setup debug shape
         this->debug_shape_.setFillColor(sf::Color::Green);
@@ -1069,7 +1073,7 @@ class AICar final : public BaseCar {
         BaseCar::reset();
 
         // Must also reset the current waypoint index, but ignore the spawn point (so we add 1)
-        this->current_waypoint_index_number_ = this->track_.get_finish_waypoint_index() + 1;
+        this->current_waypoint_index_number_ = this->track_.get_finish_index() + 1;
     }
 
     void draw(sf::RenderTarget &target) const override

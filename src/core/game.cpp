@@ -21,7 +21,7 @@ Track::Track(const Textures &tiles,
       rng_(rng),
       config_(config),
       finish_point_(0.f, 0.f),
-      finish_waypoint_index_(0)
+      finish_index_(0)
 {
     SPDLOG_DEBUG("Creating Track with config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
                  this->config_.horizontal_count,
@@ -74,15 +74,15 @@ const std::vector<TrackWaypoint> &Track::get_waypoints() const
     return this->waypoints_;
 }
 
-const sf::Vector2f &Track::get_finish_point_position() const
+const sf::Vector2f &Track::get_finish_position() const
 {
     // SPDLOG_DEBUG("Returning finish point at ('{}', '{}') px!", this->finish_point_.x, this->finish_point_.y);
     return this->finish_point_;
 }
 
-std::size_t Track::get_finish_waypoint_index() const
+std::size_t Track::get_finish_index() const
 {
-    return this->finish_waypoint_index_;
+    return this->finish_index_;
 }
 
 void Track::draw(sf::RenderTarget &target) const
@@ -101,8 +101,10 @@ void Track::build()
                  this->config_.detour_probability);
 
     // Defensive sanity check for config, prevents underflow and overflow
+    // We do this here, because if we put it in "set_config()", and the config passed to the constructor is invalid, the checks would not apply
+    // Plus, it's extremely unlikely given the current implementation that the user would pass an invalid config, but if they did, the results would be catastrophic
     constexpr std::size_t min_tile_count = 3;       // Minimum number of tiles in each direction
-    constexpr std::size_t min_size_px = 256;        // Minimum texture size; cars are 71x131 pixels so this eems reasonable
+    constexpr std::size_t min_size_px = 256;        // Minimum texture size; cars are 71x131 pixels so this seems reasonable
     constexpr float min_detour_probability = 0.0f;  // Probability must be in [0.0, 1.0]
     constexpr float max_detour_probability = 1.0f;
     if (this->config_.horizontal_count < min_tile_count) [[unlikely]] {
@@ -130,8 +132,8 @@ void Track::build()
     this->sprites_.clear();
     this->collision_bounds_.clear();
     this->waypoints_.clear();
-    this->finish_point_ = {0.f, 0.f};  // Perhaps not needed
-    this->finish_waypoint_index_ = 0;  // Perhaps not needed
+    this->finish_point_ = {0.f, 0.f};  // Perhaps not needed, but just in case
+    this->finish_index_ = 0;           // Perhaps not needed, but just in case
 
     // Reserve capacity
     const std::size_t base_tile_count =
@@ -172,7 +174,8 @@ void Track::build()
                                 const bool is_corner,
                                 const bool is_finish = false) {
         // Create a new sprite using the texture
-        sf::Sprite &sprite = this->sprites_.emplace_back(texture);  // Emplace, then reference
+        this->sprites_.emplace_back(texture);
+        sf::Sprite &sprite = this->sprites_.back();
 
         // Set the origin to the center of the sprite, for easier positioning
         sprite.setOrigin(sprite.getLocalBounds().getCenter());
@@ -188,7 +191,7 @@ void Track::build()
         if (is_finish) {
             this->finish_point_ = position;
             // Use the waypoint size BEFORE emplacing to get the current index
-            this->finish_waypoint_index_ = this->waypoints_.size();
+            this->finish_index_ = this->waypoints_.size();
         }
 
         // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
@@ -206,7 +209,7 @@ void Track::build()
 
     // Process the edge, walking downward and laying optional detours
     const auto process_edge_down = [&](float main_x,
-                                       float detour_x,
+                                       const float detour_x,
                                        const sf::Texture &top_detour,
                                        const sf::Texture &top_main,
                                        const sf::Texture &bottom_detour,
@@ -278,7 +281,7 @@ void Track::build()
 
     // Process the edge, walking upward and laying optional detours
     const auto process_edge_up = [&](float main_x,
-                                     float detour_x,
+                                     const float detour_x,
                                      const sf::Texture &bottom_detour,
                                      const sf::Texture &bottom_main,
                                      const sf::Texture &top_detour,
