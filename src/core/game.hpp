@@ -285,13 +285,6 @@ class Track final {
                    const TrackConfig &config = TrackConfig());  // Use default config
 
     /**
-     * @brief Set the configuration of the track and rebuild it.
-     *
-     * @param config New configuration for the track.
-     */
-    void set_config(const TrackConfig &config);
-
-    /**
      * @brief Get the current configuration of the track.
      *
      * @return Reference to the current configuration.
@@ -299,13 +292,11 @@ class Track final {
     [[nodiscard]] const TrackConfig &get_config() const;
 
     /**
-     * @brief Get the finish point of the track.
+     * @brief Set the configuration of the track and rebuild it.
      *
-     * This is the position of the finish line tile.
-     *
-     * @return Finish point of the track.
+     * @param config New configuration for the track.
      */
-    [[nodiscard]] const sf::Vector2f &get_finish_point() const;
+    void set_config(const TrackConfig &config);
 
     /**
      * @brief Check if a given world position is within the track.
@@ -326,6 +317,24 @@ class Track final {
      * @return Vector of waypoints on the track - positions and types.
      */
     [[nodiscard]] const std::vector<TrackWaypoint> &get_waypoints() const;
+
+    /**
+     * @brief Get the finish point's position.
+     *
+     * This is the position of the finish line tile, used as a spawn point for cars.
+     *
+     * @return Finish point's position in world coordinates (e.g., "{100.f, 200.f}").
+     */
+    [[nodiscard]] const sf::Vector2f &get_finish_point_position() const;
+
+    /**
+     * @brief Get the index of the finish waypoint in the waypoints vector.
+     *
+     * This is used for AI navigation.
+     *
+     * @return Finish index of the waypoint in the waypoints vector (e.g., "2").
+     */
+    [[nodiscard]] std::size_t get_finish_waypoint_index() const;
 
     /**
      * @brief Draw the track on the provided render target.
@@ -377,13 +386,6 @@ class Track final {
     std::vector<sf::Sprite> sprites_;
 
     /**
-     * @brief Vector of waypoints on the track.
-     *
-     * @note This is used for AI navigation.
-     */
-    std::vector<TrackWaypoint> waypoints_;
-
-    /**
      * @brief Collision bounds for the track, based on the sprites.
      *
      * @note This is used for collision detection.
@@ -391,11 +393,25 @@ class Track final {
     std::vector<sf::FloatRect> collision_bounds_;
 
     /**
+     * @brief Vector of waypoints on the track.
+     *
+     * @note This is used for AI navigation - the car will follow these waypoints sequentially, looping back to the first one after reaching the last.
+     */
+    std::vector<TrackWaypoint> waypoints_;
+
+    /**
      * @brief Finish point of the track.
      *
-     * This is the position of the finish line tile. It can be used as a spawn point for cars.
+     * @note This is the position of the finish line tile. It is used as a spawn point for cars.
      */
     sf::Vector2f finish_point_;
+
+    /**
+     * @brief Index of the finish waypoint in the waypoints vector.
+     *
+     * @note This is used for AI navigation - since the first waypoint is not at the finish point (it's at least 1 tile later), we need to know where the finish point is to start the car there, to prevent it from doing an U-turn to the waypoint before the finish point.
+     */
+    std::size_t finish_waypoint_index_;
 };
 
 /**
@@ -553,7 +569,7 @@ class BaseCar {
           // Private
           rng_(rng),
           collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
-          last_position_(this->track_.get_finish_point()),  // Get spawn point from the track
+          last_position_(this->track_.get_finish_point_position()),  // Get spawn point from the track
           velocity_(0.0f, 0.0f),
           gear_(Gear::Forward),
           is_accelerating_(false),
@@ -585,7 +601,7 @@ class BaseCar {
      */
     virtual void reset()
     {
-        const sf::Vector2f spawn_point = this->track_.get_finish_point();
+        const sf::Vector2f spawn_point = this->track_.get_finish_point_position();
         this->sprite_.setPosition(spawn_point);
         this->sprite_.setRotation(sf::degrees(0.0f));
         this->last_position_ = spawn_point;
@@ -1024,8 +1040,15 @@ class PlayerCar final : public BaseCar {
  */
 class AICar final : public BaseCar {
   public:
-    // Inherit the constructor from BaseCar
-    using BaseCar::BaseCar;
+    // Inherit from BaseCar but also set waypoint index
+    explicit AICar(const sf::Texture &texture,
+                   std::mt19937 &rng,
+                   const Track &track,
+                   const CarConfig &config = CarConfig())  // Use default config
+        : BaseCar(texture, rng, track, config),
+          current_waypoint_index_number_(this->track_.get_finish_waypoint_index() + 1)  // Start at the finish waypoint index + 1
+    {
+    }
 
     // Ensure compilation fails if BaseCar's destructor ever stops being virtual
     ~AICar() override = default;
@@ -1042,8 +1065,8 @@ class AICar final : public BaseCar {
         // Call base class reset to handle sprite and physics
         BaseCar::reset();
 
-        // Must also reset the current waypoint index, but ignore the spawn point (index 0)
-        this->current_waypoint_index_number_ = 1;
+        // Must also reset the current waypoint index, but ignore the spawn point (so we add 1)
+        this->current_waypoint_index_number_ = this->track_.get_finish_waypoint_index() + 1;
     }
 
     /**
@@ -1056,7 +1079,7 @@ class AICar final : public BaseCar {
     void update(const float dt) override
     {
         // Define how close the car must be to a waypoint before we mark it "reached"
-        static constexpr float waypoint_reach_distance_pixels = 10.0f;
+        static constexpr float waypoint_reach_distance_pixels = 200.0f;
 
         // Define the minimum heading difference (in radians) needed to trigger a steer command
         static constexpr float steering_threshold_radians = 0.02f;
@@ -1068,6 +1091,7 @@ class AICar final : public BaseCar {
         const std::size_t current_index = this->current_waypoint_index_number_;
 
         // 3) Compute the index of the next waypoint, wrapping back to 1 when we reach the end
+        // This doesn't have to go back to the finish waypoint index, because we're simply looping over the track
         const std::size_t next_index = (current_index + 1 < waypoints.size()) ? (current_index + 1) : 1;
 
         // 4) Get references to the current and next waypoint objects for easy access
@@ -1175,10 +1199,8 @@ class AICar final : public BaseCar {
   private:
     /**
      * @brief Index of the current target waypoint.
-     *
-     * @note Ensure this is set to 1 on reset to skip the spawn point (index 0).
      */
-    std::size_t current_waypoint_index_number_ = 1;
+    std::size_t current_waypoint_index_number_;
 };
 
 }  // namespace core::game

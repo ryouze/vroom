@@ -19,7 +19,9 @@ Track::Track(const Textures &tiles,
              const TrackConfig &config)
     : tiles_(tiles),
       rng_(rng),
-      config_(config)
+      config_(config),
+      finish_point_(0.f, 0.f),
+      finish_waypoint_index_(0)
 {
     SPDLOG_DEBUG("Creating Track with config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_chance_pct='{}'...",
                  this->config_.horizontal_count,
@@ -31,6 +33,11 @@ Track::Track(const Textures &tiles,
     this->build();
 
     SPDLOG_DEBUG("Track created successfully, exiting constructor!");
+}
+
+[[nodiscard]] const TrackConfig &Track::get_config() const
+{
+    return this->config_;
 }
 
 void Track::set_config(const TrackConfig &config)
@@ -52,17 +59,6 @@ void Track::set_config(const TrackConfig &config)
     // }
 }
 
-[[nodiscard]] const TrackConfig &Track::get_config() const
-{
-    return this->config_;
-}
-
-const sf::Vector2f &Track::get_finish_point() const
-{
-    // SPDLOG_DEBUG("Returning finish point at ('{}', '{}') px!", this->finish_point_.x, this->finish_point_.y);
-    return this->finish_point_;
-}
-
 bool Track::is_on_track(const sf::Vector2f &world_position) const
 {
     for (const auto &bounds : this->collision_bounds_) {
@@ -76,6 +72,17 @@ bool Track::is_on_track(const sf::Vector2f &world_position) const
 const std::vector<TrackWaypoint> &Track::get_waypoints() const
 {
     return this->waypoints_;
+}
+
+const sf::Vector2f &Track::get_finish_point_position() const
+{
+    // SPDLOG_DEBUG("Returning finish point at ('{}', '{}') px!", this->finish_point_.x, this->finish_point_.y);
+    return this->finish_point_;
+}
+
+std::size_t Track::get_finish_waypoint_index() const
+{
+    return this->finish_waypoint_index_;
 }
 
 void Track::draw(sf::RenderTarget &target) const
@@ -93,10 +100,14 @@ void Track::build()
                  this->config_.size_px,
                  this->config_.detour_chance_pct);
 
-    // Reset sprites and reserve capacity
+    // Reset everything
     this->sprites_.clear();
-    this->waypoints_.clear();
     this->collision_bounds_.clear();
+    this->waypoints_.clear();
+    this->finish_point_ = {0.f, 0.f};  // Perhaps not needed
+    this->finish_waypoint_index_ = 0;  // Perhaps not needed
+
+    // Reserve capacity
     const std::size_t base_tile_count =
         4                                           // Corners
         + 2 * (this->config_.horizontal_count - 2)  // Top and bottom edges
@@ -133,7 +144,7 @@ void Track::build()
     const auto place_tile = [&](const sf::Texture &texture,
                                 const sf::Vector2f &position,
                                 const bool is_corner,
-                                const bool finish_point = false) {
+                                const bool is_finish = false) {
         // Create a new sprite using the texture
         sf::Sprite &sprite = this->sprites_.emplace_back(texture);  // Emplace, then reference
 
@@ -147,93 +158,33 @@ void Track::build()
         sprite.setPosition(position);
 
         // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
-        if (is_corner) {
-            this->waypoints_.emplace_back(TrackWaypoint{position, TrackWaypoint::Type::Corner});
-            // SPDLOG_DEBUG("Placed corner waypoint at ('{}', '{}') px!", position.x, position.y);
-        }
-        else {
-            this->waypoints_.emplace_back(TrackWaypoint{position, TrackWaypoint::Type::Straight});
-            // SPDLOG_DEBUG("Placed straight waypoint at ('{}', '{}') px!", position.x, position.y);
-        }
+        this->waypoints_.emplace_back(TrackWaypoint{position,
+                                                    is_corner
+                                                        ? TrackWaypoint::Type::Corner
+                                                        : TrackWaypoint::Type::Straight});
 
         // If it's the finish line, record its position to be used as a spawn point
         // This should be true only once throughout the entire track; you cannot have multiple finish points
-        if (finish_point) {
+        if (is_finish) {
             this->finish_point_ = position;
         }
     };
 
-    // Place the four corner tiles
-    // SPDLOG_DEBUG("Placing corner tiles...");
-    place_tile(this->tiles_.top_left,
-               {top_left_origin.x + half * tile_size, top_left_origin.y + half * tile_size},
-               true);
-    place_tile(this->tiles_.top_right,
-               {top_left_origin.x + total_width - half * tile_size, top_left_origin.y + half * tile_size},
-               true);
-    place_tile(this->tiles_.bottom_right,
-               {top_left_origin.x + total_width - half * tile_size, top_left_origin.y + total_height - half * tile_size},
-               true);
-    place_tile(this->tiles_.bottom_left,
-               {top_left_origin.x + half * tile_size, top_left_origin.y + total_height - half * tile_size},
-               true);
-    // SPDLOG_DEBUG("Corner tiles placed!");
-
-    // Determine which top edge tile becomes the finish line (middle tile excluding corners)
-    const std::size_t finish_tile_idx = 1 + (this->config_.horizontal_count - 2) / 2;
-    // SPDLOG_DEBUG("Finish line tile index will be placed at: index '{}' (out of '{}')!", finish_tile_idx, this->config_.horizontal_count - 2);
-    if (this->config_.horizontal_count % 2 == 0) {
-        SPDLOG_WARN("Horizontal tile count '{}' is even, the finish line will be placed at an uneven, right-of-center, index '{}'!", this->config_.horizontal_count, finish_tile_idx);
-    }
-
-    // Calculate the positions of the top and bottom edges
-    const float top_row_y = top_left_origin.y + half * tile_size;
-    const float bottom_row_y = top_left_origin.y + total_height - half * tile_size;
-
-    // Place the top and bottom edge (straight horizontal line)
-    // SPDLOG_DEBUG("Placing top and bottom edge tiles at: top_row_y='{}' and bottom_row_y='{}'...", top_row_y, bottom_row_y);
-    for (std::size_t x_index = 1; x_index < this->config_.horizontal_count - 1; ++x_index) {
-        const float x = top_left_origin.x + (static_cast<float>(x_index) + half) * tile_size;
-
-        // Place the top edge
-        // If at the middle point, replace the central tile with the finish line texture and set the finish point variable
-        const bool is_finish_line = x_index == finish_tile_idx;
-        place_tile(is_finish_line
-                       ? this->tiles_.horizontal_finish
-                       : this->tiles_.horizontal,
-                   {x, top_row_y},
-                   false,
-                   is_finish_line);
-
-        // Place the bottom edge
-        place_tile(this->tiles_.horizontal,
-                   {x, bottom_row_y},
-                   false);
-    }
-    // SPDLOG_DEBUG("Top and bottom edge tiles placed, now setting up vertical edges...");
-
-    // Bubble sizes allowed for detours
+    // Define bubble sizes allowed for detours
     constexpr std::array<std::size_t, 2> bubble_heights = {3, 4};
 
-    // Distribution for detour chance [0.0, 1.0]
-    std::uniform_real_distribution<float> detour_chance_distribution{0.0f, 1.0f};
+    // Define distribution for detour chance [0.0, 1.0]
+    std::uniform_real_distribution<float> detour_dist{0.0f, 1.0f};
 
-    // Process one vertical edge (main_x is real edge, detour_x is extra column), adding detours as needed
-    const auto process_edge = [&](float main_x,
-                                  float detour_x,
-                                  const sf::Texture &top_detour,
-                                  const sf::Texture &top_main,
-                                  const sf::Texture &bottom_detour,
-                                  const sf::Texture &bottom_main) {
-        // SPDLOG_DEBUG("Processing vertical edge: main_x='{}' detour_x='{}'...", main_x, detour_x);
-
-        // Iterate over the vertical edge, excluding the top and bottom corner tiles
+    // Process the edge, walking downward and laying optional detours
+    const auto process_edge_down = [&](float main_x,
+                                       float detour_x,
+                                       const sf::Texture &top_detour,
+                                       const sf::Texture &top_main,
+                                       const sf::Texture &bottom_detour,
+                                       const sf::Texture &bottom_main) {
         for (std::size_t row = 1; row < this->config_.vertical_count - 1;) {
-            const float roll = detour_chance_distribution(this->rng_);
-            const bool want_detour = roll < this->config_.detour_chance_pct;
-            // SPDLOG_DEBUG("At row '{}': roll='{:.3f}', want_detour='{}'", row, roll, want_detour);
-
-            if (want_detour) {
+            if (detour_dist(this->rng_) < this->config_.detour_chance_pct) {
                 // Determine which bubble heights fit
                 std::vector<std::size_t> viable;
                 for (std::size_t height : bubble_heights) {
@@ -241,53 +192,47 @@ void Track::build()
                         viable.emplace_back(height);
                     }
                 }
-                // SPDLOG_DEBUG("Viable detour heights: '{}'", viable.size());
-
                 if (!viable.empty()) {
                     // Choose a random bubble height
                     // If only one viable height, use it; otherwise pick a random one
                     const std::size_t height = viable.size() == 1
                                                    ? viable.front()
                                                    : viable[std::uniform_int_distribution<std::size_t>(0, viable.size() - 1)(this->rng_)];
-                    // SPDLOG_DEBUG("Chosen detour height: '{}'", height);
-
-                    const float top_row_y_detour = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
-                    const float bottom_row_y_detour = top_row_y_detour + static_cast<float>(height - 1) * tile_size;
+                    const float y_top = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
+                    const float y_bottom = y_top + static_cast<float>(height - 1) * tile_size;
 
                     // Place entry curves
-                    place_tile(top_detour,
-                               {detour_x, top_row_y_detour},
-                               true);
                     place_tile(top_main,
-                               {main_x, top_row_y_detour},
+                               {main_x, y_top},
+                               true);
+                    place_tile(top_detour,
+                               {detour_x, y_top},
                                true);
 
                     // Place straight detour verticals
                     for (std::size_t offset = 1; offset + 1 < height; ++offset) {
-                        const float mid_y = top_row_y_detour + static_cast<float>(offset) * tile_size;
+                        const float y_mid = y_top + static_cast<float>(offset) * tile_size;
                         place_tile(this->tiles_.vertical,
-                                   {detour_x, mid_y},
+                                   {detour_x, y_mid},
                                    false);
-                        // SPDLOG_DEBUG("Placed detour vertical tile at ('{}', '{}')", detour_x, mid_y);
                     }
 
                     // Place the bottom tiles of the detour segment
                     place_tile(bottom_detour,
-                               {detour_x, bottom_row_y_detour},
+                               {detour_x, y_bottom},
                                true);
                     place_tile(bottom_main,
-                               {main_x, bottom_row_y_detour},
+                               {main_x, y_bottom},
                                true);
 
                     // Advance row pointer beyond detour and insert continuity tile
                     // This is a fix for the real edge not having a vertical tile before the next detour
                     row += height;
                     if (row < this->config_.vertical_count - 1) {
-                        const float cont_y = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
+                        const float y_cont = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
                         place_tile(this->tiles_.vertical,
-                                   {main_x, cont_y},
+                                   {main_x, y_cont},
                                    false);
-                        // SPDLOG_DEBUG("Placed continuity vertical tile at ('{}', '{}')", main_x, cont_y);
                         ++row;
                     }
                     continue;
@@ -299,41 +244,171 @@ void Track::build()
             place_tile(this->tiles_.vertical,
                        {main_x, y},
                        false);
-            // SPDLOG_DEBUG("Placed regular vertical tile at ('{}', '{}')", main_x, y);
             ++row;
         }
     };
 
-    // Process the right edge (detours to the right)
-    // SPDLOG_DEBUG("Processing right vertical edge...");
-    const float right_main_x = top_left_origin.x + total_width - half * tile_size;
-    const float right_detour_x = right_main_x + tile_size;
-    process_edge(right_main_x,
-                 right_detour_x,
-                 this->tiles_.top_right,
-                 this->tiles_.bottom_left,
-                 this->tiles_.bottom_right,
-                 this->tiles_.top_left);
+    // Process the edge, walking upward and laying optional detours
+    const auto process_edge_up = [&](float main_x,
+                                     float detour_x,
+                                     const sf::Texture &bottom_detour,
+                                     const sf::Texture &bottom_main,
+                                     const sf::Texture &top_detour,
+                                     const sf::Texture &top_main) {
+        for (std::size_t row = this->config_.vertical_count - 2; row > 0;) {
+            if (detour_dist(this->rng_) < this->config_.detour_chance_pct) {
+                // Determine which bubble heights fit
+                std::vector<std::size_t> viable;
+                for (std::size_t height : bubble_heights) {
+                    if (row >= height) {
+                        viable.emplace_back(height);
+                    }
+                }
+                if (!viable.empty()) {
+                    // Choose a random bubble height
+                    // If only one viable height, use it; otherwise pick a random one
+                    const std::size_t height = viable.size() == 1
+                                                   ? viable.front()
+                                                   : viable[std::uniform_int_distribution<std::size_t>(0, viable.size() - 1)(this->rng_)];
+                    const float y_bottom = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
+                    const float y_top = y_bottom - static_cast<float>(height - 1) * tile_size;
 
-    // Process the left edge (detours to the left)
-    // SPDLOG_DEBUG("Processing left vertical edge...");
+                    // Place entry curves
+                    place_tile(bottom_main,
+                               {main_x, y_bottom},
+                               true);
+                    place_tile(bottom_detour,
+                               {detour_x, y_bottom},
+                               true);
+
+                    // Place straight detour verticals
+                    for (std::size_t off = 1; off + 1 < height; ++off) {
+                        const float y_mid = y_bottom - static_cast<float>(off) * tile_size;
+                        place_tile(this->tiles_.vertical,
+                                   {detour_x, y_mid},
+                                   false);
+                    }
+
+                    // Place the bottom tiles of the detour segment
+                    place_tile(top_detour,
+                               {detour_x, y_top},
+                               true);
+                    place_tile(top_main,
+                               {main_x, y_top},
+                               true);
+
+                    // Advance row pointer beyond detour and insert continuity tile
+                    // This is a fix for the real edge not having a vertical tile before the next detour
+                    row -= height;
+                    if (row > 0) {
+                        const float y_cont = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
+                        place_tile(this->tiles_.vertical,
+                                   {main_x, y_cont},
+                                   false);
+                        --row;
+                    }
+                    continue;
+                }
+            }
+
+            // No detour: plain vertical
+            const float y = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
+            place_tile(this->tiles_.vertical,
+                       {main_x, y},
+                       false);
+            --row;
+        }
+    };
+
+    // Pre compute positions
+    const float top_row_y = top_left_origin.y + half * tile_size;
+    const float bottom_row_y = top_left_origin.y + total_height - half * tile_size;
     const float left_main_x = top_left_origin.x + half * tile_size;
+    const float right_main_x = top_left_origin.x + total_width - half * tile_size;
     const float left_detour_x = left_main_x - tile_size;
-    process_edge(left_main_x,
-                 left_detour_x,
-                 this->tiles_.top_left,
-                 this->tiles_.bottom_right,
-                 this->tiles_.bottom_left,
-                 this->tiles_.top_right);
+    const float right_detour_x = right_main_x + tile_size;
+
+    // Place top left corner
+    place_tile(this->tiles_.top_left,
+               {left_main_x, top_row_y},
+               true);
+
+    // Place top edge left to right
+    const std::size_t finish_idx = 1 + (this->config_.horizontal_count - 2) / 2;
+    if (this->config_.horizontal_count % 2 == 0) {
+        SPDLOG_WARN("Horizontal tile count '{}' is even, the finish line will be placed at an uneven, right-of-center, index '{}'!", this->config_.horizontal_count, finish_idx);
+    }
+    for (std::size_t x_index = 1; x_index < this->config_.horizontal_count - 1; ++x_index) {
+        const float x = top_left_origin.x + (static_cast<float>(x_index) + half) * tile_size;
+        const bool is_finish = x_index == finish_idx;
+        place_tile(is_finish
+                       ? this->tiles_.horizontal_finish
+                       : this->tiles_.horizontal,
+                   {x, top_row_y},
+                   false,
+                   is_finish);
+    }
+
+    // Place top right corner
+    place_tile(this->tiles_.top_right,
+               {right_main_x, top_row_y},
+               true);
+
+    // Place right edge downward
+    process_edge_down(right_main_x,
+                      right_detour_x,
+                      this->tiles_.top_right,
+                      this->tiles_.bottom_left,
+                      this->tiles_.bottom_right,
+                      this->tiles_.top_left);
+
+    // Place bottom right corner
+    place_tile(this->tiles_.bottom_right,
+               {right_main_x, bottom_row_y},
+               true);
+
+    // Place bottom edge right to left
+    for (std::size_t x_index = this->config_.horizontal_count - 2; x_index > 0; --x_index) {
+        const float x = top_left_origin.x + (static_cast<float>(x_index) + half) * tile_size;
+        place_tile(this->tiles_.horizontal,
+                   {x, bottom_row_y},
+                   false);
+    }
+
+    // Place bottom left corner
+    place_tile(this->tiles_.bottom_left,
+               {left_main_x, bottom_row_y},
+               true);
+
+    // Place left edge upward
+    process_edge_up(left_main_x,
+                    left_detour_x,
+                    this->tiles_.bottom_left,
+                    this->tiles_.top_right,
+                    this->tiles_.top_left,
+                    this->tiles_.bottom_right);
 
     // Pre-cache collision bounds for all sprites
-    // SPDLOG_DEBUG("Pre-caching collision bounds for all sprites...");
     for (const auto &sprite : this->sprites_) {
         this->collision_bounds_.emplace_back(sprite.getGlobalBounds());
     }
-    // SPDLOG_DEBUG("Collision bounds cached!");
 
-    // Fit storage to the actual sprite count
+    // Set finish waypoint index based on the finish point's position
+    // TODO: Find a way to do this without iterating over the entire vector, perhaps by setting it somewhere earlier
+    bool found = false;
+    for (std::size_t idx = 0; idx < this->waypoints_.size(); ++idx) {
+        if (this->waypoints_[idx].position == this->finish_point_) {
+            // SPDLOG_DEBUG("Set finish waypoint index to '{}'", idx);
+            this->finish_waypoint_index_ = idx;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        throw std::runtime_error("Finish waypoint not found in the waypoints vector!");
+    }
+
+    // Shrink containers
     this->sprites_.shrink_to_fit();
     this->waypoints_.shrink_to_fit();
     this->collision_bounds_.shrink_to_fit();
