@@ -19,7 +19,7 @@ Track::Track(const Textures &tiles,
              const TrackConfig &config)
     : tiles_(tiles),
       rng_(rng),
-      config_(config),
+      config_(this->validate_config(config)),
       finish_point_(0.f, 0.f),
       finish_index_(0)
 {
@@ -50,7 +50,7 @@ void Track::set_config(const TrackConfig &config)
     // Rebuild only when necessary
     // if (this->config_ != config) [[likely]] {  // Probably likely if the user is calling this method
     //     SPDLOG_DEBUG("Config changed, rebuilding track...");
-    this->config_ = config;
+    this->config_ = this->validate_config(config);
     this->build();
     //     SPDLOG_DEBUG("Track rebuilt successfully!");
     // }
@@ -92,6 +92,49 @@ void Track::draw(sf::RenderTarget &target) const
     }
 }
 
+TrackConfig Track::validate_config(const TrackConfig &config) const
+{
+    SPDLOG_DEBUG("Validating track config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
+                 config.horizontal_count,
+                 config.vertical_count,
+                 config.size_px,
+                 config.detour_probability);
+
+    // Create a copy of the config, will be modified
+    TrackConfig validated_config = config;
+
+    // Define minimum and maximum allowable values
+    constexpr std::size_t min_tile_count = 3;       // Minimum number of tiles in each direction
+    constexpr std::size_t min_size_px = 256;        // Minimum texture size; cars are 71x131 pixels so this seems reasonable
+    constexpr float min_detour_probability = 0.0f;  // Probability must be in [0.0, 1.0]
+    constexpr float max_detour_probability = 1.0f;
+
+    // Check and clamp values; all are marked as [[unlikely]] because they should not happen in normal operation, this is defensive programming
+    if (validated_config.horizontal_count < min_tile_count) [[unlikely]] {
+        SPDLOG_WARN("horizontal_count '{}' is too small; using '{}'", validated_config.horizontal_count, min_tile_count);
+        validated_config.horizontal_count = min_tile_count;
+    }
+    if (validated_config.vertical_count < min_tile_count) [[unlikely]] {
+        SPDLOG_WARN("vertical_count '{}' is too small; using '{}'", validated_config.vertical_count, min_tile_count);
+        validated_config.vertical_count = min_tile_count;
+    }
+    if (validated_config.size_px < min_size_px) [[unlikely]] {
+        SPDLOG_WARN("size_px '{}' is too small; using '{}'", validated_config.size_px, min_size_px);
+        validated_config.size_px = min_size_px;
+    }
+    if (validated_config.detour_probability < min_detour_probability) [[unlikely]] {
+        SPDLOG_WARN("detour_probability '{}' is below '0'; clamping to '0'", validated_config.detour_probability);
+        validated_config.detour_probability = min_detour_probability;
+    }
+    else if (validated_config.detour_probability > max_detour_probability) [[unlikely]] {
+        SPDLOG_WARN("detour_probability '{}' exceeds '1'; clamping to '1'", validated_config.detour_probability);
+        validated_config.detour_probability = max_detour_probability;
+    }
+
+    SPDLOG_DEBUG("Config validated, now returning it!");
+    return validated_config;
+}
+
 void Track::build()
 {
     SPDLOG_DEBUG("Starting build with: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
@@ -99,34 +142,6 @@ void Track::build()
                  this->config_.vertical_count,
                  this->config_.size_px,
                  this->config_.detour_probability);
-
-    // Defensive sanity check for config, prevents underflow and overflow
-    // We do this here, because if we put it in "set_config()", and the config passed to the constructor is invalid, the checks would not apply
-    // Plus, it's extremely unlikely given the current implementation that the user would pass an invalid config, but if they did, the results would be catastrophic
-    constexpr std::size_t min_tile_count = 3;       // Minimum number of tiles in each direction
-    constexpr std::size_t min_size_px = 256;        // Minimum texture size; cars are 71x131 pixels so this seems reasonable
-    constexpr float min_detour_probability = 0.0f;  // Probability must be in [0.0, 1.0]
-    constexpr float max_detour_probability = 1.0f;
-    if (this->config_.horizontal_count < min_tile_count) [[unlikely]] {
-        SPDLOG_WARN("horizontal_count '{}' is too small; using '{}'", this->config_.horizontal_count, min_tile_count);
-        this->config_.horizontal_count = min_tile_count;
-    }
-    if (this->config_.vertical_count < min_tile_count) [[unlikely]] {
-        SPDLOG_WARN("vertical_count '{}' is too small; using '{}'", this->config_.vertical_count, min_tile_count);
-        this->config_.vertical_count = min_tile_count;
-    }
-    if (this->config_.size_px < min_size_px) [[unlikely]] {
-        SPDLOG_WARN("size_px '{}' is too small; using '{}'", this->config_.size_px, min_size_px);
-        this->config_.size_px = min_size_px;
-    }
-    if (this->config_.detour_probability < min_detour_probability) [[unlikely]] {
-        SPDLOG_WARN("detour_probability '{}' is below '0'; clamping to '0'", this->config_.detour_probability);
-        this->config_.detour_probability = min_detour_probability;
-    }
-    else if (this->config_.detour_probability > max_detour_probability) [[unlikely]] {
-        SPDLOG_WARN("detour_probability '{}' exceeds '1'; clamping to '1'", this->config_.detour_probability);
-        this->config_.detour_probability = max_detour_probability;
-    }
 
     // Reset everything
     this->sprites_.clear();

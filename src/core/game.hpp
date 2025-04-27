@@ -357,6 +357,17 @@ class Track final {
 
   private:
     /**
+     * @brief Return the provided configuration, but with values clamped to reasonable defaults.
+     *
+     * This is a defensive sanity check that prevents underflow, overflow, and other catastrophic failures.
+     *
+     * @param config Configuration to validate.
+     *
+     * @return Validated configuration, with values such as minimum tile count clamped to reasonable defaults.
+     */
+    [[nodiscard]] TrackConfig validate_config(const TrackConfig &config) const;
+
+    /**
      * @brief Build the track using the current configuration and textures.
      *
      * Random detours are added for the left and right edges of the track based on the configuration.
