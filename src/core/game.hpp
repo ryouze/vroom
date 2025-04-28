@@ -1050,7 +1050,7 @@ class AICar final : public BaseCar {
           current_waypoint_index_number_(this->track_.get_finish_index() + 1)  // Start at the finish waypoint index + 1
     {
         // Setup debug shape
-        this->debug_shape_.setFillColor(sf::Color::Green);
+        this->debug_shape_.setFillColor({255, 0, 0, 64});  // 25% opacity red
         this->debug_shape_.setOrigin(this->debug_shape_.getLocalBounds().getCenter());
     }
 
