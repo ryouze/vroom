@@ -338,176 +338,144 @@ void run()
             // Since no drawing for the cars and track is done here, only the background color remains
             ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
             ImGui::SetNextWindowSize({500.f, 550.f}, ImGuiCond_FirstUseEver);
-            ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-            ImGui::Spacing();
-
-            // Horizontal layout: Resume and Exit Game buttons
-            {
-                constexpr float resume_button_width = 140.0f;
-                constexpr float button_spacing = 10.0f;
-                const float content_width = ImGui::GetContentRegionAvail().x;
-                const float total_buttons_width = (resume_button_width * 2.0f) + button_spacing;
-                const float indent = (content_width - total_buttons_width) * 0.5f;
-                ImGui::Indent(indent);
-                if (ImGui::Button("Play", {resume_button_width, 0.0f})) {
-                    current_state = GameState::Playing;
-                }
-                ImGui::SameLine(0.0f, button_spacing);
-                if (ImGui::Button("Exit", {resume_button_width, 0.0f})) {
-                    window.close();
-                }
-                ImGui::Unindent(indent);
-            }
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            if (ImGui::BeginTabBar("Tabs")) {
-                if (ImGui::BeginTabItem("Game")) {
-                    ImGui::PushItemWidth(150.f);
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Hacks:");
-                    if (ImGui::Button("Reset All")) {
-                        reset_cars();
-                        // Change to playing for instant visual feedback
+            if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
+                ImGui::Spacing();
+                {
+                    constexpr float resume_button_width = 140.f;
+                    constexpr float button_spacing = 10.f;
+                    const float available_width = ImGui::GetContentRegionAvail().x;
+                    const float buttons_total_width = (resume_button_width * 2.f) + button_spacing;
+                    const float indent_amount = (available_width - buttons_total_width) * 0.5f;
+                    ImGui::Indent(indent_amount);
+                    if (ImGui::Button("Resume", {resume_button_width, 0.f}))
                         current_state = GameState::Playing;
-                    }
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Track:");
-                    const core::game::TrackConfig &track_config = race_track.get_config();
-                    int track_width_int = static_cast<int>(track_config.horizontal_count);
-                    int track_height_int = static_cast<int>(track_config.vertical_count);
-                    int tile_size_px = static_cast<int>(track_config.size_px);
-                    float detour_chance_float = track_config.detour_probability;
-                    bool config_changed = false;
-                    if (ImGui::SliderInt("Width (tiles)", &track_width_int, 3, 30)) {
-                        config_changed = true;
-                    }
-                    if (ImGui::SliderInt("Height (tiles)", &track_height_int, 3, 30)) {
-                        config_changed = true;
-                    }
-                    if (ImGui::SliderInt("Size (px)", &tile_size_px, 256, 2048)) {
-                        config_changed = true;
-                    }
-                    if (ImGui::SliderFloat("Detour Chance (%)", &detour_chance_float, 0.0f, 1.0f)) {
-                        detour_chance_float = std::clamp(detour_chance_float, 0.0f, 1.0f);
-                        config_changed = true;
-                    }
-                    if (config_changed) {
-                        const core::game::TrackConfig new_config{static_cast<std::size_t>(track_width_int), static_cast<std::size_t>(track_height_int), static_cast<std::size_t>(tile_size_px), detour_chance_float};  // Rebuild
-                        // Reset all cars to the new track spawn point
-                        race_track.set_config(new_config);
-                        reset_cars();
-                    }
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Camera:");
-                    ImGui::SliderFloat("Zoom (x)", &camera_zoom_factor, 1.f, 15.f, "%.2f");
-                    ImGui::PopItemWidth();
-                    ImGui::EndTabItem();
+                    ImGui::SameLine(0.f, button_spacing);
+                    if (ImGui::Button("Quit to Desktop", {resume_button_width, 0.f}))
+                        window.close();
+                    ImGui::Unindent(indent_amount);
                 }
-
-                if (ImGui::BeginTabItem("Graphics")) {
-                    ImGui::PushItemWidth(150.f);
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Window Info:");
-                    ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
-                    ImGui::BulletText("Anti-Aliasing: %d", window_settings.antiAliasingLevel);
-                    ImGui::BulletText("OpenGL Version: %d.%d", window_settings.majorVersion, window_settings.minorVersion);
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                    // TODO: Turn this into "Fullscreen" toggle, instead of "Windowed" toggle, to imply that Fullscreen is the default
-                    if (ImGui::Checkbox("Windowed", &is_windowed)) {
-                        window.set_fullscreen(!is_windowed);
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                if (ImGui::BeginTabBar("settings_tabs")) {
+                    if (ImGui::BeginTabItem("Game")) {
+                        ImGui::PushItemWidth(150.f);
+                        ImGui::TextUnformatted("Hacks:");
+                        if (ImGui::Button("Reset Everything")) {
+                            reset_cars();
+                            // Change to playing for instant visual feedback
+                            current_state = GameState::Playing;
+                        }
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Spacing();
+                        ImGui::TextUnformatted("Track Layout");
+                        const core::game::TrackConfig &track_config = race_track.get_config();
+                        int track_width_tiles = static_cast<int>(track_config.horizontal_count);
+                        int track_height_tiles = static_cast<int>(track_config.vertical_count);
+                        int tile_size_pixels = static_cast<int>(track_config.size_px);
+                        float detour_probability = track_config.detour_probability;
+                        bool track_config_changed = false;
+                        track_config_changed |= ImGui::SliderInt("Width", &track_width_tiles, 3, 30, "%d tiles");
+                        track_config_changed |= ImGui::SliderInt("Height", &track_height_tiles, 3, 30, "%d tiles");
+                        track_config_changed |= ImGui::SliderInt("Tile Size", &tile_size_pixels, 256, 2048, "%d px");
+                        // Technicaly this isn't a percentage, because we go from 0.f to 1.f, but this code will be removed later, and I don't care
+                        if (ImGui::SliderFloat("Shortcut Chance", &detour_probability, 0.0f, 1.0f, "%.2f")) {
+                            detour_probability = std::clamp(detour_probability, 0.0f, 1.0f);
+                            track_config_changed = true;
+                        }
+                        if (track_config_changed) {
+                            const core::game::TrackConfig new_config{static_cast<std::size_t>(track_width_tiles), static_cast<std::size_t>(track_height_tiles), static_cast<std::size_t>(tile_size_pixels), detour_probability};  // Rebuild
+                            // Reset all cars to the new track spawn point
+                            race_track.set_config(new_config);
+                            reset_cars();
+                        }
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Spacing();
+                        ImGui::TextUnformatted("Camera");
+                        ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.2fx");
+                        ImGui::Combo("Active Car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
+                        ImGui::PopItemWidth();
+                        ImGui::EndTabItem();
                     }
-
-                    // TODO: This doesn't actualy seem to change the resolution, fix this!
-                    ImGui::BeginDisabled(is_windowed);
-                    std::string res_lbl = std::to_string(fullscreen_modes[static_cast<std::size_t>(resolution_index)].size.x) + "x" + std::to_string(fullscreen_modes[static_cast<std::size_t>(resolution_index)].size.y);
-                    if (ImGui::BeginCombo("Resolution", res_lbl.c_str())) {
-                        for (int i = 0; i < static_cast<int>(fullscreen_modes.size()); ++i) {
-                            std::string lab = std::to_string(fullscreen_modes[static_cast<std::size_t>(i)].size.x) + "x" + std::to_string(fullscreen_modes[static_cast<std::size_t>(i)].size.y);
-                            if (ImGui::Selectable(lab.c_str(), i == resolution_index)) {
-                                resolution_index = i;
-                                if (!is_windowed)
-                                    window.set_fullscreen(true, fullscreen_modes[static_cast<std::size_t>(resolution_index)]);
+                    if (ImGui::BeginTabItem("Graphics")) {
+                        ImGui::PushItemWidth(150.f);
+                        ImGui::TextUnformatted("Renderer");
+                        ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
+                        ImGui::BulletText("Anti-Aliasing: %dx", window_settings.antiAliasingLevel);
+                        ImGui::BulletText("OpenGL: %d.%d", window_settings.majorVersion, window_settings.minorVersion);
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Spacing();
+                        ImGui::TextUnformatted("Display Mode");
+                        // TODO: Turn this into "Fullscreen" toggle, instead of "Windowed" toggle, to imply that Fullscreen is the default
+                        if (ImGui::Checkbox("Windowed", &is_windowed)) {
+                            window.set_fullscreen(!is_windowed);
+                        }
+                        // TODO: This doesn't actualy seem to change the resolution, fix this!
+                        ImGui::BeginDisabled(is_windowed);
+                        const auto &current_mode = fullscreen_modes[static_cast<std::size_t>(resolution_index)];
+                        const std::string resolution_label = std::to_string(current_mode.size.x) + "x" + std::to_string(current_mode.size.y);
+                        if (ImGui::BeginCombo("Resolution", resolution_label.c_str())) {
+                            for (int i = 0; i < static_cast<int>(fullscreen_modes.size()); ++i) {
+                                const auto &mode = fullscreen_modes[static_cast<std::size_t>(i)];
+                                std::string label = std::to_string(mode.size.x) + "x" + std::to_string(mode.size.y);
+                                if (ImGui::Selectable(label.c_str(), i == resolution_index)) {
+                                    resolution_index = i;
+                                    if (!is_windowed)
+                                        window.set_fullscreen(true, fullscreen_modes[static_cast<std::size_t>(resolution_index)]);
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+                        ImGui::EndDisabled();
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Spacing();
+                        ImGui::TextUnformatted("Frame Rate");
+                        if (ImGui::Checkbox("V-sync", &is_vsync_enabled)) {
+                            if (is_vsync_enabled) {
+                                window.set_vsync(true);
+                            }
+                            else {
+                                window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
                             }
                         }
-                        ImGui::EndCombo();
-                    }
-                    ImGui::EndDisabled();
-                    if (ImGui::Checkbox("V-sync", &is_vsync_enabled)) {
-                        if (is_vsync_enabled)
-                            window.set_vsync(true);
-                        else
+                        ImGui::BeginDisabled(is_vsync_enabled);
+                        if (ImGui::Combo("FPS Limit", &fps_index, fps_labels.data(), static_cast<int>(fps_labels.size())))
                             window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                        ImGui::EndDisabled();
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Spacing();
+                        ImGui::TextUnformatted("Overlay");
+                        ImGui::Checkbox("FPS Counter", &fps_counter.enabled);
+                        ImGui::Checkbox("Minimap", &minimap.enabled);
+                        ImGui::BeginDisabled(!minimap.enabled);
+                        ImGui::SliderFloat("Minimap Refresh", &minimap.refresh_interval, 0.f, 1.f, "%.2fs");
+                        ImGui::EndDisabled();
+                        ImGui::Checkbox("Speedometer", &speedometer.enabled);
+                        ImGui::PopItemWidth();
+                        ImGui::EndTabItem();
                     }
-                    ImGui::BeginDisabled(is_vsync_enabled);
-                    int tmp = fps_index;
-                    if (ImGui::Combo("FPS Limit", &tmp, fps_labels.data(), static_cast<int>(fps_labels.size()))) {
-                        fps_index = tmp;
-                        window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                    if (ImGui::BeginTabItem("System")) {
+                        ImGui::BulletText("Version: %s", generated::PROJECT_VERSION);
+                        ImGui::BulletText("Build Configuration: %s", generated::BUILD_CONFIGURATION);
+                        ImGui::BulletText("Compiler: %s", generated::COMPILER_INFO);
+                        ImGui::BulletText("C++ Standard: %ld", generated::CPP_STANDARD);
+                        ImGui::BulletText("Build Shared Libs: %s", generated::BUILD_SHARED_LIBS);
+                        ImGui::BulletText("Strip Symbols: %s", generated::STRIP_ENABLED);
+                        ImGui::BulletText("Link-time Optimization: %s", generated::LTO_ENABLED);
+                        ImGui::BulletText("Build Date: %s", generated::BUILD_DATE);
+                        ImGui::BulletText("Build Time: %s", generated::BUILD_TIME);
+                        ImGui::BulletText("Operating System: %s (%s)", generated::OPERATING_SYSTEM, generated::ARCHITECTURE);
+                        ImGui::EndTabItem();
                     }
-                    ImGui::EndDisabled();
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                    ImGui::TextUnformatted("Toggles:");
-                    ImGui::Checkbox("Show Minimap", &minimap.enabled);
-                    ImGui::Checkbox("Show Speedometer", &speedometer.enabled);
-                    ImGui::Checkbox("Show FPS Counter", &fps_counter.enabled);
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Minimap:");
-                    ImGui::SliderFloat(" Refresh Rate (s)", &minimap.refresh_interval, 0.0f, 1.0f, "%.2f");
-                    ImGui::PopItemWidth();
-                    ImGui::EndTabItem();
+                    ImGui::EndTabBar();
                 }
-
-                if (ImGui::BeginTabItem("Cars")) {
-                    ImGui::PushItemWidth(150.f);
-                    ImGui::TextUnformatted("Select Car:");
-                    ImGui::Combo("##car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Car Info:");
-                    const sf::Vector2f position_for_display = selected_vehicle_pointer->get_position();
-                    const sf::Vector2f velocity_for_display = selected_vehicle_pointer->get_velocity();
-                    ImGui::BulletText(
-                        "Position: (%.1f, %.1f)",
-                        static_cast<double>(position_for_display.x),
-                        static_cast<double>(position_for_display.y));
-                    ImGui::BulletText(
-                        "Velocity: (%.1f, %.1f)",
-                        static_cast<double>(velocity_for_display.x),
-                        static_cast<double>(velocity_for_display.y));
-                    ImGui::PopItemWidth();
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("System")) {
-                    ImGui::Spacing();
-                    ImGui::TextUnformatted("Build Info:");
-                    ImGui::BulletText("Project Version: %s", generated::PROJECT_VERSION);
-                    ImGui::BulletText("Build Configuration: %s", generated::BUILD_CONFIGURATION);
-                    ImGui::BulletText("Compiler: %s", generated::COMPILER_INFO);
-                    ImGui::BulletText("C++ Standard: %ld", generated::CPP_STANDARD);
-                    ImGui::BulletText("Build Shared Libs: %s", generated::BUILD_SHARED_LIBS);
-                    ImGui::BulletText("Strip Enabled: %s", generated::STRIP_ENABLED);
-                    ImGui::BulletText("LTO Enabled: %s", generated::LTO_ENABLED);
-                    ImGui::BulletText("Build Date: %s", generated::BUILD_DATE);
-                    ImGui::BulletText("Build Time: %s", generated::BUILD_TIME);
-                    ImGui::BulletText("Operating System: %s (%s)",
-                                      generated::OPERATING_SYSTEM,
-                                      generated::ARCHITECTURE);
-                    ImGui::EndTabItem();
-                }
-                ImGui::EndTabBar();
+                ImGui::End();
             }
-            ImGui::End();
         }
     };
 

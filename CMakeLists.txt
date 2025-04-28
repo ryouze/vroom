@@ -113,9 +113,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND ENABLE_STRIP)
     # macOS
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
       COMMAND strip -x $<TARGET_FILE:${PROJECT_NAME}>
-      COMMENT "Stripping local symbols for Release builds on macOS."
+      COMMENT "Stripping symbols for Release builds on macOS."
     )
-    message(STATUS "Stripping local symbols for Release builds on macOS.")
+    message(STATUS "Stripping symbols for Release builds on macOS.")
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # GNU/Linux
     target_link_options(${PROJECT_NAME} PRIVATE -s)
