@@ -207,7 +207,7 @@ void run()
     const std::vector<sf::VideoMode> fullscreen_modes = sf::VideoMode::getFullscreenModes();
     int resolution_index = 0;
     bool is_windowed = !window.is_fullscreen();
-    bool is_vsync_enabled = window.is_vsync();
+    bool is_vsync_enabled = window.is_vsync_enabled();
 
     // FPS limit options
     static constexpr std::array<unsigned, 9> fps_values = {30, 60, 90, 120, 144, 165, 240, 360, 0};
@@ -443,15 +443,15 @@ void run()
                     ImGui::EndDisabled();
                     if (ImGui::Checkbox("V-sync", &is_vsync_enabled)) {
                         if (is_vsync_enabled)
-                            window.set_vertical_sync(true);
+                            window.set_vsync(true);
                         else
-                            window.set_frame_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                            window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
                     }
                     ImGui::BeginDisabled(is_vsync_enabled);
                     int tmp = fps_index;
                     if (ImGui::Combo("FPS Limit", &tmp, fps_labels.data(), static_cast<int>(fps_labels.size()))) {
                         fps_index = tmp;
-                        window.set_frame_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                        window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
                     }
                     ImGui::EndDisabled();
                     ImGui::Spacing();

@@ -22,8 +22,10 @@ struct WindowConfig {
     sf::Vector2u windowed_resolution = {1280, 720};
     std::string title = std::format("{} ({})", generated::PROJECT_NAME, generated::PROJECT_VERSION);
     unsigned frame_limit = 144;  // 0 == uncapped
-    bool vertical_sync = false;
+    bool vsync = false;
     bool start_fullscreen = true;
+    unsigned anti_aliasing_level = 8;
+    // TODO: Allow user to change anti-aliasing level
 };
 
 class Window {
@@ -38,10 +40,11 @@ class Window {
     ~Window() = default;
 
     // TODO: Move this to .cpp once the API is stable
-    [[nodiscard]] bool is_fullscreen() const { return this->is_fullscreen_; }
-    [[nodiscard]] bool is_vsync() const { return this->config_.vertical_sync; }
+    [[nodiscard]] bool is_fullscreen() const { return this->fullscreen_; }
+    [[nodiscard]] bool is_vsync_enabled() const { return this->config_.vsync; }
     [[nodiscard]] const sf::ContextSettings &get_settings() const { return this->window_.getSettings(); }
     [[nodiscard]] sf::RenderWindow &raw() { return this->window_; }
+    [[nodiscard]] const sf::RenderWindow &raw() const { return this->window_; }
     [[nodiscard]] sf::Vector2u get_size() const { return this->window_.getSize(); }
 
     void request_focus() { this->window_.requestFocus(); }
@@ -52,16 +55,14 @@ class Window {
     void display() { this->window_.display(); }
     void close() { this->window_.close(); }
 
-    // Full-screen or windowed
     void set_fullscreen(const bool enable,
-                        const sf::VideoMode &mode = sf::VideoMode::getDesktopMode());
+                        const sf::VideoMode &video_mode = sf::VideoMode::getDesktopMode());
 
-    void set_windowed_resolution(const sf::Vector2u &res);
+    // void set_windowed_resolution(const sf::Vector2u &resolution);
 
     // FPS or V-sync (exclusive)
-    void set_frame_limit(const unsigned fps_limit);  // 0 == uncapped
-
-    void set_vertical_sync(const bool enable);
+    void set_fps_limit(const unsigned fps_limit);  // 0 == uncapped
+    void set_vsync(const bool enable);
 
     // Main-loop helper
     void run(const event_callback_type &on_event,
@@ -77,14 +78,12 @@ class Window {
   private:
     void create_window(const sf::VideoMode &mode,
                        const sf::State state);
-
     void recreate_window(const sf::VideoMode &mode,
                          const sf::State state);
-
     void apply_sync_settings();
 
     WindowConfig config_;
-    bool is_fullscreen_;
+    bool fullscreen_;
     sf::RenderWindow window_;
 };
 
