@@ -7,6 +7,9 @@
 
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
+#ifndef NDEBUG  // Debug, remove later
+#include <imgui.h>
+#endif
 
 #include "backend.hpp"
 
@@ -84,6 +87,31 @@ void Window::run(const event_callback_type &on_event,
         constexpr float dt_max = 0.1f;
         const float dt = std::clamp(clock.restart().asSeconds(), dt_min, dt_max);
         on_update(dt);
+
+#ifndef NDEBUG  // Debug, remove later
+        const ImGuiViewport *vp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x, vp->WorkPos.y), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImVec2(320.0f, 360.0f), ImGuiCond_Always);
+        if (ImGui::Begin("Window Debugging", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground)) {
+            ImGui::TextUnformatted("Config:");
+            ImGui::BulletText(".minimum_size: %dx%d", this->config_.minimum_size.x, this->config_.minimum_size.y);
+            ImGui::BulletText(".windowed_resolution: %dx%d", this->config_.windowed_resolution.x, this->config_.windowed_resolution.y);
+            ImGui::BulletText(".title: %s", this->config_.title.c_str());
+            ImGui::BulletText(".frame_limit: %u", this->config_.frame_limit);
+            ImGui::BulletText(".vsync: %s", this->config_.vsync ? "true" : "false");
+            ImGui::BulletText(".start_fullscreen: %s", this->config_.start_fullscreen ? "true" : "false");
+            ImGui::BulletText(".anti_aliasing_level: %u", this->config_.anti_aliasing_level);
+            ImGui::TextUnformatted("Member Variables:");
+            ImGui::BulletText("this->fullscreen_: %s", this->fullscreen_ ? "true" : "false");
+            const auto window_settings = this->window_.getSettings();
+            const auto window_size_u = this->window_.getSize();
+            ImGui::TextUnformatted("SFML:");
+            ImGui::BulletText("Current Resolution: %dx%d", window_size_u.x, window_size_u.y);
+            ImGui::BulletText("Current Anti-Aliasing Level: %d", window_settings.antiAliasingLevel);
+            ImGui::BulletText("Current OpenGL Version: %d.%d", window_settings.majorVersion, window_settings.minorVersion);
+        }
+        ImGui::End();
+#endif
         on_render(this->window_, dt);
     }
 }
