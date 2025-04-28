@@ -34,15 +34,11 @@ namespace assets::textures {
  * @brief Class that loads and manages embedded SFML textures.
  *
  * On construction, the class loads a set of textures from memory and stores them for later retrieval.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class TextureManager final {
   public:
     /**
      * @brief Parameter struct for a single embedded texture. Holds pointer to the texture data and its size.
-     *
-     * @note This struct is marked as "final" to prevent inheritance.
      */
     struct EmbeddedTexture final {
         /**

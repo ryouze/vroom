@@ -19,8 +19,6 @@ namespace core::ui {
  *
  * On construction, the class initializes the ImGui-SFML context with the specified SFML window, disables INI file saving, and applies the Moonlight theme.
  * On destruction, it automatically shuts down ImGui-SFML.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class ImGuiContext final {
   public:
@@ -132,8 +130,6 @@ enum class Corner {
  * @brief Class that computes and displays the current frames per second (FPS) in an ImGui overlay.
  *
  * On construction, the pivot point will be calculated based on the corner provided.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class FpsCounter final {
   public:
@@ -224,8 +220,6 @@ class FpsCounter final {
  * @brief Class that displays the current car speed in an ImGui overlay.
  *
  * On construction, the pivot point and padding offset will be calculated based on the corner provided.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class Speedometer final {
   public:
@@ -298,8 +292,6 @@ class Speedometer final {
  * @brief Class that displays the minimap in an ImGui overlay.
  *
  * The minimap renders the supplied scene into an internal texture at a configurable refresh rate and draws that texture inside an ImGui window.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class Minimap final {
   public:

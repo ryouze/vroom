@@ -92,8 +92,6 @@ inline constexpr float PX_TO_KPH = 0.1008f;
 
 /**
  * @brief Struct that represents the configurable parameters of the track. Invalid values will be clamped to reasonable defaults.
- *
- * @note This struct is marked as "final" to prevent inheritance.
  */
 struct TrackConfig final {
     /**
@@ -122,11 +120,11 @@ struct TrackConfig final {
     std::size_t size_px = 512;
 
     /**
-     * @brief Chance for a detour to occur [0.0, 1.0] for detours (e.g., "0.1" for 10%).
+     * @brief Probability in the range [0.0, 1.0] that a detour bubble will be generated on each vertical edge segment.
      *
-     * @note Set to "0.0" for no detours.
+     * @note A value of 0.0 disables detours entirely; 1.0 maximizes detour frequency.
      */
-#ifndef NDEBUG  // Debug, remove later
+#ifndef NDEBUG
     float detour_probability = 0.0f;
 #else
     float detour_probability = 0.4f;
@@ -143,43 +141,39 @@ struct TrackConfig final {
 };
 
 /**
- * @brief Struct that represents a waypoint on the track, i.e., position and type.
- *
- * @note This struct is marked as "final" to prevent inheritance.
+ * @brief Struct that represents a single waypoint on the track, including its position and driving type behavior.
  */
 struct TrackWaypoint final {
     /**
-     * @brief Enum that represents the type of a waypoint.
+     * @brief Enum that represents the driving type of the waypoint.
      */
-    enum class Type {
+    enum class DrivingType {
         /**
-         * @brief Straight line. Can go fast.
+         * @brief Straight-line waypoint; vehicles can maintain full speed.
          */
         Straight,
 
         /**
-         * @brief Corner. Need to slow down, preferably before the corner.
+         * @brief Corner waypoint; vehicles should slow down, preferably before the corner.
          */
         Corner
     };
 
     /**
-     * @brief Position of the waypoint (e.g., "{100.f, 200.f}").
+     * @brief World-space coordinates of the waypoint center (e.g., "{100.f, 200.f}").
      */
     sf::Vector2f position;
 
     /**
-     * @brief Type of the waypoint (e.g., "Straight" or "Corner").
+     * @brief Driving type of the waypoint (e.g., "Straight" or "Corner").
      */
-    Type type;
+    DrivingType type;
 };
 
 /**
- * @brief Class that manages the race track, including its textures, configuration, positioning, and rendering.
+ * @brief Class that manages procedural generation, validation, and rendering of a race track.
  *
- * On construction, the class builds the track using the provided textures and config.
- *
- * @note This class is marked as "final" to prevent inheritance.
+ * On construction or configuration change, this class builds the complete track layout from provided tile textures and configuration parameters, which can be drawn to a render target.
  */
 class Track final {
   public:
@@ -188,8 +182,6 @@ class Track final {
      *
      * The caller is responsible for ensuring that these textures remain valid for the lifetime of the "Track" instance.
      * It is assumed that all textures are square and of the same size (e.g., 256x256) for uniform scaling.
-     *
-     * @note This struct is marked as "final" to prevent inheritance.
      */
     struct Textures final {
         /**
@@ -274,72 +266,74 @@ class Track final {
     /**
      * @brief Construct a new Track object.
      *
-     * On construction, the track is built using the provided textures and config.
+     * On construction, the track is built using the provided textures and config, with the config's invalid values clamped upon construction to prevent underflow, overflow, or other catastrophic errors.
      *
      * @param tiles Tiles struct containing the textures. It is assumed that all textures are square (e.g., 256x256) for uniform scaling. The caller is responsible for ensuring that these textures remain valid for the lifetime of the Track.
      * @param rng Instance of a random number generator (e.g., std::mt19937) used for generating random detours.
-     * @param config Configuration struct containing the track configuration (default: "TrackConfig()").
+     * @param config Configuration struct containing the track configuration (invalid values will be clamped) (default: "TrackConfig()").
      */
     explicit Track(const Textures &tiles,
                    std::mt19937 &rng,
                    const TrackConfig &config = TrackConfig());  // Use default config
 
     /**
-     * @brief Get the current configuration of the track.
+     * @brief Get the current validated track configuration.
      *
-     * @return Reference to the current configuration.
+     * @return Const reference to the current configuration.
      */
     [[nodiscard]] const TrackConfig &get_config() const;
 
     /**
-     * @brief Set the configuration of the track and rebuild it.
+     * @brief Set the configuration (invalid values will be clamped), then rebuild the track.
      *
-     * @param config New configuration for the track.
-     *
-     * @note No check is performed to see if the new configuration is different from the current one. The calling code is responsible for that.
+     * @param config New configuration for the track; invalid values are clamped during validation.
      */
     void set_config(const TrackConfig &config);
 
     /**
-     * @brief Check if a given world position is within the track.
+     * @brief Check whether a given world-space point lies within any track tile boundary.
      *
-     * This is a simple check that treats every tile as a rectangle, regardless of its actual shape.
+     * * This is a simple check that treats every tile as a rectangle, regardless of its actual shape. So it's technically possible to go outside the curves.
      *
-     * @param world_position Position in world coordinates to check.
+     * @param world_position Coordinates in world space to test.
      *
-     * @return True if the position is on the track, false otherwise.
+     * @return True if the point is inside any tile collision bounds; false otherwise.
      */
     [[nodiscard]] bool is_on_track(const sf::Vector2f &world_position) const;
 
     /**
-     * @brief Get the waypoints on the track.
+     * @brief Get the ordered sequence of waypoints.
      *
-     * This is used for AI navigation.
+     * This is used for AI navigation around the track by following the waypoints sequentially.
      *
-     * @return Vector of waypoints on the track - positions and types.
+     * @return Const reference to the vector of TrackWaypoint instances defining the racing line.
      */
     [[nodiscard]] const std::vector<TrackWaypoint> &get_waypoints() const;
 
     /**
-     * @brief Get the finish point's position.
+     * @brief Get the world-space position of the finish line spawn point.
      *
      * This is the position of the finish line tile, used as a spawn point for cars.
      *
-     * @return Finish point's position in world coordinates (e.g., "{100.f, 200.f}").
+     * @return Coordinates of the finish-line tile center.
      */
     [[nodiscard]] const sf::Vector2f &get_finish_position() const;
 
+    // TODO: Make it so that the first waypoint (index=0) is always the finish line, instead of requiting the "get_finish_index()" method
+
     /**
-     * @brief Get the index of the finish waypoint in the waypoints vector.
+     * @brief Get the index of the finish-line waypoint in the ordered waypoint sequence (vector).
      *
-     * This is used for AI navigation.
+     * @return Zero-based index into the waypoint vector corresponding to the finish point.
      *
-     * @return Finish index of the waypoint in the waypoints vector (e.g., "2").
+     * @note This ensures that the AI cars don't immediately U-turn to the waypoint before the finish line.
+     *
+     * @details TODO: Find a way to get rid of this and set the "waypoints_[0]" to the finish point.
      */
     [[nodiscard]] std::size_t get_finish_index() const;
 
     /**
-     * @brief Draw the track on the provided render target.
+     * @brief Draw all track tile sprites onto the provided render target.
      *
      * @param target Target window where the track will be drawn.
      *
@@ -357,82 +351,78 @@ class Track final {
 
   private:
     /**
-     * @brief Return the provided configuration, but with values clamped to reasonable defaults.
+     * @brief Return a copy of the configuration with invalid values clamped to safe values.
      *
-     * This is a defensive sanity check that prevents underflow, overflow, and other catastrophic failures.
+     * @param config Configuration for the track, possibly containing invalid values.
      *
-     * @param config Configuration to validate.
+     * @return Copy of the configuration with ubvakud values clamped to safe values (e.g., "horizontal_count" and "vertical_count" must be at least "3" or higher).
      *
-     * @return Validated configuration, with values such as minimum tile count clamped to reasonable defaults.
+     * @note Always use this during construction or configuration changes to prevent catastrophic errors.
      */
     [[nodiscard]] TrackConfig validate_config(const TrackConfig &config) const;
 
     /**
-     * @brief Build the track using the current configuration and textures.
+     * @brief Build the track layout using on current configuration and textures.
      *
-     * Random detours are added for the left and right edges of the track based on the configuration.
+     * This fills in the sprite array, collision bounds, waypoint sequence, and finish-line data.
      *
-     * The finish point and waypoints are also calculated during this process.
+     * Random detour bubbles are inserted on vertical edges according to detour probability, whereas the horizontal edges are always straight.
      *
      * @note This is marked as private, because we only want to build the track on construction and explicit config changes.
      */
     void build();
 
     /**
-     * @brief Lightweight struct holding references to texture tiles.
+     * @brief References to tile textures used for building the track.
      */
     const Textures &tiles_;
 
     /**
-     * @brief Random number generator.
+     * @brief Random number generator used for making the track layout more interesting/unpredictable.
      */
     std::mt19937 &rng_;
 
     /**
-     * @brief Configuration of the track.
+     * @brief Current validated track configuration.
      */
     TrackConfig config_;
 
     /**
-     * @brief Vector of sprites representing the track tiles.
+     * @brief Collection of sprite objects for each tile in the track layout.
      *
-     * @note These are the actual objects displayed on screen.
+     * @note This should be drawn every frame to display the track on the screen.
      */
     std::vector<sf::Sprite> sprites_;
 
     /**
-     * @brief Collision bounds for the track, based on the sprites.
+     * @brief Axis-aligned bounding rectangles used for collision detection against each sprite.
      *
-     * @note This is used for collision detection.
+     * @note This ensures that we don't need to call "getGlobalBounds()" on each sprite every time we want to check for collisions.
      */
     std::vector<sf::FloatRect> collision_bounds_;
 
     /**
-     * @brief Vector of waypoints on the track.
-     *
-     * @note This is used for AI navigation - the car will follow these waypoints sequentially, looping back to the first one after reaching the last.
+     * @brief Ordered sequence of waypoints defining the AI navigation path around the track.
      */
     std::vector<TrackWaypoint> waypoints_;
 
     /**
-     * @brief Finish point of the track.
-     *
-     * @note This is the position of the finish line tile. It is used as a spawn point for cars.
+     * @brief Center position of the finish-line sprite, used as a spawn point for vehicles.
      */
     sf::Vector2f finish_point_;
 
     /**
-     * @brief Index of the finish waypoint in the waypoints vector.
+     * @brief Index of the finish-line waypoint within the waypoint vector.
      *
      * @note This is used for AI navigation - since the first waypoint is not at the finish point (it's at least 1 tile later), we need to know where the finish point is to start the car there, to prevent it from doing an U-turn to the waypoint before the finish point.
+     *
+     * @details TODO: Find a way to get rid of this and set the "waypoints_[0]" to the finish point.
      */
     std::size_t finish_index_;
 };
 
 /**
  * @brief Struct that represents the configurable parameters of the car.
- *
- * @note This struct is marked as "final" to prevent inheritance.
  */
 struct CarConfig final {
     /**
@@ -1010,8 +1000,6 @@ class BaseCar {
  * Inherits core physics and rendering from BaseCar.
  *
  * On construction, it runs the base class constructor.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class PlayerCar final : public BaseCar {
   public:
@@ -1050,8 +1038,6 @@ class PlayerCar final : public BaseCar {
  * Inherits core physics and rendering from BaseCar, implements waypoint‑following logic to drive around the track.
  *
  * On construction, it runs the base class constructor.
- *
- * @note This class is marked as "final" to prevent inheritance.
  */
 class AICar final : public BaseCar {
   public:
@@ -1160,11 +1146,11 @@ class AICar final : public BaseCar {
 
         // 14) Determine if we should brake for the current corner
         // True if current waypoint is a corner and we are within stopping distance + small margin
-        const bool should_brake_current = (current_waypoint.type == TrackWaypoint::Type::Corner) && (distance_to_current_waypoint <= required_stopping_distance + 5.0f);
+        const bool should_brake_current = (current_waypoint.type == TrackWaypoint::DrivingType::Corner) && (distance_to_current_waypoint <= required_stopping_distance + 5.0f);
 
         // 15) Determine if we should pre‑brake for the next corner
         // True if next waypoint is a corner and we are within stopping distance + larger margin
-        const bool should_prebrake_next = (next_waypoint.type == TrackWaypoint::Type::Corner) && (distance_to_next_waypoint <= required_stopping_distance + 15.0f);
+        const bool should_prebrake_next = (next_waypoint.type == TrackWaypoint::DrivingType::Corner) && (distance_to_next_waypoint <= required_stopping_distance + 15.0f);
 
         // 16) Apply brake or throttle based on corner logic
         bool brake_or_gas = (should_brake_current || should_prebrake_next);
@@ -1205,8 +1191,8 @@ class AICar final : public BaseCar {
             ImGui::Separator();
             ImGui::TextUnformatted("AI:");
             ImGui::BulletText("Current Waypoint Index      : %zu / %zu", this->current_waypoint_index_number_, waypoints.size());
-            ImGui::BulletText("Current Waypoint Type       : %s", current_waypoint.type == TrackWaypoint::Type::Corner ? "Corner" : "Straight");
-            ImGui::BulletText("Next Waypoint Type          : %s", next_waypoint.type == TrackWaypoint::Type::Corner ? "Corner" : "Straight");
+            ImGui::BulletText("Current Waypoint Type       : %s", current_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
+            ImGui::BulletText("Next Waypoint Type          : %s", next_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
             ImGui::BulletText("Distance to Current Waypoint: %.0f px", static_cast<double>(distance_to_current_waypoint));
             ImGui::BulletText("Distance to Next Waypoint   : %.0f px", static_cast<double>(distance_to_next_waypoint));
             ImGui::BulletText("Stopping Distance Required  : %.0f px", static_cast<double>(required_stopping_distance));

@@ -212,8 +212,8 @@ void Track::build()
         // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
         this->waypoints_.emplace_back(TrackWaypoint{position,
                                                     is_corner
-                                                        ? TrackWaypoint::Type::Corner
-                                                        : TrackWaypoint::Type::Straight});
+                                                        ? TrackWaypoint::DrivingType::Corner
+                                                        : TrackWaypoint::DrivingType::Straight});
     };
 
     // Define bubble sizes allowed for detours

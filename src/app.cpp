@@ -129,7 +129,7 @@ void run()
             imgui_position.x -= text_size.x * 0.5f;
             imgui_position.y -= text_size.y * 0.5f;
 
-            foreground_draw_list->AddText(imgui_position, current_waypoint.type == core::game::TrackWaypoint::Type::Corner ? IM_COL32(255, 0, 0, 255) : IM_COL32(0, 0, 255, 255), label.c_str());
+            foreground_draw_list->AddText(imgui_position, current_waypoint.type == core::game::TrackWaypoint::DrivingType::Corner ? IM_COL32(255, 0, 0, 255) : IM_COL32(0, 0, 255, 255), label.c_str());
         }
     };
 
