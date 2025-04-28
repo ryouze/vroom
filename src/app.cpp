@@ -4,14 +4,10 @@
 
 #include <algorithm>  // for std::clamp, std::max
 #include <array>      // for std::array
-#include <cmath>      // for std::hypot
 #include <cstddef>    // for std::size_t
 #include <format>     // for std::format
-#include <limits>     // for std::numeric_limits
-#include <memory>     // for std::unique_ptr
-#include <optional>   // for std::optional
 #include <random>     // for std::random_device, std::mt19937
-#include <string>     // for std::string
+#include <string>     // for std::string. std::to_string
 #include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>
@@ -53,12 +49,13 @@ void run()
     GameState current_state = GameState::Menu;
 
     // Create SFML window with sane defaults and ImGui GUI
-    std::unique_ptr<sf::RenderWindow> window = core::backend::create_window();  // Default: 800p, 144 FPS limit
-    core::ui::ImGuiContext imgui_context{*window};                              // RAII context with theme and no INI file
+    core::backend::Window window;                        // Fullscreen, 144 FPS limit
+    core::ui::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
 
     // Get window size, update during game loop
-    sf::Vector2u window_size_u = window->getSize();
+    sf::Vector2u window_size_u = window.get_size();
     sf::Vector2f window_size_f = core::misc::to_vector2f(window_size_u);
+    // TODO: Add move "to_vector2f" to backend
 
     // Create a configuration object to load and save settings
     // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
@@ -114,22 +111,21 @@ void run()
 
     // Draw waypoints
     const auto draw_waypoints = [&window, &camera_view, &waypoints]() {
-        ImDrawList *const foreground_draw_list = ImGui::GetForegroundDrawList();
-
+        ImDrawList *foreground_draw_list = ImGui::GetForegroundDrawList();
         for (std::size_t idx = 0; idx < waypoints.size(); ++idx) {
-            const core::game::TrackWaypoint &current_waypoint = waypoints[idx];
+            const core::game::TrackWaypoint &waypoint = waypoints[idx];
 
             // World to screen
-            const sf::Vector2i pixel_position = window->mapCoordsToPixel(current_waypoint.position, camera_view);
+            const sf::Vector2i pixel_position = window.raw().mapCoordsToPixel(waypoint.position, camera_view);
             ImVec2 imgui_position = {static_cast<float>(pixel_position.x), static_cast<float>(pixel_position.y)};
-            const std::string label = std::format("Waypoint {}\n({}, {})", idx, current_waypoint.position.x, current_waypoint.position.y);
+            const std::string label = std::format("Waypoint {}\n({}, {})", idx, waypoint.position.x, waypoint.position.y);
             const ImVec2 text_size = ImGui::CalcTextSize(label.c_str());
 
             // Center on waypoint
             imgui_position.x -= text_size.x * 0.5f;
             imgui_position.y -= text_size.y * 0.5f;
 
-            foreground_draw_list->AddText(imgui_position, current_waypoint.type == core::game::TrackWaypoint::DrivingType::Corner ? IM_COL32(255, 0, 0, 255) : IM_COL32(0, 0, 255, 255), label.c_str());
+            foreground_draw_list->AddText(imgui_position, waypoint.type == core::game::TrackWaypoint::DrivingType::Corner ? IM_COL32(255, 0, 0, 255) : IM_COL32(0, 0, 255, 255), label.c_str());
         }
     };
 
@@ -193,9 +189,8 @@ void run()
         }
     };
 
-    // Frame clock and window settings
-    sf::Clock clock;
-    const sf::ContextSettings &window_settings = window->getSettings();
+    // Window settings
+    const sf::ContextSettings &window_settings = window.get_settings();
 
     // List of vehicles
     const std::array<core::game::BaseCar *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
@@ -208,9 +203,17 @@ void run()
     int selected_vehicle_index = 0;
 #endif
 
+    // Guntime graphics options
+    const std::vector<sf::VideoMode> fullscreen_modes = sf::VideoMode::getFullscreenModes();
+    int resolution_index = 0;
+    bool is_windowed = !window.is_fullscreen();
+    bool is_vsync_enabled = window.is_vsync();
+
     // FPS limit options
-    static constexpr std::array<unsigned int, 9> fps_limit_array = {30, 60, 90, 120, 144, 165, 240, 360, 0};
-    static constexpr std::array<const char *, 9> fps_option_string_array = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
+    static constexpr std::array<unsigned, 9> fps_values = {30, 60, 90, 120, 144, 165, 240, 360, 0};
+    static constexpr std::array<const char *, 9> fps_labels = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
+    int fps_index = 4;  // 144
+    // TODO: Make the spawned window use the fps index, so we don't need to set it in backend
 
     // Function to draw the game entities (race track and cars) in the window and minimap
     const auto draw_game_entities = [&race_track, &player_car, &ai_cars](sf::RenderTarget &rt) {
@@ -222,47 +225,40 @@ void run()
     };
 
     // Widgets
-    core::ui::Minimap minimap{*window, window_colors.game, draw_game_entities};  // Minimap in the top-right corner
-    core::ui::FpsCounter fps_counter{*window};                                   // FPS counter in the top-left corner
-    core::ui::Speedometer speedometer{*window};                                  // Speedometer in the bottom-right corner
+    core::ui::Minimap minimap{window.raw(), window_colors.game, draw_game_entities};  // Minimap in the top-right corner
+    core::ui::FpsCounter fps_counter{window.raw()};                                   // FPS counter in the top-left corner
+    core::ui::Speedometer speedometer{window.raw()};                                  // Speedometer in the bottom-right corner
 
-    window->requestFocus();  // Ask OS to switch to this window
+    const auto on_event = [&](const sf::Event &event) {
+        // Let ImGui handle the event
+        imgui_context.process_event(event);
 
-    // Main loop
-    while (window->isOpen()) {
-        while (const std::optional event = window->pollEvent()) {
-            // Let ImGui handle the event
-            imgui_context.process_event(*event);
-
-            // Window was closed
-            if (event->is<sf::Event::Closed>()) [[unlikely]] {
-                window->close();
-            }
-
-            // Note: we no longer need this, because we set the view size and zoom on every frame
-            // // Window was resized
-            // else if (event->is<sf::Event::Resized>()) [[unlikely]] {
-            //     // macOS fullscreen fix: query the actual size after resizing
-            //     camera_view.setSize(core::misc::to_vector2f(window->getSize()));
-            //     camera_view.zoom(camera_zoom_factor);
-            // }
-
-            else if (const auto *pressed = event->getIf<sf::Event::KeyPressed>())
-                onKeyPressed(*pressed);
-            else if (const auto *released = event->getIf<sf::Event::KeyReleased>())
-                onKeyReleased(*released);
+        // Window was closed
+        if (event.is<sf::Event::Closed>()) [[unlikely]] {
+            window.close();
         }
 
-        // Prevent extreme dt values at below 10 FPS by clamping between 0.001 and 0.1 seconds
-        constexpr float min_delta_time = std::numeric_limits<float>::epsilon();
-        constexpr float max_delta_time = 0.1f;
-        const float delta_time = std::clamp(clock.restart().asSeconds(), min_delta_time, max_delta_time);
+        // Note: we no longer need this, because we set the view size and zoom on every frame
+        // // Window was resized
+        // else if (event.is<sf::Event::Resized>()) [[unlikely]] {
+        //     // macOS fullscreen fix: query the actual size after resizing
+        //     camera_view.setSize(core::misc::to_vector2f(window->getSize()));
+        //     camera_view.zoom(camera_zoom_factor);
+        // }
 
-        imgui_context.update(delta_time);
-        fps_counter.update_and_draw(delta_time);
+        else if (const auto *pressed = event.getIf<sf::Event::KeyPressed>())
+            onKeyPressed(*pressed);
+        else if (const auto *released = event.getIf<sf::Event::KeyReleased>())
+            onKeyReleased(*released);
+    };
+
+    const auto on_update = [&](const float dt) {
+        imgui_context.update(dt);
+        // TODO: Split "update_and_draw" UI abstractions into separate "update" and "draw" methods so they better fit the current "on_update" "on_render" paradigm
+        fps_counter.update_and_draw(dt);
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
-        window_size_u = window->getSize();
+        window_size_u = window.get_size();
         window_size_f = core::misc::to_vector2f(window_size_u);
 
         // Currently selected vehicle
@@ -271,41 +267,32 @@ void run()
         // Handle each GameState
         // Menu state
         if (current_state == GameState::Menu) [[unlikely]] {
-            window->clear(window_colors.menu);
-
             // Center at screen midpoint, but give a fixed width (200px) and auto-height on first use
             ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-            ImGui::SetNextWindowSize({200.0f, 0.0f}, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize({200.f, 0.f}, ImGuiCond_FirstUseEver);
 
             // No AlwaysAutoResize, so width stays at200px
             ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
             ImGui::Spacing();
-            {
-                const std::string welcome_message = std::format("{} {}", generated::PROJECT_NAME, generated::PROJECT_VERSION);
-                ImGui::TextUnformatted(welcome_message.c_str());
-            }
+            ImGui::TextUnformatted(std::format("{} {}", generated::PROJECT_NAME, generated::PROJECT_VERSION).c_str());
             ImGui::Separator();
             ImGui::Spacing();
 
             // Buttons are centered within the fixed window width
-            {
-                constexpr float button_width = 150.0f;
-                const float content_width = ImGui::GetContentRegionAvail().x;
-                const float indent = std::max(0.0f, (content_width - button_width) * 0.5f);
-                ImGui::Indent(indent);
-                if (ImGui::Button("Play", {button_width, 0.0f})) {
-                    current_state = GameState::Playing;
-                }
-                if (ImGui::Button("Settings", {button_width, 0.0f})) {
-                    current_state = GameState::Paused;
-                }
-                if (ImGui::Button("Exit", {button_width, 0.0f})) {
-                    window->close();
-                }
-
-                ImGui::Unindent(indent);
+            constexpr float button_width = 150.f;
+            const float content_width = ImGui::GetContentRegionAvail().x;
+            const float indent = std::max(0.f, (content_width - button_width) * 0.5f);
+            ImGui::Indent(indent);
+            if (ImGui::Button("Play", {button_width, 0})) {
+                current_state = GameState::Playing;
             }
-            ImGui::Spacing();
+            if (ImGui::Button("Settings", {button_width, 0})) {
+                current_state = GameState::Paused;
+            }
+            if (ImGui::Button("Exit", {button_width, 0})) {
+                window.close();
+            }
+            ImGui::Unindent(indent);
             ImGui::End();
         }
 
@@ -326,15 +313,14 @@ void run()
             if (key_states.handbrake) {
                 player_car.handbrake();
             }
-            player_car.update(delta_time);
+            player_car.update(dt);
 #ifndef NDEBUG  // Debug, remove later
-            ai_cars[0].update(delta_time);
+            ai_cars[0].update(dt);
 #else
             for (auto &ai : ai_cars) {
-                ai.update(delta_time);
+                ai.update(dt);
             }
 #endif
-
             const sf::Vector2f vehicle_position = selected_vehicle_pointer->get_position();
             const float speed_kph = core::game::units::px_per_s_to_kph(selected_vehicle_pointer->get_speed());
             speedometer.update_and_draw(speed_kph);
@@ -342,22 +328,16 @@ void run()
             camera_view.setCenter(vehicle_position);
             camera_view.setSize(window_size_f);
             camera_view.zoom(camera_zoom_factor);
-            window->setView(camera_view);
+            window.set_view(camera_view);
 
-            // Clear with game color and draw game objects
-            window->clear(window_colors.game);
-            draw_game_entities(*window);
-            draw_waypoints();
-            minimap.update_and_draw(delta_time, vehicle_position);
+            minimap.update_and_draw(dt, vehicle_position);
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
         else {
-            window->clear(window_colors.settings);
             // Since no drawing for the cars and track is done here, only the background color remains
-
             ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-            ImGui::SetNextWindowSize({500.0f, 550.0f}, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize({500.f, 550.f}, ImGuiCond_FirstUseEver);
             ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
             ImGui::Spacing();
 
@@ -374,7 +354,7 @@ void run()
                 }
                 ImGui::SameLine(0.0f, button_spacing);
                 if (ImGui::Button("Exit", {resume_button_width, 0.0f})) {
-                    window->close();
+                    window.close();
                 }
                 ImGui::Unindent(indent);
             }
@@ -382,9 +362,9 @@ void run()
             ImGui::Separator();
             ImGui::Spacing();
 
-            if (ImGui::BeginTabBar("Pause_Dev_Tabs")) {
+            if (ImGui::BeginTabBar("Tabs")) {
                 if (ImGui::BeginTabItem("Game")) {
-                    ImGui::PushItemWidth(150.0f);
+                    ImGui::PushItemWidth(150.f);
                     ImGui::Spacing();
                     ImGui::TextUnformatted("Hacks:");
                     if (ImGui::Button("Reset All")) {
@@ -425,13 +405,13 @@ void run()
                     ImGui::Separator();
                     ImGui::Spacing();
                     ImGui::TextUnformatted("Camera:");
-                    ImGui::SliderFloat("Zoom (x)", &camera_zoom_factor, 1.0f, 15.0f, "%.2f");
+                    ImGui::SliderFloat("Zoom (x)", &camera_zoom_factor, 1.f, 15.f, "%.2f");
                     ImGui::PopItemWidth();
                     ImGui::EndTabItem();
                 }
 
                 if (ImGui::BeginTabItem("Graphics")) {
-                    ImGui::PushItemWidth(150.0f);
+                    ImGui::PushItemWidth(150.f);
                     ImGui::Spacing();
                     ImGui::TextUnformatted("Window Info:");
                     ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
@@ -440,22 +420,44 @@ void run()
                     ImGui::Spacing();
                     ImGui::Separator();
                     ImGui::Spacing();
-                    ImGui::TextUnformatted("FPS Limit:");
-                    const unsigned int current_fps_limit = core::backend::get_fps_limit();
-                    int default_fps_index = 0;
-                    for (std::size_t i = 0; i < fps_limit_array.size(); ++i) {
-                        if (fps_limit_array[i] == current_fps_limit) {
-                            default_fps_index = static_cast<int>(i);
-                            break;
+
+                    // TODO: Turn this into "Fullscreen" toggle, instead of "Windowed" toggle, to imply that Fullscreen is the default
+                    if (ImGui::Checkbox("Windowed", &is_windowed)) {
+                        window.set_fullscreen(!is_windowed);
+                    }
+
+                    // TODO: This doesn't actualy seem to change the resolution, fix this!
+                    ImGui::BeginDisabled(is_windowed);
+                    std::string res_lbl = std::to_string(fullscreen_modes[static_cast<std::size_t>(resolution_index)].size.x) + "x" + std::to_string(fullscreen_modes[static_cast<std::size_t>(resolution_index)].size.y);
+                    if (ImGui::BeginCombo("Resolution", res_lbl.c_str())) {
+                        for (int i = 0; i < static_cast<int>(fullscreen_modes.size()); ++i) {
+                            std::string lab = std::to_string(fullscreen_modes[static_cast<std::size_t>(i)].size.x) + "x" + std::to_string(fullscreen_modes[static_cast<std::size_t>(i)].size.y);
+                            if (ImGui::Selectable(lab.c_str(), i == resolution_index)) {
+                                resolution_index = i;
+                                if (!is_windowed)
+                                    window.set_fullscreen(true, fullscreen_modes[static_cast<std::size_t>(resolution_index)]);
+                            }
                         }
+                        ImGui::EndCombo();
                     }
-                    int selected_fps_index = default_fps_index;
-                    if (ImGui::Combo("##fps_limit", &selected_fps_index, fps_option_string_array.data(), static_cast<int>(fps_option_string_array.size()))) {
-                        core::backend::set_fps_limit(*window, fps_limit_array[static_cast<std::size_t>(selected_fps_index)]);
+                    ImGui::EndDisabled();
+                    if (ImGui::Checkbox("V-sync", &is_vsync_enabled)) {
+                        if (is_vsync_enabled)
+                            window.set_vertical_sync(true);
+                        else
+                            window.set_frame_limit(fps_values[static_cast<std::size_t>(fps_index)]);
                     }
+                    ImGui::BeginDisabled(is_vsync_enabled);
+                    int tmp = fps_index;
+                    if (ImGui::Combo("FPS Limit", &tmp, fps_labels.data(), static_cast<int>(fps_labels.size()))) {
+                        fps_index = tmp;
+                        window.set_frame_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                    }
+                    ImGui::EndDisabled();
                     ImGui::Spacing();
                     ImGui::Separator();
                     ImGui::Spacing();
+
                     ImGui::TextUnformatted("Toggles:");
                     ImGui::Checkbox("Show Minimap", &minimap.enabled);
                     ImGui::Checkbox("Show Speedometer", &speedometer.enabled);
@@ -468,7 +470,7 @@ void run()
                 }
 
                 if (ImGui::BeginTabItem("Cars")) {
-                    ImGui::PushItemWidth(150.0f);
+                    ImGui::PushItemWidth(150.f);
                     ImGui::TextUnformatted("Select Car:");
                     ImGui::Combo("##car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
                     ImGui::Spacing();
@@ -486,7 +488,6 @@ void run()
                     ImGui::PopItemWidth();
                     ImGui::EndTabItem();
                 }
-
                 if (ImGui::BeginTabItem("System")) {
                     ImGui::Spacing();
                     ImGui::TextUnformatted("Build Info:");
@@ -504,16 +505,32 @@ void run()
                                       generated::ARCHITECTURE);
                     ImGui::EndTabItem();
                 }
-
                 ImGui::EndTabBar();
             }
-
             ImGui::End();
+        }
+    };
+
+    const auto on_render = [&](sf::RenderWindow &rw, [[maybe_unused]] const float dt) {
+        if (current_state == GameState::Menu)
+            rw.clear(window_colors.menu);
+        else if (current_state == GameState::Playing)
+            rw.clear(window_colors.game);
+        else
+            rw.clear(window_colors.settings);
+
+        if (current_state == GameState::Playing) {
+            draw_game_entities(rw);
+            draw_waypoints();
         }
 
         imgui_context.render();
-        window->display();
-    }
+        rw.display();
+    };
+
+    window.request_focus();  // Ask OS to switch to this window
+
+    window.run(on_event, on_update, on_render);  // Start the main loop
 }
 
 }  // namespace app

@@ -10,18 +10,7 @@
 
 #include <filesystem>  // for std::filesystem
 
-#include <SFML/Graphics.hpp>
-
 namespace core::platform::windows {
-
-/**
- * @brief Add the titlebar icon on Windows using the embedded icon data (must be embedded by CMake first).
- *
- * @param window SFML window to set the titlebar icon for.
- *
- * @throws std::runtime_error if failed to set the icon.
- */
-void set_titlebar_icon(const sf::Window &window);
 
 /**
  * @brief Get the path to the local AppData directory on Windows.

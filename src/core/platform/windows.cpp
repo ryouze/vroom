@@ -11,49 +11,19 @@
 // However, I want to avoid any platform-specific files whenever possible
 
 #include <filesystem>  // for std::filesystem
-#include <format>      // for std::format
 #include <memory>      // for std::unique_ptr
 #include <stdexcept>   // for std::runtime_error
 
-// #include <combaseapi.h>    // CoInitializeEx, CoUninitializ
+#include <combaseapi.h>  // CoInitializeEx, CoUninitializ
 // #include <knownfolders.h>  // FOLDERID_LocalAppData
-// #include <shlobj.h>        // SHGetKnownFolderPath
 #include <shlobj.h>
 #include <windows.h>
 
-#include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
 
 #include "windows.hpp"
 
 namespace core::platform::windows {
-
-void set_titlebar_icon(const sf::Window &window)
-{
-    SPDLOG_DEBUG("Retrieving native window handle from SFML window...");
-
-    // Get the native window handle from the SFML window
-    const HWND native_window_handle = window.getNativeHandle();
-    if (native_window_handle == nullptr) [[unlikely]] {
-        throw std::runtime_error("Window handle is null");
-    }
-    SPDLOG_DEBUG("Native window handle retrieved, loading icon resource...");
-
-    // Load the embedded icon resource
-    const HICON loaded_icon_handle = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_ICON1));
-    if (loaded_icon_handle == nullptr) [[unlikely]] {
-        throw std::runtime_error(std::format("Failed to load icon resource: {}", GetLastError()));
-    }
-    SPDLOG_DEBUG("Icon resource retrieved, applying to window...");
-
-    // Set the big and small icons for the window
-    // If you provide an icon resource with multiple sizes (e.g., ".ico" files with 16x16, 32x32, and other sizes), Windows will automatically select the most appropriate size for "ICON_BIG" and "ICON_SMALL"
-    // If an appropriate size isn't available, Windows will scale the icon, which may reduce quality
-    SendMessage(native_window_handle, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(loaded_icon_handle));    // Title bar of the window, the Alt+Tab switcher, possibly the task manager
-    SendMessage(native_window_handle, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(loaded_icon_handle));  // Window's title bar (on the left side) and in system notifications
-
-    SPDLOG_DEBUG("Icon applied successfully, exiting function!");
-}
 
 // std::filesystem::path get_local_appdata_directory()
 // {
