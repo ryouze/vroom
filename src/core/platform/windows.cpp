@@ -6,18 +6,13 @@
 
 #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 
-#define IDI_ICON1 101  // Icon resource ID, must match the generated "icon.rc" in CMakeLists.txt
-// Typically, you’d define this ID in a "resource.h" file and include it in both "icon.rc" and this file
-// However, I want to avoid any platform-specific files whenever possible
-
 #include <filesystem>  // for std::filesystem
 #include <memory>      // for std::unique_ptr
 #include <stdexcept>   // for std::runtime_error
 
-#include <combaseapi.h>  // CoInitializeEx, CoUninitializ
-// #include <knownfolders.h>  // FOLDERID_LocalAppData
-#include <shlobj.h>
-#include <windows.h>
+#include <combaseapi.h>  // for CoTaskMemFree
+#include <shlobj.h>      // for SHGetKnownFolderPath, FOLDERID_LocalAppData, KF_FLAG_*
+#include <windows.h>     // for HRESULT, CoInitializeEx, CoUninitialize, COINIT_*
 
 #include <spdlog/spdlog.h>
 
