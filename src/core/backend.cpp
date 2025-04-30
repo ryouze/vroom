@@ -75,10 +75,9 @@ void Window::run(const event_callback_type &on_event,
     while (this->window_.isOpen()) {
         // Alow user of this call to explicitly handle events themselves
         this->window_.handleEvents(on_event);
-        // Prevent extreme dt values at below 10 FPS by clamping between 0.001 and 0.1 seconds
-        constexpr float dt_min = 0.001f;
+        // Prevent extreme dt by clamping to 0.1 seconds
         constexpr float dt_max = 0.1f;
-        const float dt = std::clamp(clock.restart().asSeconds(), dt_min, dt_max);
+        const float dt = std::min(clock.restart().asSeconds(), dt_max);
         on_update(dt);
         on_render(this->window_);
     }
