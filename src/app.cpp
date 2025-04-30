@@ -88,6 +88,7 @@ void run()
         rng);
 
     // AI waypoints (need to be overwritten on reset)
+    // TODO: Get rid of this after debug display is no longer needed, because each AI car gets its own waypoints internally
     std::vector<core::game::TrackWaypoint> waypoints = race_track.get_waypoints();
 
     // Create cars
@@ -109,7 +110,8 @@ void run()
         }
     };
 
-    // Draw waypoints
+    // Function to draw waypoints
+    // TODO: Get rid of this debuf diplay, then also get rid of explicitly getting waypoints
     const auto draw_waypoints = [&window, &camera_view, &waypoints]() {
         ImDrawList *foreground_draw_list = ImGui::GetForegroundDrawList();
         for (std::size_t idx = 0; idx < waypoints.size(); ++idx) {
@@ -254,7 +256,6 @@ void run()
 
     const auto on_update = [&](const float dt) {
         imgui_context.update(dt);
-        // TODO: Split "update_and_draw" UI abstractions into separate "update" and "draw" methods so they better fit the current "on_update" "on_render" paradigm
         fps_counter.update_and_draw(dt);
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
@@ -264,40 +265,8 @@ void run()
         // Currently selected vehicle
         core::game::BaseCar *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
-        // Handle each GameState
-        // Menu state
-        if (current_state == GameState::Menu) [[unlikely]] {
-            // Center at screen midpoint, but give a fixed width (200px) and auto-height on first use
-            ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-            ImGui::SetNextWindowSize({200.f, 0.f}, ImGuiCond_FirstUseEver);
-
-            // No AlwaysAutoResize, so width stays at200px
-            ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-            ImGui::Spacing();
-            ImGui::TextUnformatted(std::format("{} {}", generated::PROJECT_NAME, generated::PROJECT_VERSION).c_str());
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            // Buttons are centered within the fixed window width
-            constexpr float button_width = 150.f;
-            const float content_width = ImGui::GetContentRegionAvail().x;
-            const float indent = std::max(0.f, (content_width - button_width) * 0.5f);
-            ImGui::Indent(indent);
-            if (ImGui::Button("Play", {button_width, 0})) {
-                current_state = GameState::Playing;
-            }
-            if (ImGui::Button("Settings", {button_width, 0})) {
-                current_state = GameState::Paused;
-            }
-            if (ImGui::Button("Exit", {button_width, 0})) {
-                window.close();
-            }
-            ImGui::Unindent(indent);
-            ImGui::End();
-        }
-
         // Playing state, this is what is gonna happen 99% of the time
-        else if (current_state == GameState::Playing) [[likely]] {
+        if (current_state == GameState::Playing) [[likely]] {
             if (key_states.gas) {
                 player_car.gas();
             }
@@ -314,26 +283,24 @@ void run()
                 player_car.handbrake();
             }
             player_car.update(dt);
-#ifndef NDEBUG  // Debug, remove later
-            ai_cars[0].update(dt);
+#ifndef NDEBUG                      // Debug, remove later
+            ai_cars[0].update(dt);  // Update only the first car so we can focus on AI programming
 #else
             for (auto &ai : ai_cars) {
                 ai.update(dt);
             }
 #endif
             const sf::Vector2f vehicle_position = selected_vehicle_pointer->get_position();
-            speedometer.update_and_draw(selected_vehicle_pointer->get_speed());
-
             camera_view.setCenter(vehicle_position);
             camera_view.setSize(window_size_f);
             camera_view.zoom(camera_zoom_factor);
             window.set_view(camera_view);
-
+            speedometer.update_and_draw(selected_vehicle_pointer->get_speed());
             minimap.update_and_draw(dt, vehicle_position);
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
-        else {
+        else if (current_state == GameState::Paused) {
             // Since no drawing for the cars and track is done here, only the background color remains
             ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
             ImGui::SetNextWindowSize({500.f, 550.f}, ImGuiCond_FirstUseEver);
@@ -475,6 +442,38 @@ void run()
                 }
                 ImGui::End();
             }
+        }
+
+        // Handle each GameState
+        // Menu state
+        else [[unlikely]] {
+            // Center at screen midpoint, but give a fixed width (200px) and auto-height on first use
+            ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
+            ImGui::SetNextWindowSize({200.f, 0.f}, ImGuiCond_FirstUseEver);
+
+            // No AlwaysAutoResize, so width stays at200px
+            ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+            ImGui::Spacing();
+            ImGui::TextUnformatted(std::format("{} {}", generated::PROJECT_NAME, generated::PROJECT_VERSION).c_str());
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Buttons are centered within the fixed window width
+            constexpr float button_width = 150.f;
+            const float content_width = ImGui::GetContentRegionAvail().x;
+            const float indent = std::max(0.f, (content_width - button_width) * 0.5f);
+            ImGui::Indent(indent);
+            if (ImGui::Button("Play", {button_width, 0})) {
+                current_state = GameState::Playing;
+            }
+            if (ImGui::Button("Settings", {button_width, 0})) {
+                current_state = GameState::Paused;
+            }
+            if (ImGui::Button("Exit", {button_width, 0})) {
+                window.close();
+            }
+            ImGui::Unindent(indent);
+            ImGui::End();
         }
     };
 
