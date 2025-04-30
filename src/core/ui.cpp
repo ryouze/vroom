@@ -378,7 +378,7 @@ Speedometer::Speedometer(sf::RenderTarget &window,
                  this->offset_.y);
 }
 
-void Speedometer::update_and_draw(const float kph) const
+void Speedometer::update_and_draw(const float speed) const
 {
     // If disabled, do nothing
     if (!this->enabled) {
@@ -399,7 +399,7 @@ void Speedometer::update_and_draw(const float kph) const
                      ImGuiWindowFlags_AlwaysAutoResize  // Always resize the window to fit its contents
     );
 
-    const int display_kph = static_cast<int>(kph);
+    const int display_kph = static_cast<int>(speed * this->px_to_kph_factor_);  // Convert speed from px/h to kph
     // Cast again to ensure consistency with the "display_kph", then clamp to [0, 1]
     const float speed_fraction = std::clamp(static_cast<float>(display_kph) / this->max_kph_, 0.0f, 1.0f);
 

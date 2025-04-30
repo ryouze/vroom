@@ -237,11 +237,11 @@ class Speedometer final {
     /**
      * @brief Update the speedometer and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
      *
-     * @param kph Current car speed in kilometers per hour (kp/h).
+     * @param speed Current car speed in pixels per hour (px/h).
      *
      * @note Call this once per frame, before ImGui is rendered to the screen (i.e., before "render()").
      */
-    void update_and_draw(const float kph) const;
+    void update_and_draw(const float speed) const;
 
     /**
      * @brief Enable or disable the speedometer (default: true).
@@ -264,6 +264,13 @@ class Speedometer final {
      * @details Size: 30px height, 200px width.
      */
     static constexpr float aspect_ratio_ = 30.f / 200.f;
+
+    /**
+     * @brief Pixel-to-kilometer per hour conversion factor.
+     *
+     * @note This is roughly modeled after the Nissan Silvia S14 real-world dimensions ({4.5f, 1.7f}) vs. in-game player car sprite (car_black_1).
+     */
+    static constexpr float px_to_kph_factor_ = 0.1008f;
 
     /**
      * @brief Maximum speed in kilometers per hour, for scaling the progress bar, in pixels.

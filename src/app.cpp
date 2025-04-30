@@ -322,8 +322,7 @@ void run()
             }
 #endif
             const sf::Vector2f vehicle_position = selected_vehicle_pointer->get_position();
-            const float speed_kph = core::game::units::px_per_s_to_kph(selected_vehicle_pointer->get_speed());
-            speedometer.update_and_draw(speed_kph);
+            speedometer.update_and_draw(selected_vehicle_pointer->get_speed());
 
             camera_view.setCenter(vehicle_position);
             camera_view.setSize(window_size_f);
