@@ -11,7 +11,7 @@ vroom is a cross-platform 2D racing game with arcade physics, procedurally-gener
 
 ## Motivation
 
-I wanted to build a 2D racing game from scratch, without relying on existing game engines like Godot or Unity. To achieve this, I chose to build my own game engine in SFML, allowing me to improve my understanding of C++ and game development.
+I wanted to build a 2D racing game from scratch, without relying on existing game engines like Godot or Unity. To achieve this, I chose to build my own game engine in C++, allowing me to improve my understanding of C++ and game development.
 
 The primary goal is to learn and explore, not to build a groundbreaking game. That said, I still want the final product to be enjoyable for non-developers; I am shipping a playable game, after all.
 
@@ -29,9 +29,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## Known Issues
 
 - The FPS limiter is unreliable due to timing inaccuracies in SFML; this is unfixable.
-  - As a workaround, the default frame rate cap is set to 144 FPS, which balances performance and hardware compatibility. The engine is capable of exceeding 2,500 FPS on Apple M1 Pro systems and 10,000+ FPS on a desktop PC with a dedicated GPU.
-- Fullscreen mode is not currently supported; the application runs in windowed mode only.
-  - This is might be addressed in a future release.
+  - As a workaround, the default frame rate cap is set to 144 FPS, which balances performance and hardware compatibility. The game engine is capable of exceeding 2,500 FPS on Apple M1 Pro systems and 10,000+ FPS on a desktop PC with a dedicated GPU.
 
 
 ## Todo
@@ -42,8 +40,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Make the minimap's internal resolution either:
   - a) scale automatically with the window size
   - b) be configurable through the settings
-- Fix the car's `bounce_back()` method making the car go out of bounds when faced backwards to a wall.
-- Add basic waypoint AI behavior to AI-controlled cars.
 
 **Later**:
 - Research the `sf::View` class in detail to ensure correct and flexible camera handling.
