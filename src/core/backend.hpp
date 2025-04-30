@@ -32,7 +32,7 @@ class Window {
   public:
     using event_callback_type = std::function<void(const sf::Event &)>;
     using update_callback_type = std::function<void(const float)>;
-    using render_callback_type = std::function<void(sf::RenderWindow &, const float)>;
+    using render_callback_type = std::function<void(sf::RenderWindow &)>;
 
     explicit Window(const WindowConfig &config = WindowConfig());  // Use default config
 

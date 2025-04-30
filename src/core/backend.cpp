@@ -112,7 +112,7 @@ void Window::run(const event_callback_type &on_event,
         }
         ImGui::End();
 #endif
-        on_render(this->window_, dt);
+        on_render(this->window_);
     }
 }
 

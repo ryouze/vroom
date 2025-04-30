@@ -478,21 +478,20 @@ void run()
         }
     };
 
-    const auto on_render = [&](sf::RenderWindow &rw, [[maybe_unused]] const float dt) {
-        if (current_state == GameState::Menu)
-            rw.clear(window_colors.menu);
-        else if (current_state == GameState::Playing)
-            rw.clear(window_colors.game);
-        else
-            rw.clear(window_colors.settings);
-
-        if (current_state == GameState::Playing) {
-            draw_game_entities(rw);
+    const auto on_render = [&](sf::RenderWindow &window) {
+        if (current_state == GameState::Playing) [[likely]] {
+            window.clear(window_colors.game);
+            draw_game_entities(window);
             draw_waypoints();
         }
-
+        else if (current_state == GameState::Paused) {
+            window.clear(window_colors.settings);
+        }
+        else [[unlikely]] {
+            window.clear(window_colors.menu);
+        }
         imgui_context.render();
-        rw.display();
+        window.display();
     };
 
     window.request_focus();  // Ask OS to switch to this window
