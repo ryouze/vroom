@@ -407,6 +407,8 @@ void run()
                         ImGui::TextUnformatted("Frame Rate");
                         if (ImGui::Checkbox("V-sync", &vsync)) {
                             window.set_vsync(vsync);
+                            // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
+                            fps_index = 8;
                         }
 
                         ImGui::BeginDisabled(vsync);

@@ -83,11 +83,11 @@ class Window {
     static constexpr bool default_start_fullscreen_ = true;
     static constexpr unsigned default_anti_aliasing_level_ = 8;
 
-    // Runtime state
-    bool fullscreen_ = default_start_fullscreen_;
-    bool vsync_enabled_ = default_vsync_enabled_;
-    unsigned frame_limit_ = default_frame_limit_;
-    sf::Vector2u windowed_resolution_ = default_windowed_resolution_;
+    // Runtime state; always initialize in initializer list
+    bool fullscreen_;
+    bool vsync_enabled_;
+    unsigned frame_limit_;
+    sf::Vector2u windowed_resolution_;
 
     sf::RenderWindow window_;
 };
