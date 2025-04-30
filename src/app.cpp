@@ -480,20 +480,20 @@ void run()
         }
     };
 
-    const auto on_render = [&](sf::RenderWindow &window) {
+    const auto on_render = [&](sf::RenderWindow &rt) {
         if (current_state == GameState::Playing) [[likely]] {
-            window.clear(window_colors.game);
-            draw_game_entities(window);
+            rt.clear(window_colors.game);
+            draw_game_entities(rt);
             draw_waypoints();
         }
         else if (current_state == GameState::Paused) {
-            window.clear(window_colors.settings);
+            rt.clear(window_colors.settings);
         }
         else [[unlikely]] {
-            window.clear(window_colors.menu);
+            rt.clear(window_colors.menu);
         }
         imgui_context.render();
-        window.display();
+        rt.display();
     };
 
     window.request_focus();  // Ask OS to switch to this window
