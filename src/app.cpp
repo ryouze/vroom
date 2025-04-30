@@ -53,7 +53,7 @@ void run()
     core::ui::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
 
     // Get window size, update during game loop
-    sf::Vector2u window_size_u = window.get_size();
+    sf::Vector2u window_size_u = window.get_resolution();
     sf::Vector2f window_size_f = core::misc::to_vector2f(window_size_u);
     // TODO: Add move "to_vector2f" to backend
 
@@ -191,9 +191,6 @@ void run()
         }
     };
 
-    // Window settings
-    const sf::ContextSettings &window_settings = window.get_settings();
-
     // List of vehicles
     const std::array<core::game::BaseCar *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
 
@@ -205,18 +202,6 @@ void run()
     int selected_vehicle_index = 0;
 #endif
 
-    // Guntime graphics options
-    const std::vector<sf::VideoMode> fullscreen_modes = sf::VideoMode::getFullscreenModes();
-    int resolution_index = 0;
-    bool is_windowed = !window.is_fullscreen();
-    bool is_vsync_enabled = window.is_vsync_enabled();
-
-    // FPS limit options
-    static constexpr std::array<unsigned, 9> fps_values = {30, 60, 90, 120, 144, 165, 240, 360, 0};
-    static constexpr std::array<const char *, 9> fps_labels = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
-    int fps_index = 4;  // 144
-    // TODO: Make the spawned window use the fps index, so we don't need to set it in backend
-
     // Function to draw the game entities (race track and cars) in the window and minimap
     const auto draw_game_entities = [&race_track, &player_car, &ai_cars](sf::RenderTarget &rt) {
         race_track.draw(rt);
@@ -225,6 +210,26 @@ void run()
             ai_car.draw(rt);
         }
     };
+
+    // Build list of fullscreen modes
+    const auto modes = sf::VideoMode::getFullscreenModes();
+    std::vector<std::string> mode_names;
+    mode_names.reserve(modes.size());
+    for (const auto &mode : modes) {
+        mode_names.emplace_back(std::format("{}x{} @ {} bpp", mode.size.x, mode.size.y, mode.bitsPerPixel));
+    }
+
+    // Build C-string array for ImGui
+    std::vector<const char *> mode_cstr;
+    mode_cstr.reserve(mode_names.size());
+    for (auto &name : mode_names) {
+        mode_cstr.emplace_back(name.c_str());
+    }
+
+    int mode_index = 0;  // Which resolution is selected; default to best resolution
+    int fps_index = 4;   // Default "144"
+    static constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
+    static constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
 
     // Widgets
     core::ui::Minimap minimap{window.raw(), window_colors.game, draw_game_entities};  // Minimap in the top-right corner
@@ -259,7 +264,7 @@ void run()
         fps_counter.update_and_draw(dt);
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
-        window_size_u = window.get_size();
+        window_size_u = window.get_resolution();
         window_size_f = core::misc::to_vector2f(window_size_u);
 
         // Currently selected vehicle
@@ -367,50 +372,46 @@ void run()
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
                         ImGui::PushItemWidth(150.f);
-                        ImGui::TextUnformatted("Renderer");
+                        bool fullscreen = window.is_fullscreen();
+                        bool vsync = window.is_vsync_enabled();
+
+                        ImGui::TextUnformatted("Debug info");
                         ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
-                        ImGui::BulletText("Anti-Aliasing: %dx", window_settings.antiAliasingLevel);
-                        ImGui::BulletText("OpenGL: %d.%d", window_settings.majorVersion, window_settings.minorVersion);
                         ImGui::Spacing();
                         ImGui::Separator();
                         ImGui::Spacing();
+
                         ImGui::TextUnformatted("Display Mode");
-                        // TODO: Turn this into "Fullscreen" toggle, instead of "Windowed" toggle, to imply that Fullscreen is the default
-                        if (ImGui::Checkbox("Windowed", &is_windowed)) {
-                            window.set_fullscreen(!is_windowed);
+                        if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
+                            window.set_window(fullscreen);
                         }
-                        // TODO: This doesn't actualy seem to change the resolution, fix this!
-                        ImGui::BeginDisabled(is_windowed);
-                        const auto &current_mode = fullscreen_modes[static_cast<std::size_t>(resolution_index)];
-                        const std::string resolution_label = std::to_string(current_mode.size.x) + "x" + std::to_string(current_mode.size.y);
-                        if (ImGui::BeginCombo("Resolution", resolution_label.c_str())) {
-                            for (int i = 0; i < static_cast<int>(fullscreen_modes.size()); ++i) {
-                                const auto &mode = fullscreen_modes[static_cast<std::size_t>(i)];
-                                std::string label = std::to_string(mode.size.x) + "x" + std::to_string(mode.size.y);
-                                if (ImGui::Selectable(label.c_str(), i == resolution_index)) {
-                                    resolution_index = i;
-                                    if (!is_windowed)
-                                        window.set_fullscreen(true, fullscreen_modes[static_cast<std::size_t>(resolution_index)]);
+                        ImGui::BeginDisabled(!fullscreen);
+                        if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<size_t>(mode_index)])) {
+                            for (int i = 0; i < static_cast<int>(modes.size()); ++i) {
+                                bool selected = (i == mode_index);
+                                if (ImGui::Selectable(mode_cstr[static_cast<size_t>(i)], selected)) {
+                                    mode_index = i;
+                                    window.set_window(true, modes[static_cast<size_t>(mode_index)]);
                                 }
+                                if (selected)
+                                    ImGui::SetItemDefaultFocus();
                             }
                             ImGui::EndCombo();
                         }
                         ImGui::EndDisabled();
+
                         ImGui::Spacing();
                         ImGui::Separator();
                         ImGui::Spacing();
+
                         ImGui::TextUnformatted("Frame Rate");
-                        if (ImGui::Checkbox("V-sync", &is_vsync_enabled)) {
-                            if (is_vsync_enabled) {
-                                window.set_vsync(true);
-                            }
-                            else {
-                                window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
-                            }
+                        if (ImGui::Checkbox("V-sync", &vsync)) {
+                            window.set_vsync(vsync);
                         }
-                        ImGui::BeginDisabled(is_vsync_enabled);
-                        if (ImGui::Combo("FPS Limit", &fps_index, fps_labels.data(), static_cast<int>(fps_labels.size())))
-                            window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+
+                        ImGui::BeginDisabled(vsync);
+                        if (ImGui::Combo("FPS Limit", &fps_index, fps_labels, IM_ARRAYSIZE(fps_labels)))
+                            window.set_fps_limit(fps_values[static_cast<size_t>(fps_index)]);
                         ImGui::EndDisabled();
                         ImGui::Spacing();
                         ImGui::Separator();
