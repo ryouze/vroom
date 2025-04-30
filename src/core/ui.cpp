@@ -399,16 +399,15 @@ void Speedometer::update_and_draw(const float speed) const
                      ImGuiWindowFlags_AlwaysAutoResize  // Always resize the window to fit its contents
     );
 
-    const int display_kph = static_cast<int>(speed * this->px_to_kph_factor_);  // Convert speed from px/h to kph
-    // Cast again to ensure consistency with the "display_kph", then clamp to [0, 1]
-    const float speed_fraction = std::clamp(static_cast<float>(display_kph) / this->max_kph_, 0.0f, 1.0f);
-
+    // Convert speed from px/h to kph, casting to int to get rid of decimals
+    const int display_kph = static_cast<int>(speed * this->px_to_kph_factor_);
     // Display the speed as a progress bar
-    const std::string speed_label = std::format("{} kp/h", display_kph);
-    ImGui::ProgressBar(speed_fraction,
-                       // Calculate the size based on the window size and scale ratio
-                       get_scaled_rectangle_size(width, height, this->aspect_ratio_, this->window_scale_ratio_),
-                       speed_label.c_str());
+    ImGui::ProgressBar(
+        // Cast again to ensure consistency with the "display_kph", then clamp to [0, 1]
+        std::clamp(static_cast<float>(display_kph) / this->max_kph_, 0.0f, 1.0f),
+        // Calculate the size based on the window size and scale ratio
+        get_scaled_rectangle_size(width, height, this->aspect_ratio_, this->window_scale_ratio_),
+        std::format("{} kp/h", display_kph).c_str());
     ImGui::End();
 }
 
