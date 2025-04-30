@@ -6,7 +6,6 @@
 #include <cstdint>      // for std::uint32_t
 #include <format>       // for std::format
 #include <stdexcept>    // for std::runtime_error
-#include <string>       // for std::string
 #include <type_traits>  // for std::underlying_type_t
 #include <utility>      // for std::move
 
