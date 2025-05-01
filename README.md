@@ -146,7 +146,12 @@ To start the program, simply run the `vroom` executable (`vroom.app` on macOS, `
 
 ### Controls
 
-// TODO
+- **Gas**: Up Arrow (↑)
+- **Handbrake**: Down Arrow (↓)
+- **Left**: Left Arrow (←)
+- **Right**: Right Arrow (→)
+- **Brake**: Spacebar
+- **Menu Options**: ESC
 
 
 ## Development
