@@ -2,7 +2,7 @@
  * @file backend.cpp
  */
 
-#include <algorithm>  // for std::clamp
+#include <algorithm>  // for std::min
 
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>

@@ -7,7 +7,7 @@
 #include <cstddef>    // for std::size_t
 #include <format>     // for std::format
 #include <random>     // for std::random_device, std::mt19937
-#include <string>     // for std::string. std::to_string
+#include <string>     // for std::string
 #include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>
