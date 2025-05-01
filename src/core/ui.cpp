@@ -303,13 +303,13 @@ void ImGuiContext::render() const
 
 FpsCounter::FpsCounter(sf::RenderTarget &window,
                        const Corner corner)
-    : enabled(false),  // Disable by default
-      window_(window),
+    : window_(window),
       pivot_(compute_pivot(corner)),
       accumulation_(0.0f),
       frames_(0),
       fps_(144)  // Default value, will overwritten immediately by internal calculations
 {
+    this->enabled = false;  // Disable by default
     SPDLOG_DEBUG("FPS counter created at corner '{}', set pivot point to ('{}', '{}') successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
                  this->pivot_.x,
@@ -364,8 +364,7 @@ void FpsCounter::draw() const
 
 Speedometer::Speedometer(sf::RenderTarget &window,
                          const Corner corner)
-    : enabled(true),  // Enable by default
-      window_(window),
+    : window_(window),
       pivot_(compute_pivot(corner)),
       offset_(compute_offset(this->pivot_))
 {
@@ -414,8 +413,7 @@ Minimap::Minimap(sf::RenderTarget &window,
                  const sf::Color &background_color,
                  GameEntitiesDrawer game_entities_drawer,
                  const Corner corner)
-    : enabled(true),            // Enable by default
-      refresh_interval(0.10f),  // 0.1 second; lower values = more frequent updates but worse performance
+    : refresh_interval(0.1f),  // 0.1 second; lower values = more frequent updates but worse performance
       window_(window),
       background_color_(background_color),
       game_entities_drawer_(std::move(game_entities_drawer)),

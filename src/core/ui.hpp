@@ -127,11 +127,33 @@ enum class Corner {
 };
 
 /**
+ * @brief Interface for all UI widgets.
+ *
+ * All widgets should have an option to enable or disable them. The derived class should implement the "update_and_draw()" method, which will be called once per frame and draw nothing if "enabled" is false.
+ */
+class IWidget {
+  public:
+    /**
+     * @brief Default destructor.
+     */
+    virtual ~IWidget() = default;
+
+    /**
+     * @brief Enable or disable widget.
+     *
+     * @note By setting this to false, the "update_and_draw()" method will not perform any calculations or drawing.
+     *
+     * @details This is enabled by default.
+     */
+    bool enabled = true;
+};
+
+/**
  * @brief Class that computes and displays the current frames per second (FPS) in an ImGui overlay.
  *
  * On construction, the pivot point will be calculated based on the corner provided.
  */
-class FpsCounter final {
+class FpsCounter final : public IWidget {
   public:
     /**
      * @brief Construct a new FpsCounter object.
@@ -154,13 +176,6 @@ class FpsCounter final {
      * @note Call this once per frame, before ImGui is rendered to the screen (i.e., before "render()").
      */
     void update_and_draw(const float dt);
-
-    /**
-     * @brief Enable or disable the FPS counter (default: false).
-     *
-     * @note By setting this to false, the "update_and_draw()" method will not perform any calculations or drawing.
-     */
-    bool enabled;
 
   private:
     /**
@@ -221,7 +236,7 @@ class FpsCounter final {
  *
  * On construction, the pivot point and padding offset will be calculated based on the corner provided.
  */
-class Speedometer final {
+class Speedometer final : public IWidget {
   public:
     /**
      * @brief Construct a new Speedometer object.
@@ -242,13 +257,6 @@ class Speedometer final {
      * @note Call this once per frame, before ImGui is rendered to the screen (i.e., before "render()").
      */
     void update_and_draw(const float speed) const;
-
-    /**
-     * @brief Enable or disable the speedometer (default: true).
-     *
-     * @note By setting this to false, the "update_and_draw()" method will not perform any calculations or drawing.
-     */
-    bool enabled;
 
   private:
     /**
@@ -300,7 +308,7 @@ class Speedometer final {
  *
  * The minimap renders the supplied scene into an internal texture at a configurable refresh rate and draws that texture inside an ImGui window.
  */
-class Minimap final {
+class Minimap final : public IWidget {
   public:
     /**
      * @brief Function that draws the game entities (e.g., sprites) onto an `sf::RenderTarget`.
@@ -333,13 +341,6 @@ class Minimap final {
      */
     void update_and_draw(const float dt,
                          const sf::Vector2f &center);
-
-    /**
-     * @brief Enable or disable the minimap (default: true).
-     *
-     * @note By setting this to false, the "update_and_draw()" method will not perform any calculations or drawing.
-     */
-    bool enabled;
 
     /**
      * @brief Refresh interval in seconds; values ≤ 0 refresh every frame (default: 0.1 s).
