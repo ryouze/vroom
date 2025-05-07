@@ -28,30 +28,57 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ## Known Issues
 
-- The FPS limiter is unreliable due to timing inaccuracies in SFML; this is unfixable.
+- On macOS, the FPS limiter is unreliable due to timing inaccuracies in SFML; this is unfixable.
   - As a workaround, the default frame rate cap is set to 144 FPS, which balances performance and hardware compatibility. The game engine is capable of exceeding 2,500 FPS on Apple M1 Pro systems and 10,000+ FPS on a desktop PC with a dedicated GPU.
+  - On Linux, it seems to work correctly, and the game runs at consistent 90 FPS at just 3 watts on a Steam Deck OLED.
 
 
 ## Todo
 
 ```md
+**Critical**:
+- Investigate why a segmentation fault occurs when modifying literally *any* race track parameter (width, height, size, etc.) in Release builds. This issue does not occur in Debug mode. Perhaps the configuration validation is being optimized away? Weird.
+
 **Current**:
-- Read the SFML documentation.
-- Make the minimap's internal resolution either:
-  - a) scale automatically with the window size
-  - b) be configurable through the settings
+- Revert to the previous implementation of ImGui screen resolution picker that included bits-per-pixel (BPP) selection, because it's now hidden, and the same resolution might have multiple bit depths, which this is not reflected in the menu, instead showing duplicate entries, which is confusing. We should either only target 32-bit color or show all available modes to the user; the latter is likely better, since we're targetting semi-advanced users anyway.
+  - Then, ensure that all video mode-related code uses the default parameter (cf. initial full-screen) instead of hardcoding 32 bits per pixel. This will improve future compatibility.
+- In `BaseCar::apply_physics_step()`, test whether the random rotation should be applied only to the sprite (as currently implemented), only to the steering wheel, or to both. The steering wheel behavior seems strange when bouncing back after high-speed collisions.
+  - Also verify whether the position of the code block itself is correct or whether it's overwriting something.
 
 **Later**:
-- Research the `sf::View` class in detail to ensure correct and flexible camera handling.
-- Add config loading/saving via the platform-specific getter function in `core/io.hpp`
-- Add basic audio support (e.g., sound effects and background music).
-- Add gamepad support if feasible, possibly using Steam Input for Steam Deck compatibility.
-- Implement automated tests once the project is mature enough.
-  - Use a proper testing framework such as Catch2.
-  - Improve packaging process:
-  - Simplify macOS packaging, which is currently too hacky.
-  - Evaluate the use of CPack for cross-platform packaging.
-  - Provide proper `.dmg` and `.exe` installers for distribution.
+- Read the SFML documentation.
+  - Study the `sf::View` class in detail to ensure the camera is handled correctly.
+- In `AICar`, move all AI-related variables to private class scope as `static constexpr` instead of defining them inside the `update()` function.
+  - Also, scale the braking value (e.g., 0.4f) dynamically using `CarConfig`'s brake and acceleration strength, rather than relying on hardcoded values.
+- Implement configuration loading and saving for screen resolution, VSync, and other graphical settings. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
+  - Decide whether we use a custom file format, or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
+- Improve the driving and control mechanics. The vehicles take too long to turn.
+
+**Ideas**:
+- In `BaseCar`, add a private member `std::size_t closest_waypoint_`, which is updated in `apply_physics_step()`. Alternatively, perform per-frame scanning of all waypoints in `app.cpp` to determine which waypoint each car is at, and thus identifying the race leader. However, tracking the closest waypoint internally may assist with AI logic, such as recovering from a crash by reverting to the previous waypoint. But sharing it across all derived classes, including the player, might be stupid. A scan-based approach is likely better.
+  - If choosing to store the closest waypoint internally, add a public getter `get_closest_waypoint()`. The distance threshold for waypoint changes should be retrieved from `Track::get_config()`, which must include the tile size (e.g., `512`). To do so, we must also add a private variable that is set by `Track::build()` based on the texture size to ensure consistent tile and track scaling.
+- In `Track::build()`, shift the starting tile position to the actual finish/spawn point to eliminate the need for the `finish_index_` workaround.
+  - This is harder than it looks.
+- Consider converting `PlayerCar` into a subclass of `AICar`, with a toggle to enable AI control of the player vehicle in ImGui. I liked that feature in trainers for old NFS Games; it would also enable testing stability of the game, if left overnight, or running at speeds higher than real-time (cf. Cheat Engine's speed hack).
+- In `game.hpp`, revise all Doxygen documentation to accurately reflect actual code behavior. For example, in `BaseCar`, note that internal booleans are overwritten each frame by `apply_physics_step()`, and so on.
+- Integrate parallel algorithms. Many STL algorithms (e.g., `copy`, `find`, `sort`) support parallel execution policies such as `seq`, `par`, and `par_unseq`, corresponding to "sequential", "parallel", and "parallel unsequenced", respectively. E.g., `auto result1 = std::find(std::execution::par, std::begin(longVector), std::end(longVector), 2);`.
+  - This could be particularly useful for collision checking, which involves iterating over all track tiles until a collision is detected.
+- Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
+  - Also implement compile-time enums and switch-case validation (I forgot why I wanted this?).
+- Use the `contains` method for associative containers (e.g., sets, maps) in place of the traditional "find and compare to end" idiom.
+- Use `std::pair` for grouping related values to avoid creating separate variables or structs. Example: `Coordinate = std::pair<int, int>;`.
+- Ensure that the minimap's internal resolution either scales automatically with the window size or is configurable through the settings menu.
+  - Perhaps we could do both. The minimap is pretty expensive to render, so we should definitely allow a lot of customization, apart from the the ability to disable it completely, which is already implemented.
+
+**Finishing Touches**:
+- Add basic audio support, with sound effects for the car engine. Avoid adding music, because it will bloat the file size too much.
+- Add gamepad support, if feasible.
+  - We'd need to bypass the steering wheel emulation. The pedals are simple on/off switches, so that's annoying too.
+- Implement automated testing once the project reaches a mature state.
+  - Use a proper testing framework, such as Catch2.
+- Improve the packaging workflow:
+  - Simplify the macOS packaging process; the icon copying process is hacky.
+  - Rsearch the use of CPack for cross-platform distribution.
 ```
 
 
