@@ -23,6 +23,7 @@ namespace core::backend {
 // };
 
 class Window {
+    // TODO: Get rid of bits per pixel, always set resolution in object's constructor and rely on the default bits per pixel
   public:
     using event_callback_type = std::function<void(const sf::Event &)>;
     using update_callback_type = std::function<void(const float)>;

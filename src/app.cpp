@@ -216,7 +216,8 @@ void run()
     std::vector<std::string> mode_names;
     mode_names.reserve(modes.size());
     for (const auto &mode : modes) {
-        mode_names.emplace_back(std::format("{}x{} @ {} bpp", mode.size.x, mode.size.y, mode.bitsPerPixel));
+        // We don't care about bits per pixel on modern systems
+        mode_names.emplace_back(std::format("{}x{}", mode.size.x, mode.size.y));
     }
 
     // Build C-string array for ImGui
@@ -375,7 +376,7 @@ void run()
                         bool fullscreen = window.is_fullscreen();
                         bool vsync = window.is_vsync_enabled();
 
-                        ImGui::TextUnformatted("Debug info");
+                        ImGui::TextUnformatted("Debug Info");
                         ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
                         ImGui::Spacing();
                         ImGui::Separator();
@@ -398,6 +399,9 @@ void run()
                             }
                             ImGui::EndCombo();
                         }
+#if defined(__APPLE__)
+                        ImGui::BulletText("macOS only supports borderless fullscreen");
+#endif
                         ImGui::EndDisabled();
 
                         ImGui::Spacing();
