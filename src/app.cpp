@@ -216,8 +216,7 @@ void run()
     std::vector<std::string> mode_names;
     mode_names.reserve(modes.size());
     for (const auto &mode : modes) {
-        // We don't care about bits per pixel on modern systems
-        mode_names.emplace_back(std::format("{}x{}", mode.size.x, mode.size.y));
+        mode_names.emplace_back(std::format("{}x{} ({}-bit)", mode.size.x, mode.size.y, mode.bitsPerPixel));
     }
 
     // Build C-string array for ImGui
