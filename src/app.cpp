@@ -111,7 +111,7 @@ void run()
     };
 
     // Function to draw waypoints
-    // TODO: Get rid of this debuf diplay, then also get rid of explicitly getting waypoints
+    // TODO: Get rid of this debug display, then also get rid of explicitly getting waypoints
     const auto draw_waypoints = [&window, &camera_view, &waypoints]() {
         ImDrawList *foreground_draw_list = ImGui::GetForegroundDrawList();
         for (std::size_t idx = 0; idx < waypoints.size(); ++idx) {
@@ -351,7 +351,7 @@ void run()
                         track_config_changed |= ImGui::SliderInt("Width", &track_width_tiles, 3, 30, "%d tiles");
                         track_config_changed |= ImGui::SliderInt("Height", &track_height_tiles, 3, 30, "%d tiles");
                         track_config_changed |= ImGui::SliderInt("Tile Size", &tile_size_pixels, 256, 2048, "%d px");
-                        // Technicaly this isn't a percentage, because we go from 0.f to 1.f, but this code will be removed later, and I don't care
+                        // Technically this isn't a percentage, because we go from 0.f to 1.f, but this code will be removed later, and I don't care
                         if (ImGui::SliderFloat("Shortcut Chance", &detour_probability, 0.0f, 1.0f, "%.2f")) {
                             detour_probability = std::clamp(detour_probability, 0.0f, 1.0f);
                             track_config_changed = true;
@@ -454,32 +454,60 @@ void run()
         // Handle each GameState
         // Menu state
         else [[unlikely]] {
-            // Center at screen midpoint, but give a fixed width (200px) and auto-height on first use
-            ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-            ImGui::SetNextWindowSize({200.f, 0.f}, ImGuiCond_FirstUseEver);
+            // Main menu
+            constexpr float main_menu_width = 240.0f;
+            constexpr float button_width = 160.0f;
 
-            // No AlwaysAutoResize, so width stays at200px
-            ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+            // Center the ImGui window inside the SFML window
+            ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
+            ImGui::SetNextWindowSize({main_menu_width, 0.0f}, ImGuiCond_Always);
+
+            ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+
             ImGui::Spacing();
-            ImGui::TextUnformatted(std::format("{} {}", generated::PROJECT_NAME, generated::PROJECT_VERSION).c_str());
+
+            const float window_width = ImGui::GetWindowWidth();
+
+            // Title and subtitle
+            ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_NAME).x) * 0.5f);
+            ImGui::Text("%s", generated::PROJECT_NAME);
+            ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("A cross-platform 2D racer").x) * 0.5f);
+            ImGui::TextUnformatted("A cross-platform 2D racer");
+
             ImGui::Separator();
             ImGui::Spacing();
 
-            // Buttons are centered within the fixed window width
-            constexpr float button_width = 150.f;
-            const float content_width = ImGui::GetContentRegionAvail().x;
-            const float indent = std::max(0.f, (content_width - button_width) * 0.5f);
-            ImGui::Indent(indent);
-            if (ImGui::Button("Play", {button_width, 0})) {
+            // Centered buttons
+            const float indent_amount = std::max(0.0f, (ImGui::GetContentRegionAvail().x - button_width) * 0.5f);
+            ImGui::Indent(indent_amount);
+
+            if (ImGui::Button("Play", {button_width, 0.0f})) {
                 current_state = GameState::Playing;
             }
-            if (ImGui::Button("Settings", {button_width, 0})) {
+            ImGui::Spacing();
+
+            if (ImGui::Button("Settings", {button_width, 0.0f})) {
                 current_state = GameState::Paused;
             }
-            if (ImGui::Button("Exit", {button_width, 0})) {
+            ImGui::Spacing();
+
+            if (ImGui::Button("Quit", {button_width, 0.0f})) {
                 window.close();
             }
-            ImGui::Unindent(indent);
+
+            ImGui::Unindent(indent_amount);
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Footer
+            ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("Built with C++20 by ryouze").x) * 0.5f);
+            ImGui::TextUnformatted("Built with C++20 by ryouze");
+
+            ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_VERSION).x) * 0.5f);
+            ImGui::Text("%s", generated::PROJECT_VERSION);
+
             ImGui::End();
         }
     };
