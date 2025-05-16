@@ -80,6 +80,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Improve the packaging workflow:
   - Simplify the macOS packaging process; the icon copying process is hacky.
   - Research the use of CPack for cross-platform distribution.
+- Add new screenshots of the main menu, settings, game, and a GIF (or video) of the game in action.
 ```
 
 
@@ -87,7 +88,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 This project has been tested on the following systems:
 
-- macOS 15.3 (Sequoia)
+- macOS 15.4 (Sequoia)
 - Manjaro 24.0 (Wynsdey)
 - Windows 11 23H2
 
