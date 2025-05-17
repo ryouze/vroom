@@ -501,8 +501,8 @@ void run()
             ImGui::Spacing();
 
             // Footer
-            ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("Built with C++20 by ryouze").x) * 0.5f);
-            ImGui::TextUnformatted("Built with C++20 by ryouze");
+            ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("Built with C++20 and SFML3").x) * 0.5f);
+            ImGui::TextUnformatted("Built with C++20 and SFML3");
 
             ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_VERSION).x) * 0.5f);
             ImGui::Text("%s", generated::PROJECT_VERSION);
