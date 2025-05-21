@@ -37,9 +37,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## To-Do
 
 ```md
-**Critical**:
-- Investigate why a segmentation fault occurs when modifying literally *any* race track parameter (width, height, size, etc.) in Release builds. This issue does not occur in Debug mode. Perhaps the configuration validation is being optimized away? Weird.
-
 **Current**:
 - Avoid rebuilding the track twice, first on boot, then when hitting play, as this calls `reset_game()`.
 - Esure that all video mode-related code (cf. backend?) uses the default parameter (cf. initial full-screen) instead of hardcoding 32 bits per pixel. This will improve future compatibility.

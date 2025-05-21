@@ -14,10 +14,10 @@
 
 namespace core::game {
 
-Track::Track(const Textures &tiles,
+Track::Track(const Textures tiles,
              std::mt19937 &rng,
              const TrackConfig &config)
-    : tiles_(tiles),
+    : tiles_(tiles),  //  Copy the small struct
       rng_(rng),
       config_(this->validate_config(config)),
       finish_point_(0.f, 0.f),

@@ -203,7 +203,7 @@ class Track final {
      * @param rng Instance of a random number generator (e.g., std::mt19937) used for generating random detours.
      * @param config Configuration struct containing the track configuration (invalid values will be clamped) (default: "TrackConfig()").
      */
-    explicit Track(const Textures &tiles,
+    explicit Track(const Textures tiles,  //  Copy to prevent segfault
                    std::mt19937 &rng,
                    const TrackConfig &config = TrackConfig());  // Use default config
 
@@ -304,9 +304,11 @@ class Track final {
     void build();
 
     /**
-     * @brief References to tile textures used for building the track.
+     * @brief Tile textures used for building the track.
+     *
+     * @details A copy is required to prevent segfault.
      */
-    const Textures &tiles_;
+    const Textures tiles_;
 
     /**
      * @brief Random number generator used for making the track layout more interesting/unpredictable.
