@@ -76,7 +76,8 @@ void run()
     // Create random number generator
     std::mt19937 rng{std::random_device{}()};
 
-    // Build race track
+    // Create race track
+    // On construction, the track will NOT be built; the "set_config()" method must be called to build the track
     core::game::Track race_track(
         {.top_left = road_textures[0],
          .top_right = road_textures[1],
@@ -116,7 +117,7 @@ void run()
 
     // Full game reset: restore original track layout, reset cars, reset camera
     const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor, &initial_track_config]() {
-        race_track.set_config(initial_track_config);
+        race_track.set_config(initial_track_config);  // Build the track
         reset_cars();
         camera_zoom_factor = 2.5f;
     };

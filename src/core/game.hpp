@@ -197,7 +197,7 @@ class Track final {
     /**
      * @brief Construct a new Track object.
      *
-     * On construction, the track is built using the provided textures and config, with the config's invalid values clamped upon construction to prevent underflow, overflow, or other catastrophic errors.
+     * On construction, the track is NOT buit. Use "set_config()" to build the track, preferably from within some kind of "reset_game()" function.
      *
      * @param tiles Tiles struct containing the textures. It is assumed that all textures are square (e.g., 256x256) for uniform scaling. The caller is responsible for ensuring that these textures remain valid for the lifetime of the Track.
      * @param rng Instance of a random number generator (e.g., std::mt19937) used for generating random detours.
@@ -215,7 +215,7 @@ class Track final {
     [[nodiscard]] const TrackConfig &get_config() const;
 
     /**
-     * @brief Set the configuration (invalid values will be clamped), then rebuild the track.
+     * @brief Set the configuration (invalid values will be clamped), then build the track.
      *
      * @param config New configuration for the track; invalid values are clamped during validation.
      */
@@ -224,7 +224,7 @@ class Track final {
     /**
      * @brief Check whether a given world-space point lies within any track tile boundary.
      *
-     * * This is a simple check that treats every tile as a rectangle, regardless of its actual shape. So it's technically possible to go outside the curves.
+     * This is a simple check that treats every tile as a rectangle, regardless of its actual shape. So while it's technically possible to go outside the curves, the collision detection is simple and fast.
      *
      * @param world_position Coordinates in world space to test.
      *

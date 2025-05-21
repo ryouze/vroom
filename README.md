@@ -38,7 +38,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Current**:
-- Avoid rebuilding the track twice, first on boot, then when hitting play, as this calls `reset_game()`.
 - Esure that all video mode-related code (cf. backend?) uses the default parameter (cf. initial full-screen) instead of hardcoding 32 bits per pixel. This will improve future compatibility.
 - In `BaseCar::apply_physics_step()`, test whether the random rotation should be applied only to the sprite (as currently implemented), only to the steering wheel, or to both. The steering wheel behavior seems strange when bouncing back after high-speed collisions.
   - Also verify whether the position of the code block itself is correct or whether it's overwriting something.

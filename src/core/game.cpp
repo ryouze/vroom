@@ -17,22 +17,13 @@ namespace core::game {
 Track::Track(const Textures tiles,
              std::mt19937 &rng,
              const TrackConfig &config)
-    : tiles_(tiles),  //  Copy the small struct
+    : tiles_(tiles),  //  Copy the small struct to prevent segfaults
       rng_(rng),
       config_(this->validate_config(config)),
       finish_point_(0.f, 0.f),
       finish_index_(0)
 {
-    SPDLOG_DEBUG("Creating Track with config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
-                 this->config_.horizontal_count,
-                 this->config_.vertical_count,
-                 this->config_.size_px,
-                 this->config_.detour_probability);
-
-    // Build the track on construction
-    this->build();
-
-    SPDLOG_DEBUG("Track created successfully, exiting constructor!");
+    // Do not build the track on construction, let "set_config()" do it
 }
 
 [[nodiscard]] const TrackConfig &Track::get_config() const
