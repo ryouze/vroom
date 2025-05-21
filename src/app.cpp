@@ -87,6 +87,10 @@ void run()
          .horizontal_finish = road_textures[6]},
         rng);
 
+    // Store the very first layout so we can restore it later
+    // TODO: Add a ".reset()" method to the TrackConfig or Track class, this is very ugly
+    const core::game::TrackConfig initial_track_config = race_track.get_config();
+
     // AI waypoints (need to be overwritten on reset)
     // TODO: Get rid of this after debug display is no longer needed, because each AI car gets its own waypoints internally
     std::vector<core::game::TrackWaypoint> waypoints = race_track.get_waypoints();
@@ -108,6 +112,13 @@ void run()
         for (auto &ai_car : ai_cars) {
             ai_car.reset();
         }
+    };
+
+    // Full game reset: restore original track layout, reset cars, reset camera
+    const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor, &initial_track_config]() {
+        race_track.set_config(initial_track_config);
+        reset_cars();
+        camera_zoom_factor = 2.5f;
     };
 
     // Function to draw waypoints
@@ -315,13 +326,18 @@ void run()
                     constexpr float resume_button_width = 140.f;
                     constexpr float button_spacing = 10.f;
                     const float available_width = ImGui::GetContentRegionAvail().x;
-                    const float buttons_total_width = (resume_button_width * 2.f) + button_spacing;
+                    const float buttons_total_width = (resume_button_width * 3.f) + (button_spacing * 2.f);
                     const float indent_amount = (available_width - buttons_total_width) * 0.5f;
                     ImGui::Indent(indent_amount);
                     if (ImGui::Button("Resume", {resume_button_width, 0.f}))
                         current_state = GameState::Playing;
                     ImGui::SameLine(0.f, button_spacing);
-                    if (ImGui::Button("Quit to Desktop", {resume_button_width, 0.f}))
+                    if (ImGui::Button("Main Menu", {resume_button_width, 0.f})) {
+                        reset_game();
+                        current_state = GameState::Menu;
+                    }
+                    ImGui::SameLine(0.f, button_spacing);
+                    if (ImGui::Button("Quit", {resume_button_width, 0.f}))
                         window.close();
                     ImGui::Unindent(indent_amount);
                 }
@@ -330,7 +346,7 @@ void run()
                 ImGui::Spacing();
                 if (ImGui::BeginTabBar("settings_tabs")) {
                     if (ImGui::BeginTabItem("Game")) {
-                        ImGui::PushItemWidth(150.f);
+                        ImGui::PushItemWidth(200.f);
                         ImGui::TextUnformatted("Hacks:");
                         if (ImGui::Button("Reset Everything")) {
                             reset_cars();
@@ -371,7 +387,7 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
-                        ImGui::PushItemWidth(150.f);
+                        ImGui::PushItemWidth(200.f);
                         bool fullscreen = window.is_fullscreen();
                         bool vsync = window.is_vsync_enabled();
 
@@ -386,12 +402,12 @@ void run()
                             window.set_window(fullscreen);
                         }
                         ImGui::BeginDisabled(!fullscreen);
-                        if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<size_t>(mode_index)])) {
+                        if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<std::size_t>(mode_index)])) {
                             for (int i = 0; i < static_cast<int>(modes.size()); ++i) {
                                 bool selected = (i == mode_index);
-                                if (ImGui::Selectable(mode_cstr[static_cast<size_t>(i)], selected)) {
+                                if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], selected)) {
                                     mode_index = i;
-                                    window.set_window(true, modes[static_cast<size_t>(mode_index)]);
+                                    window.set_window(true, modes[static_cast<std::size_t>(mode_index)]);
                                 }
                                 if (selected)
                                     ImGui::SetItemDefaultFocus();
@@ -416,7 +432,7 @@ void run()
 
                         ImGui::BeginDisabled(vsync);
                         if (ImGui::Combo("FPS Limit", &fps_index, fps_labels, IM_ARRAYSIZE(fps_labels)))
-                            window.set_fps_limit(fps_values[static_cast<size_t>(fps_index)]);
+                            window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
                         ImGui::EndDisabled();
                         ImGui::Spacing();
                         ImGui::Separator();
@@ -481,6 +497,7 @@ void run()
             ImGui::Indent(indent_amount);
 
             if (ImGui::Button("Play", {button_width, 0.0f})) {
+                reset_game();
                 current_state = GameState::Playing;
             }
             ImGui::Spacing();
