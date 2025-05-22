@@ -37,6 +37,9 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## To-Do
 
 ```md
+**Critical**:
+- On boot, if the user clicks "Settings" before ever starting gameplay, then clicks "Resume", the game crashes with a segmentation fault. However, if the user first clicks "Play", then later accesses settings via "Esc" and clicks "Resume", the game resumes correctly without crashing. The crash only occurs when using the Settings -> Resume path before entering gameplay.
+
 **Current**:
 - Esure that all video mode-related code (cf. backend?) uses the default parameter (cf. initial full-screen) instead of hardcoding 32 bits per pixel. This will improve future compatibility.
 - In `BaseCar::apply_physics_step()`, test whether the random rotation should be applied only to the sprite (as currently implemented), only to the steering wheel, or to both. The steering wheel behavior seems strange when bouncing back after high-speed collisions.
