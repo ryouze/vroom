@@ -84,7 +84,7 @@ void Window::run(const event_callback_type &on_event,
                  const update_callback_type &on_update,
                  const render_callback_type &on_render)
 {
-    SPDLOG_DEBUG("Starting main window loop");
+    SPDLOG_INFO("Starting main window loop!");
     sf::Clock clock;
     while (this->window_.isOpen()) {
         // Allow user of this call to explicitly handle events themselves
@@ -95,7 +95,7 @@ void Window::run(const event_callback_type &on_event,
         on_update(dt);
         on_render(this->window_);
     }
-    SPDLOG_DEBUG("Main window loop ended");
+    SPDLOG_INFO("Main window loop ended!");
 }
 
 void Window::create_window(const sf::VideoMode &mode,
