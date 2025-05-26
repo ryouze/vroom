@@ -1,39 +1,23 @@
 /**
  * @file textures.hpp
  *
- * @brief Load embedded textures as RAII objects.
+ * @brief Load and manage embedded SFML textures.
  */
 
 #pragma once
 
-#include <cstddef>           // for std::size_t
-#include <initializer_list>  // for std::initializer_list
-#include <vector>            // for std::vector
+#include <cstddef>        // for std::size_t
+#include <string>         // for std::string
+#include <unordered_map>  // for std::unordered_map
 
 #include <SFML/Graphics.hpp>
-
-// Embedded road textures
-#include "data/textures/road/road_sand01.hpp"
-#include "data/textures/road/road_sand35.hpp"
-#include "data/textures/road/road_sand37.hpp"
-#include "data/textures/road/road_sand39.hpp"
-#include "data/textures/road/road_sand87.hpp"
-#include "data/textures/road/road_sand88.hpp"
-#include "data/textures/road/road_sand89.hpp"
-
-// Embedded car textures
-#include "data/textures/car/car_black_1.hpp"
-#include "data/textures/car/car_blue_1.hpp"
-#include "data/textures/car/car_green_1.hpp"
-#include "data/textures/car/car_red_1.hpp"
-#include "data/textures/car/car_yellow_1.hpp"
 
 namespace assets::textures {
 
 /**
  * @brief Class that loads and manages embedded SFML textures.
  *
- * On construction, the class loads a set of textures from memory and stores them for later retrieval.
+ * On construction, the class does nothing. Use the "load()" method to load textures from memory.
  */
 class TextureManager final {
   public:
@@ -53,26 +37,33 @@ class TextureManager final {
     };
 
     /**
-     * @brief Construct a new TextureManager object.
-     *
-     * @param embedded_textures List of embedded textures to load from memory (e.g., "{{car::data, car::size}}").
-     * @param smooth If true, enable texture smoothing, otherwise keep it disabled, which is the SFML's default behavior (default: true).
-     *
-     * @throws std::runtime_error if failed to load a texture from memory.
+     * @brief Default constructor.
      */
-    explicit TextureManager(const std::initializer_list<EmbeddedTexture> &embedded_textures,
-                            const bool smooth = true);
+    TextureManager() = default;
 
     /**
-     * @brief Retrieve a texture by index.
+     * @brief Load a texture from memory and store it at the given identifier.
      *
-     * @param index Index of the texture to retrieve (e.g., "4").
+     * @param identifier Unique identifier for the texture (e.g., "car_black").
+     * @param embedded_texture Embedded texture data to load from memory.
      *
-     * @return Reference to the texture at the given index.
+     * @throws std::runtime_error if failed to load the texture from memory.
      *
-     * @throws std::out_of_range if the index is out of range.
+     * @note If the identifier already exists, the previous texture is overwritten, mirroring "operator[]" on the map.
      */
-    [[nodiscard]] const sf::Texture &operator[](const std::size_t index) const;
+    void load(const std::string &identifier,
+              const EmbeddedTexture &embedded_texture);
+
+    /**
+     * @brief Get a texture by its identifier.
+     *
+     * @param identifier Unique identifier for the texture (e.g., "car_black").
+     *
+     * @return Const reference to the texture.
+     *
+     * @throws std::out_of_range if the identifier is not found.
+     */
+    [[nodiscard]] const sf::Texture &get(const std::string &identifier) const;
 
     /**
      * @brief Get the number (size) of stored textures.
@@ -91,69 +82,9 @@ class TextureManager final {
 
   private:
     /**
-     * @brief Vector of loaded textures.
+     * @brief Map of loaded textures, where the key is a unique identifier (e.g., "car_black") and the value is the loaded texture.
      */
-    std::vector<sf::Texture> textures_;
+    std::unordered_map<std::string, sf::Texture> textures_;
 };
-
-/**
- * @brief Return a TextureManager instance with loaded road tile textures.
- *
- * The texture order is as follows:
- *  - 0: [┏] Top-left curve
- *  - 1: [┓] Top-right curve
- *  - 2: [┛] Bottom-right curve
- *  - 3: [┗] Bottom-left curve
- *  - 4: [┃] Vertical road
- *  - 5: [━] Horizontal road
- *  - 6: [━] Horizontal finish line
- *
- * @return TextureManager instance with the loaded textures. The textures are always 128x128 pixels.
- *
- * @note This should only be called once, preferably at the start of the program.
- *
- * @details The textures are loaded from embedded header files and managed with RAII. Use indexing to access them.
- */
-[[nodiscard]] inline TextureManager get_road_textures()
-{
-    return TextureManager(  // Always 128x128px
-        {
-            {road_sand89::data, road_sand89::size},  // Top-left curve
-            {road_sand01::data, road_sand01::size},  // Top-right curve
-            {road_sand37::data, road_sand37::size},  // Bottom-right curve
-            {road_sand35::data, road_sand35::size},  // Bottom-left curve
-            {road_sand87::data, road_sand87::size},  // Vertical road
-            {road_sand88::data, road_sand88::size},  // Horizontal road
-            {road_sand39::data, road_sand39::size},  // Horizontal finish line
-        });
-}
-
-/**
- * @brief Return a TextureManager instance with loaded car textures.
- *
- * The texture order is as follows:
- * - 0: Black
- * - 1: Blue
- * - 2: Green
- * - 3: Red
- * - 4: Yellow
- *
- * @return TextureManager instance with the loaded textures. The textures are usually 71x131 pixels.
- *
- * @note This should only be called once, preferably at the start of the program.
- *
- * @details The textures are loaded from embedded header files and managed with RAII. Use indexing to access them.
- */
-[[nodiscard]] inline TextureManager get_car_textures()
-{
-    return TextureManager(  // Usually 71x131px, with the car facing right
-        {
-            {car_black_1::data, car_black_1::size},    // Black
-            {car_blue_1::data, car_blue_1::size},      // Blue
-            {car_green_1::data, car_green_1::size},    // Green
-            {car_red_1::data, car_red_1::size},        // Red
-            {car_yellow_1::data, car_yellow_1::size},  // Yellow
-        });
-}
 
 }  // namespace assets::textures

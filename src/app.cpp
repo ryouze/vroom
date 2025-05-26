@@ -16,13 +16,29 @@
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"
-#include "assets/textures.hpp"  // Embedded textures
+#include "assets/textures.hpp"
 #include "core/backend.hpp"
 #include "core/game.hpp"
 #include "core/io.hpp"
 #include "core/misc.hpp"
 #include "core/ui.hpp"
 #include "generated.hpp"
+
+// Embedded road textures
+#include "assets/data/textures/road/road_sand01.hpp"
+#include "assets/data/textures/road/road_sand35.hpp"
+#include "assets/data/textures/road/road_sand37.hpp"
+#include "assets/data/textures/road/road_sand39.hpp"
+#include "assets/data/textures/road/road_sand87.hpp"
+#include "assets/data/textures/road/road_sand88.hpp"
+#include "assets/data/textures/road/road_sand89.hpp"
+
+// Embedded car textures
+#include "assets/data/textures/car/car_black_1.hpp"
+#include "assets/data/textures/car/car_blue_1.hpp"
+#include "assets/data/textures/car/car_green_1.hpp"
+#include "assets/data/textures/car/car_red_1.hpp"
+#include "assets/data/textures/car/car_yellow_1.hpp"
 
 namespace app {
 
@@ -68,24 +84,37 @@ void run()
     camera_view.setSize(window_size_f);  // Same as window size
     camera_view.zoom(camera_zoom_factor);
 
-    // Load textures, will be automatically managed with RAII, with index access (e.g., "textures[0]")
-    // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
-    const assets::textures::TextureManager road_textures = assets::textures::get_road_textures();
-    const assets::textures::TextureManager car_textures = assets::textures::get_car_textures();
-
     // Create random number generator
     std::mt19937 rng{std::random_device{}()};
+
+    // Setup texture manager
+    // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
+    assets::textures::TextureManager textures;
+    // Load road textures
+    textures.load("top_left", {road_sand89::data, road_sand89::size});
+    textures.load("top_right", {road_sand01::data, road_sand01::size});
+    textures.load("bottom_right", {road_sand37::data, road_sand37::size});
+    textures.load("bottom_left", {road_sand35::data, road_sand35::size});
+    textures.load("vertical", {road_sand87::data, road_sand87::size});
+    textures.load("horizontal", {road_sand88::data, road_sand88::size});
+    textures.load("horizontal_finish", {road_sand39::data, road_sand39::size});
+    // Load car textures
+    textures.load("car_black", {car_black_1::data, car_black_1::size});
+    textures.load("car_blue", {car_blue_1::data, car_blue_1::size});
+    textures.load("car_green", {car_green_1::data, car_green_1::size});
+    textures.load("car_red", {car_red_1::data, car_red_1::size});
+    textures.load("car_yellow", {car_yellow_1::data, car_yellow_1::size});
 
     // Create race track
     // On construction, the track will NOT be built; the "set_config()" method must be called to build the track
     core::game::Track race_track(
-        {.top_left = road_textures[0],
-         .top_right = road_textures[1],
-         .bottom_right = road_textures[2],
-         .bottom_left = road_textures[3],
-         .vertical = road_textures[4],
-         .horizontal = road_textures[5],
-         .horizontal_finish = road_textures[6]},
+        {.top_left = textures.get("top_left"),
+         .top_right = textures.get("top_right"),
+         .bottom_right = textures.get("bottom_right"),
+         .bottom_left = textures.get("bottom_left"),
+         .vertical = textures.get("vertical"),
+         .horizontal = textures.get("horizontal"),
+         .horizontal_finish = textures.get("horizontal_finish")},
         rng);
 
     // Store the very first layout so we can restore it later
@@ -97,12 +126,12 @@ void run()
     std::vector<core::game::TrackWaypoint> waypoints = race_track.get_waypoints();
 
     // Create cars
-    core::game::PlayerCar player_car(car_textures[0], rng, race_track);
+    core::game::PlayerCar player_car(textures.get("car_black"), rng, race_track);
     std::array<core::game::AICar, 4> ai_cars = {
-        core::game::AICar(car_textures[1], rng, race_track),
-        core::game::AICar(car_textures[2], rng, race_track),
-        core::game::AICar(car_textures[3], rng, race_track),
-        core::game::AICar(car_textures[4], rng, race_track)};
+        core::game::AICar(textures.get("car_blue"), rng, race_track),
+        core::game::AICar(textures.get("car_green"), rng, race_track),
+        core::game::AICar(textures.get("car_red"), rng, race_track),
+        core::game::AICar(textures.get("car_yellow"), rng, race_track)};
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&race_track, &player_car, &ai_cars, &waypoints]() {
