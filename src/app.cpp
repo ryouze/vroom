@@ -106,7 +106,6 @@ void run()
     textures.load("car_yellow", {car_yellow_1::data, car_yellow_1::size});
 
     // Create race track
-    // On construction, the track will NOT be built; the "set_config()" method must be called to build the track
     core::game::Track race_track(
         {.top_left = textures.get("top_left"),
          .top_right = textures.get("top_right"),
@@ -116,10 +115,6 @@ void run()
          .horizontal = textures.get("horizontal"),
          .horizontal_finish = textures.get("horizontal_finish")},
         rng);
-
-    // Store the very first layout so we can restore it later
-    // TODO: Add a ".reset()" method to the TrackConfig or Track class, this is very ugly
-    const core::game::TrackConfig initial_track_config = race_track.get_config();
 
     // AI waypoints (need to be overwritten on reset)
     // TODO: Get rid of this after debug display is no longer needed, because each AI car gets its own waypoints internally
@@ -135,18 +130,18 @@ void run()
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&race_track, &player_car, &ai_cars, &waypoints]() {
-        // Reset AI waypoints
+        // Update waypoints reference for debug display
         waypoints = race_track.get_waypoints();
-        // Reset positions of all cars
+        // Reset positions of all cars to spawn point
         player_car.reset();
         for (auto &ai_car : ai_cars) {
             ai_car.reset();
         }
     };
 
-    // Full game reset: restore original track layout, reset cars, reset camera
-    const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor, &initial_track_config]() {
-        race_track.set_config(initial_track_config);  // Build the track
+    // Full game reset: restore default track layout, reset cars, reset camera
+    const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor]() {
+        race_track.reset();  // Rebuild track with default settings
         reset_cars();
         camera_zoom_factor = 2.5f;
     };

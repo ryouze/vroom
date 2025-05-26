@@ -197,7 +197,7 @@ class Track final {
     /**
      * @brief Construct a new Track object.
      *
-     * On construction, the track is NOT buit. Use "set_config()" to build the track, preferably from within some kind of "reset_game()" function.
+     * On construction, the track is automatically built using the provided configuration. The track will be ready for use immediately after construction.
      *
      * @param tiles Tiles struct containing the textures. It is assumed that all textures are square (e.g., 256x256) for uniform scaling. The caller is responsible for ensuring that these textures remain valid for the lifetime of the Track.
      * @param rng Instance of a random number generator (e.g., std::mt19937) used for generating random detours.
@@ -220,6 +220,13 @@ class Track final {
      * @param config New configuration for the track; invalid values are clamped during validation.
      */
     void set_config(const TrackConfig &config);
+
+    /**
+     * @brief Reset the track to use the default configuration.
+     *
+     * This rebuilds the track using the default "TrackConfig", effectively restoring it to its initial state.
+     */
+    void reset();
 
     /**
      * @brief Check whether a given world-space point lies within any track tile boundary.
@@ -1026,13 +1033,6 @@ class AICar final : public BaseCar {
     {
         // 1) Retrieve the list of waypoints from the track
         const auto &waypoints = this->track_.get_waypoints();
-
-        // Ugly hack: absolute safety against empty waypoint list
-        if (waypoints.empty()) {
-            SPDLOG_WARN("AI car update called with empty waypoints list, running physics update only!");
-            BaseCar::update(dt);
-            return;
-        }
 
         // 2) Remember which waypoint we are currently targeting
         const std::size_t current_index = this->current_waypoint_index_number_;

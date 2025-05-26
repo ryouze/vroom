@@ -23,7 +23,8 @@ Track::Track(const Textures tiles,
       finish_point_(0.f, 0.f),
       finish_index_(0)
 {
-    // Do not build the track on construction, let "set_config()" do it
+    // Build the track immediately on construction
+    this->build();
 }
 
 [[nodiscard]] const TrackConfig &Track::get_config() const
@@ -48,6 +49,12 @@ void Track::set_config(const TrackConfig &config)
     // else {
     //     SPDLOG_DEBUG("Config is the same, skipping rebuild...");
     // }
+}
+
+void Track::reset()
+{
+    this->config_ = this->validate_config(TrackConfig{});  // Validate default compile-time config anyway
+    this->build();
 }
 
 bool Track::is_on_track(const sf::Vector2f &world_position) const
