@@ -23,7 +23,7 @@ Window::Window()
 {
     const sf::VideoMode initial_mode = this->fullscreen_
                                            ? sf::VideoMode::getDesktopMode()
-                                           : sf::VideoMode{this->windowed_resolution_, default_bits_per_pixel_};
+                                           : sf::VideoMode{this->windowed_resolution_};
     const sf::State initial_state = this->fullscreen_
                                         ? sf::State::Fullscreen
                                         : sf::State::Windowed;
@@ -44,7 +44,7 @@ void Window::set_window(const bool enable,
         this->recreate_window(mode, sf::State::Fullscreen);
     }
     else {  // To windowed
-        sf::VideoMode windowed_mode{this->windowed_resolution_, default_bits_per_pixel_};
+        sf::VideoMode windowed_mode{this->windowed_resolution_};
         this->recreate_window(windowed_mode, sf::State::Windowed);
     }
 }

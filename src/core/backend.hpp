@@ -77,7 +77,6 @@ class Window {
     // Fixed defaults
     static constexpr sf::Vector2u default_windowed_resolution_ = {1280, 720};
     static constexpr sf::Vector2u default_minimum_size_ = {800, 600};
-    static constexpr unsigned default_bits_per_pixel_ = 32;
     static inline const std::string default_title_ = std::format("{} ({})", generated::PROJECT_NAME, generated::PROJECT_VERSION);
     static constexpr unsigned default_frame_limit_ = 144;
     static constexpr bool default_vsync_enabled_ = false;
