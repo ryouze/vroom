@@ -185,6 +185,30 @@ To start the program, simply run the `vroom` executable (`vroom.app` on macOS, `
 
 ## Development
 
+### Debugging
+
+To build with runtime sanitizers and keep debugging symbols, use the following configuration in the `build` directory:
+
+```sh
+cmake .. \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DENABLE_STRIP=OFF \
+  -DCMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE=OFF \
+  -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+  -DCMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO="-fsanitize=address,undefined"
+cmake --build . --parallel
+```
+
+Then, run the program under `lldb` (macOS):
+
+```sh
+lldb ./vroom.app/Contents/MacOS/vroom
+run
+```
+
+When a sanitizer detects a fault, it will stop execution and print a full stack trace. Use this to pinpoint the root cause of the issue. You can also use `lldb` commands like `bt` (backtrace) to inspect the call stack.
+
+
 ### Logging
 
 The application uses [spdlog](https://github.com/gabime/spdlog) for logging.
