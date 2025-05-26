@@ -28,7 +28,7 @@ void TextureManager::load(const std::string &identifier,
 
     // Set the texture smoothing option, then store it
     texture.setSmooth(true);
-    this->textures_[identifier] = std::move(texture);
+    this->textures_.insert_or_assign(identifier, std::move(texture));
     SPDLOG_DEBUG("Texture '{}' loaded, exiting!", identifier);
 }
 
