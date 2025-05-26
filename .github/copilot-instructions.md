@@ -1,4 +1,4 @@
-## General Programing Guidelines
+## General Programming Guidelines
 
 ### All Languages
 - Use plain ASCII in logs and comments; no Unicode.
@@ -12,7 +12,7 @@
 - Use snake_case everywhere, apart for class and struct names, which should use CamelCase. I hate pascalCase.
 - Use `const` and `constexpr` everywhere whenever possible.
 - Use trailing underscore for member variables in classes (e.g., `zoom_ratio_`) but plain names in structs (e.g., `zoom_ratio`).
-- Use modern C++20 features and SFML3. SFML3 uses C++17 and has the following differences from SFML 2:
+- Use modern C++20 features and SFML3. SFML3 uses C++17 and has the following differences from SFML2:
 ```md
 ### 1. Vectors, rects, sizes
 * Replace any `(x, y)` or `(w, h)` parameter pair with `sf::Vector2<T>{x, y}`.
