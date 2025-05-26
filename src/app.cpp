@@ -424,7 +424,7 @@ void run()
 
                         ImGui::TextUnformatted("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
-                            window.set_window(fullscreen);
+                            window.set_window_state(fullscreen ? core::backend::WindowState::Fullscreen : core::backend::WindowState::Windowed);
                         }
                         ImGui::BeginDisabled(!fullscreen);
                         if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<std::size_t>(mode_index)])) {
@@ -432,7 +432,7 @@ void run()
                                 bool selected = (i == mode_index);
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], selected)) {
                                     mode_index = i;
-                                    window.set_window(true, modes[static_cast<std::size_t>(mode_index)]);
+                                    window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
                                 }
                                 if (selected)
                                     ImGui::SetItemDefaultFocus();
