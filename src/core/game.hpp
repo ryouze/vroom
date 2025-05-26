@@ -459,11 +459,18 @@ struct CarConfig final {
     float collision_minimum_bounce_speed_pixels_per_second = 50.0f;
 
     /**
-     * @brief Maximum random angle offset (in degrees) applied to the car's rebound direction on collision.
+     * @brief Minimum random angle offset (in degrees) applied to the car's rebound direction on collision at low speeds.
      *
-     * Higher values create more unpredictable bounces, which might be unrealistic and ugly.
+     * This creates subtle direction changes at low speeds to prevent jitter while maintaining predictable handling.
      */
-    float collision_maximum_random_bounce_angle_degrees = 15.0f;
+    float collision_minimum_random_bounce_angle_degrees = 1.0f;
+
+    /**
+     * @brief Maximum random angle offset (in degrees) applied to the car's rebound direction on collision at high speeds.
+     *
+     * Higher values create more unpredictable bounces at high speeds, which helps prevent getting stuck in walls.
+     */
+    float collision_maximum_random_bounce_angle_degrees = 35.0f;
 };
 
 /**
@@ -513,7 +520,6 @@ class BaseCar {
           config_(config),
           // Private
           rng_(rng),
-          collision_jitter_dist_(-config_.collision_maximum_random_bounce_angle_degrees, config_.collision_maximum_random_bounce_angle_degrees),
           last_position_(this->track_.get_finish_position()),  // Get spawn point from the track
           velocity_(0.0f, 0.0f),
           gear_(Gear::Forward),
@@ -847,12 +853,20 @@ class BaseCar {
             // If below minimum speed, stop the car completely to avoid jitter
             if (current_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
                 this->velocity_ = {0.0f, 0.0f};
+                // SPDLOG_DEBUG("Collision below minimum bounce speed; now stopping car!");
             }
-            // Otherwise, bounce it randomly
+            // Otherwise, bounce it randomly with speed-scaled angles to avoid jitter at low speeds
             // This is a simple approximation of a bounce, not a real physics simulation; we use a random angle to make the bounce direction unpredictable
-            // TODO: Make the angle scale with speed; low speed = barely any {-max:max} angle, high speed = very high {-max,max} angle
             else {
-                const float random_jitter_degrees = this->collision_jitter_dist_(this->rng_);
+                // Calculate speed ratio from 0.0 (minimum bounce speed) to 1.0 (maximum speed)
+                const float speed_ratio = std::clamp((current_speed - this->config_.collision_minimum_bounce_speed_pixels_per_second) / (this->config_.maximum_movement_pixels_per_second - this->config_.collision_minimum_bounce_speed_pixels_per_second), 0.0f, 1.0f);
+
+                // Interpolate between minimum and maximum jitter angles based on speed
+                const float max_jitter_angle_degrees = this->config_.collision_minimum_random_bounce_angle_degrees * (1.0f - speed_ratio) + this->config_.collision_maximum_random_bounce_angle_degrees * speed_ratio;
+
+                // Generate random angle within the calculated range
+                std::uniform_real_distribution<float> speed_scaled_jitter_dist(-max_jitter_angle_degrees, max_jitter_angle_degrees);
+                const float random_jitter_degrees = speed_scaled_jitter_dist(this->rng_);
                 const float random_jitter_radians = sf::degrees(random_jitter_degrees).asRadians();
                 const float cosine_jitter = std::cos(random_jitter_radians);
                 const float sine_jitter = std::sin(random_jitter_radians);
@@ -860,6 +874,7 @@ class BaseCar {
                 this->velocity_.x = original_velocity.x * cosine_jitter - original_velocity.y * sine_jitter;
                 this->velocity_.y = original_velocity.x * sine_jitter + original_velocity.y * cosine_jitter;
                 this->sprite_.rotate(sf::degrees(random_jitter_degrees));
+                // SPDLOG_DEBUG("Collision above minimum bounce speed, current speed '{}' results in a speed ratio of '{}'; now bouncing back with a random angle of '{}' degrees!", current_speed, speed_ratio, random_jitter_degrees);
             }
         }
 
@@ -878,11 +893,6 @@ class BaseCar {
      * @brief Random number generator.
      */
     std::mt19937 &rng_;
-
-    /**
-     * @brief Uniform distribution for random decision making.
-     */
-    std::uniform_real_distribution<float> collision_jitter_dist_;
 
     /**
      * @brief Last valid position of the car sprite in world coordinates (pixels).

@@ -41,8 +41,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - None.
 
 **Current**:
-- In `BaseCar::apply_physics_step()`, test whether the random rotation should be applied only to the sprite (as currently implemented), only to the steering wheel, or to both. The steering wheel behavior seems strange when bouncing back after high-speed collisions.
-  - Also verify whether the position of the code block itself is correct or whether it's overwriting something.
+- None.
 
 **Later**:
 - Read the SFML documentation.
