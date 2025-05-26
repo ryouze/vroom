@@ -1027,6 +1027,13 @@ class AICar final : public BaseCar {
         // 1) Retrieve the list of waypoints from the track
         const auto &waypoints = this->track_.get_waypoints();
 
+        // Ugly hack: absolute safety against empty waypoint list
+        if (waypoints.empty()) {
+            SPDLOG_WARN("AI car update called with empty waypoints list, running physics update only!");
+            BaseCar::update(dt);
+            return;
+        }
+
         // 2) Remember which waypoint we are currently targeting
         const std::size_t current_index = this->current_waypoint_index_number_;
 
