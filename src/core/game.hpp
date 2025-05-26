@@ -1041,132 +1041,232 @@ class AICar final : public BaseCar {
      */
     void update(const float dt) override
     {
-        // 1) Retrieve the list of waypoints from the track
+        // Get basic info
         const auto &waypoints = this->track_.get_waypoints();
-
-        // 2) Remember which waypoint we are currently targeting
         const std::size_t current_index = this->current_waypoint_index_number_;
-
-        // 3) Compute the index of the next waypoint, wrapping back to 1 when we reach the end
-        // This doesn't have to go back to the finish waypoint index, because we're simply looping over the track
-        const std::size_t next_index = (current_index + 1 < waypoints.size()) ? (current_index + 1) : 1;
-
-        // 4) Get references to the current and next waypoint objects for easy access
+        const std::size_t next_index = (current_index + 1) % waypoints.size();
         const TrackWaypoint &current_waypoint = waypoints[current_index];
         const TrackWaypoint &next_waypoint = waypoints[next_index];
-
-        // Debug: set position of the debug shape to target waypoint
-        this->debug_shape_.setPosition(current_waypoint.position);
-
-        // 5) Read the car’s current position in world pixels
         const sf::Vector2f car_position = this->sprite_.getPosition();
-
-        // 6) Compute vector and distance from car to current waypoint
-        const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
-        const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
-
-        // 7) Compute the desired heading (angle) to face the current waypoint
-        const float desired_heading_radians = std::atan2(vector_to_current_waypoint.y, vector_to_current_waypoint.x);
-
-        // 8) Read the car’s current heading (angle) in radians
-        const float current_heading_radians = this->sprite_.getRotation().asRadians();
-
-        // 9) Compute the smallest signed angle difference between desired and current heading
-        const float heading_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
-
-        // 10) Decide steering direction based on whether the heading error exceeds threshold
-        bool steering_left = (heading_difference_radians < -steering_threshold_radians_);
-        bool steering_right = (heading_difference_radians > steering_threshold_radians_);
-        if (steering_left) {
-            this->steer_left();
-        }
-        else if (steering_right) {
-            this->steer_right();
-        }
-
-        // 11) Compute current speed magnitude (pixels per second)
+        const float tile_size = static_cast<float>(this->track_.get_config().size_px);
         const float current_speed = this->get_speed();
 
-        // 12) Compute stopping distance needed at current speed using standard kinematic formula
-        const float required_stopping_distance = (current_speed * current_speed) / (2.0f * this->config_.brake_deceleration_rate_pixels_per_second_squared);
+        // Calculate distances
+        const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
+        const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
+        const float waypoint_reach_distance = tile_size * this->waypoint_reach_factor_;
 
-        // 13) Compute vector and distance to the next waypoint for pre‑braking checks
-        const sf::Vector2f vector_to_next_waypoint = next_waypoint.position - car_position;
-        const float distance_to_next_waypoint = std::hypot(vector_to_next_waypoint.x, vector_to_next_waypoint.y);
+        // Simple collision detection - just check one point ahead
+        bool collision_detected = false;
+        const sf::Vector2f car_velocity = this->get_velocity();
+        const float velocity_magnitude = std::hypot(car_velocity.x, car_velocity.y);
+        if (velocity_magnitude > 10.0f) {
+            const sf::Vector2f velocity_normalized = car_velocity / velocity_magnitude;
+            const sf::Vector2f check_point = car_position + velocity_normalized * (tile_size * this->collision_distance_);
+            collision_detected = !this->track_.is_on_track(check_point);
+        }
 
-        // 14) Determine if we should brake for the current corner
-        // True if current waypoint is a corner and we are within stopping distance + small margin
-        const bool should_brake_current = (current_waypoint.type == TrackWaypoint::DrivingType::Corner) && (distance_to_current_waypoint <= required_stopping_distance + 5.0f);
+        // Simple steering logic with early corner turning
+        const float desired_heading_radians = std::atan2(vector_to_current_waypoint.y, vector_to_current_waypoint.x);
+        const float current_heading_radians = this->sprite_.getRotation().asRadians();
+        const float heading_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
 
-        // 15) Determine if we should pre‑brake for the next corner
-        // True if next waypoint is a corner and we are within stopping distance + larger margin
-        const bool should_prebrake_next = (next_waypoint.type == TrackWaypoint::DrivingType::Corner) && (distance_to_next_waypoint <= required_stopping_distance + 15.0f);
+        // Look ahead for early corner turning - check if next waypoint is a corner
+        const bool approaching_corner = (next_waypoint.type == TrackWaypoint::DrivingType::Corner);
+        const bool at_corner = (current_waypoint.type == TrackWaypoint::DrivingType::Corner);
 
-        // 16) Apply brake or throttle based on corner logic
-        bool brake_or_gas = (should_brake_current || should_prebrake_next);
-        if (brake_or_gas) {
-            this->brake();
+        // Use more aggressive steering when approaching or at corners
+        float steering_threshold;
+        if (at_corner || approaching_corner) {
+            steering_threshold = this->corner_steering_threshold_;
         }
         else {
+            steering_threshold = this->straight_steering_threshold_;
+        }
+
+        // Early corner turning: if approaching corner and close enough, use corner threshold
+        if (approaching_corner && distance_to_current_waypoint < tile_size * this->early_corner_turn_distance_) {
+            steering_threshold = this->corner_steering_threshold_;
+        }
+
+        // Only steer if we need to turn significantly or there's a collision
+        const bool should_steer = collision_detected || std::abs(heading_difference_radians) > steering_threshold;
+
+        // Add steering smoothing to reduce wiggling - require minimum heading difference for straights
+        const bool is_on_straight = !at_corner && !approaching_corner;
+        const float minimum_steering_difference = is_on_straight ? this->minimum_straight_steering_difference_ : 0.001f;
+
+        if (should_steer && std::abs(heading_difference_radians) > minimum_steering_difference) {
+            if (heading_difference_radians < 0.0f) {
+                this->steer_left();
+            }
+            else {
+                this->steer_right();
+            }
+        }
+
+        // Speed management - fixed logic to prevent getting stuck
+        const float target_speed =
+            (current_waypoint.type == TrackWaypoint::DrivingType::Corner || next_waypoint.type == TrackWaypoint::DrivingType::Corner)
+                ? tile_size * this->corner_speed_factor_
+                : tile_size * this->straight_speed_factor_;
+
+        const float brake_distance = tile_size * this->brake_distance_factor_;
+
+        // More intelligent braking logic
+        const bool approaching_corner_too_fast = (next_waypoint.type == TrackWaypoint::DrivingType::Corner) &&
+                                                 (distance_to_current_waypoint < brake_distance) &&
+                                                 (current_speed > target_speed * 1.5f);
+
+        const bool speed_too_high = current_speed > target_speed * 2.0f;  // Only brake if way too fast
+
+        const bool should_brake = collision_detected || speed_too_high || approaching_corner_too_fast;
+
+        if (should_brake) {
+            this->brake();
+        }
+        else if (current_speed < target_speed * 0.8f) {  // Start accelerating sooner
             this->gas();
         }
 
-        // 17) If we have reached (or passed) the current waypoint, advance to the next
-        if (distance_to_current_waypoint < waypoint_reach_distance_pixels_) {
+        // Advance waypoint
+        if (distance_to_current_waypoint < waypoint_reach_distance) {
             this->current_waypoint_index_number_ = next_index;
         }
 
-#ifndef NDEBUG  // Debug, remove later
-        // Create bare minimum ImGui window for debugging the current car
-        // This must be before the physics update, because it resets the input flags
+        // Update debug shape
+        this->debug_shape_.setRadius(waypoint_reach_distance);
+        this->debug_shape_.setOrigin(this->debug_shape_.getLocalBounds().getCenter());  // Recalculate origin after radius change
+        this->debug_shape_.setPosition(current_waypoint.position);
+
+#ifndef NDEBUG
+        // Runtime-configurable debug window
         const ImGuiViewport *vp = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 10.0f, vp->WorkPos.y + 10.0f), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
-        ImGui::SetNextWindowSize(ImVec2(400.0f, 480.0f), ImGuiCond_Always);
-        ImGui::SetNextWindowBgAlpha(0.60f);
-        if (ImGui::Begin(
-                "AI Debugging",
-                nullptr,
-                ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse |
-                    ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoMove)) {
-            ImGui::TextUnformatted("Physics:");
-            ImGui::BulletText("Speed                       : %.0f px/s", static_cast<double>(this->get_speed()));
-            ImGui::BulletText("Rotation                    : %.0f deg", static_cast<double>(this->sprite_.getRotation().asDegrees()));
-            ImGui::BulletText("Steering Wheel Angle        : %.0f deg", static_cast<double>(this->get_steering_angle()));
-            ImGui::Separator();
-            ImGui::TextUnformatted("Input:");
-            ImGui::BulletText("Accelerating                : %s", brake_or_gas ? "OFF" : "ON");
-            ImGui::BulletText("Braking                     : %s", brake_or_gas ? "ON" : "OFF");
-            ImGui::BulletText("Steering Left               : %s", steering_left ? "ON" : "OFF");
-            ImGui::BulletText("Steering Right              : %s", steering_right ? "ON" : "OFF");
-            ImGui::Separator();
-            ImGui::TextUnformatted("AI:");
-            ImGui::BulletText("Current Waypoint Index      : %zu / %zu", this->current_waypoint_index_number_, waypoints.size());
-            ImGui::BulletText("Current Waypoint Type       : %s", current_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
-            ImGui::BulletText("Next Waypoint Type          : %s", next_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
-            ImGui::BulletText("Distance to Current Waypoint: %.0f px", static_cast<double>(distance_to_current_waypoint));
-            ImGui::BulletText("Distance to Next Waypoint   : %.0f px", static_cast<double>(distance_to_next_waypoint));
-            ImGui::BulletText("Stopping Distance Required  : %.0f px", static_cast<double>(required_stopping_distance));
-            ImGui::BulletText("Brake for Current Corner    : %s", should_brake_current ? "YES" : "NO");
-            ImGui::BulletText("Pre-Brake for Next Corner   : %s", should_prebrake_next ? "YES" : "NO");
+        ImGui::SetNextWindowSize(ImVec2(450.0f, 550.0f), ImGuiCond_Always);
+
+        if (ImGui::Begin("AI", nullptr,
+                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                             ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing)) {
+
+            // Telemetry section
+            if (ImGui::CollapsingHeader("Telemetry", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Indent();
+
+                // Speed info
+                ImGui::Text("Speed: %.0f px/s", static_cast<double>(current_speed));
+                ImGui::Text("Target Speed: %.0f px/s", static_cast<double>(target_speed));
+
+                ImGui::Separator();
+
+                // Distance info
+                ImGui::Text("Distance to Waypoint: %.0f px", static_cast<double>(distance_to_current_waypoint));
+                ImGui::Text("Brake Distance: %.0f px", static_cast<double>(brake_distance));
+
+                ImGui::Separator();
+
+                // Steering info
+                ImGui::Text("Heading Diff: %.3f rad", static_cast<double>(heading_difference_radians));
+
+                ImGui::Separator();
+
+                // Status info
+                ImGui::Text("Current Type: %s", current_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
+                ImGui::Text("Next Type: %s", next_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
+
+                // Status indicators
+                ImGui::Text("Collision: %s", collision_detected ? "YES" : "NO");
+                ImGui::Text("Should Brake: %s", should_brake ? "YES" : "NO");
+                ImGui::Text("Approaching Corner Fast: %s", approaching_corner_too_fast ? "YES" : "NO");
+                ImGui::Text("Speed Too High: %s", speed_too_high ? "YES" : "NO");
+                ImGui::Text("Approaching Corner: %s", approaching_corner ? "YES" : "NO");
+                ImGui::Text("At Corner: %s", at_corner ? "YES" : "NO");
+
+                ImGui::Unindent();
+            }
+
+            // AI Settings section
+            if (ImGui::CollapsingHeader("Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Indent();
+
+                // Basic settings
+                ImGui::SeparatorText("Basic Parameters:");
+                ImGui::PushItemWidth(-180.0f);  // Make sliders narrower to fit window
+
+                ImGui::SliderFloat("Waypoint Reach", &this->waypoint_reach_factor_, 0.1f, 1.0f, "%.2fx");
+                ImGui::TextWrapped("How close the car must get to a waypoint before targeting the next one. Lower = more precise but may miss waypoints.");
+
+                ImGui::SliderFloat("Collision Distance", &this->collision_distance_, 0.1f, 1.0f, "%.2fx");
+                ImGui::TextWrapped("How far ahead the car looks for track boundaries to avoid crashes. Higher = earlier collision avoidance.");
+
+                // Steering settings
+                ImGui::SeparatorText("Steering Parameters");
+
+                ImGui::SliderFloat("Straight Threshold", &this->straight_steering_threshold_, 0.05f, 0.5f, "%.3f rad");
+                ImGui::TextWrapped("How much the car heading must differ from target direction before steering on straights. Higher = less wiggling but slower corrections.");
+
+                ImGui::SliderFloat("Corner Threshold", &this->corner_steering_threshold_, 0.001f, 0.1f, "%.3f rad");
+                ImGui::TextWrapped("How much the car heading must differ from target direction before steering in corners. Lower = more responsive turning.");
+
+                ImGui::SliderFloat("Min Straight Steer", &this->minimum_straight_steering_difference_, 0.01f, 0.2f, "%.3f rad");
+                ImGui::TextWrapped("Minimum heading difference required to steer on straights. Prevents tiny steering corrections that cause wiggling.");
+
+                ImGui::SliderFloat("Early Corner Turn", &this->early_corner_turn_distance_, 0.5f, 2.0f, "%.2fx");
+                ImGui::TextWrapped("How far before a corner the car starts using corner steering settings. Higher = starts turning sooner for smoother cornering.");
+
+                // Speed settings
+                ImGui::SeparatorText("Speed Parameters");
+
+                ImGui::SliderFloat("Corner Speed", &this->corner_speed_factor_, 0.5f, 2.0f, "%.2fx");
+                ImGui::TextWrapped("Target speed multiplier for corners. Lower = slower and safer cornering, higher = faster but riskier.");
+
+                ImGui::SliderFloat("Straight Speed", &this->straight_speed_factor_, 1.0f, 3.0f, "%.2fx");
+                ImGui::TextWrapped("Target speed multiplier for straight sections. Higher = faster top speed on straights.");
+
+                ImGui::SliderFloat("Brake Distance", &this->brake_distance_factor_, 0.2f, 2.0f, "%.2fx");
+                ImGui::TextWrapped("How far before corners the car starts braking. Higher = earlier braking for safer cornering.");
+
+                ImGui::PopItemWidth();
+
+                ImGui::Spacing();
+
+                // Reset button
+                if (ImGui::Button("Reset to Defaults", ImVec2(-1.0f, 0.0f))) {
+                    this->waypoint_reach_factor_ = 0.5f;
+                    this->collision_distance_ = 0.5f;
+                    this->straight_steering_threshold_ = 0.36f;
+                    this->corner_steering_threshold_ = 0.02f;
+                    this->minimum_straight_steering_difference_ = 0.05f;
+                    this->early_corner_turn_distance_ = 1.0f;
+                    this->corner_speed_factor_ = 1.2f;
+                    this->straight_speed_factor_ = 2.0f;
+                    this->brake_distance_factor_ = 1.0f;
+                }
+
+                ImGui::Unindent();
+            }
         }
         ImGui::End();
 #endif
 
-        // 18) Finally, call the shared physics handler to apply movement, rotation, and collisions
+        // Apply physics
         BaseCar::update(dt);
     }
 
   private:
-    // TODO: Make these scale with track tile size, because smaller tiles = waypoints more close together
-
-    // Define how close the car must be to a waypoint before we mark it "reached"
-    static constexpr float waypoint_reach_distance_pixels_ = 250.0f;
-
-    // Define the minimum heading difference (in radians) needed to trigger a steer command
-    static constexpr float steering_threshold_radians_ = 0.10f;
+    // Runtime-configurable AI parameters (exposed in debug window)
+    float waypoint_reach_factor_ = 0.5f;                  // Waypoint reach distance as fraction of tile size
+    float collision_distance_ = 0.5f;                     // Collision check distance as fraction of tile size
+    float straight_steering_threshold_ = 0.2f;            // Steering threshold on straights (higher = less wiggling)
+    float corner_steering_threshold_ = 0.02f;             // Steering threshold in corners (lower = more responsive)
+    float minimum_straight_steering_difference_ = 0.05f;  // Minimum heading difference to steer on straights (reduces wiggling)
+    float early_corner_turn_distance_ = 1.0f;             // Distance before corner to start turning early (as fraction of tile size)
+    float corner_speed_factor_ = 1.2f;                    // Target speed in corners as fraction of tile size
+    float straight_speed_factor_ = 2.0f;                  // Target speed on straights as fraction of tile size
+    float brake_distance_factor_ = 1.0f;                  // Brake distance as fraction of tile size
 
     // Debug shape for visualization
-    sf::CircleShape debug_shape_{waypoint_reach_distance_pixels_};  // TODO: Remove this later
+    sf::CircleShape debug_shape_{250.0f};
 
     /**
      * @brief Index of the current target waypoint.
