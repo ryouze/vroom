@@ -14,9 +14,9 @@ function(fetch_and_link_external_dependencies target)
   set(SFML_BUILD_AUDIO OFF)
   set(SFML_BUILD_NETWORK OFF)
   # Prevent SFML v3.0.1 from using the system locale (C locale when using VSCode on macOS)
-  if(NOT DEFINED ENV{LC_ALL})
-    set(ENV{LC_ALL} "en_US.UTF-8")
-  endif()
+  # if(NOT DEFINED ENV{LC_ALL})
+  set(ENV{LC_ALL} "en_US.UTF-8")  # Always set, so it will work the first time instead of second time
+  # endif()
   FetchContent_Declare(
     sfml
     #URL https://github.com/SFML/SFML/releases/download/3.0.0/SFML-3.0.0-sources.zip
