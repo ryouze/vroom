@@ -41,7 +41,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - None.
 
 **Current**:
-- None.
+- Add many different car textures and add more AI cars to the game that use them.
+  - The game is very basic, so we can run A LOT of AI cars at once.
 
 **Later**:
 - Read the SFML documentation.
