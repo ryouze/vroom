@@ -305,12 +305,13 @@ void Track::build()
                                      const sf::Texture &bottom_main,
                                      const sf::Texture &top_detour,
                                      const sf::Texture &top_main) {
-        for (std::size_t row = this->config_.vertical_count - 2; row > 0;) {
+        for (std::ptrdiff_t row = static_cast<std::ptrdiff_t>(this->config_.vertical_count - 2); row > 0;) {
             if (detour_dist(this->rng_) < this->config_.detour_probability) {
                 // Determine which bubble heights fit
                 std::vector<std::size_t> viable;
                 for (std::size_t height : bubble_heights) {
-                    if (row >= height) {
+                    const std::ptrdiff_t height_signed = static_cast<std::ptrdiff_t>(height);
+                    if (row >= height_signed) {
                         viable.emplace_back(height);
                     }
                 }
@@ -349,7 +350,7 @@ void Track::build()
 
                     // Advance row pointer beyond detour and insert continuity tile
                     // This is a fix for the real edge not having a vertical tile before the next detour
-                    row -= height;
+                    row -= static_cast<std::ptrdiff_t>(height);
                     if (row > 0) {
                         const float y_cont = top_left_origin.y + (static_cast<float>(row) + half) * tile_size;
                         place_tile(this->tiles_.vertical,
@@ -658,7 +659,11 @@ void BaseCar::apply_physics_step(const float dt)
         // This is a simple approximation of a bounce, not a real physics simulation; we use a random angle to make the bounce direction unpredictable
         else {
             // Calculate speed ratio from 0.0 (minimum bounce speed) to 1.0 (maximum speed)
-            const float speed_ratio = std::clamp((current_speed - this->config_.collision_minimum_bounce_speed_pixels_per_second) / (this->config_.maximum_movement_pixels_per_second - this->config_.collision_minimum_bounce_speed_pixels_per_second), 0.0f, 1.0f);
+            // Protect against division by zero
+            float speed_ratio = 0.0f;
+            if (this->config_.maximum_movement_pixels_per_second > this->config_.collision_minimum_bounce_speed_pixels_per_second) {
+                speed_ratio = std::clamp((current_speed - this->config_.collision_minimum_bounce_speed_pixels_per_second) / (this->config_.maximum_movement_pixels_per_second - this->config_.collision_minimum_bounce_speed_pixels_per_second), 0.0f, 1.0f);
+            }
 
             // Interpolate between minimum and maximum jitter angles based on speed
             const float max_jitter_angle_degrees = this->config_.collision_minimum_random_bounce_angle_degrees * (1.0f - speed_ratio) + this->config_.collision_maximum_random_bounce_angle_degrees * speed_ratio;
@@ -710,6 +715,13 @@ void AICar::update(const float dt)
 {
     // Get basic info
     const auto &waypoints = this->track_.get_waypoints();
+
+    // Safety check for empty waypoints
+    if (waypoints.empty()) {
+        SPDLOG_WARN("No waypoints available, cannot update AI car!");
+        return;
+    }
+
     const std::size_t current_index = this->current_waypoint_index_number_;
     const std::size_t next_index = (current_index + 1) % waypoints.size();
     const TrackWaypoint &current_waypoint = waypoints[current_index];
