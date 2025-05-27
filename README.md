@@ -246,6 +246,7 @@ ctest --output-on-failure
 - [spdlog](https://github.com/gabime/spdlog) - Logging.
 
 **Graphics:**
+- [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard icons.
 - [Moonlight](https://github.com/Madam-Herta/Moonlight) - ImGui theme.
 - [PlayCover](https://macosicons.com/#/u/helloman) - App icon.
 - [Racing Pack](https://kenney.nl/assets/racing-pack) - Car and track assets.
