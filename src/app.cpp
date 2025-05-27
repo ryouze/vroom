@@ -522,8 +522,8 @@ void run()
                 // Title and subtitle
                 ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_NAME).x) * 0.5f);
                 ImGui::Text("%s", generated::PROJECT_NAME);
-                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("Pure 2D drift racing").x) * 0.5f);
-                ImGui::TextUnformatted("Pure 2D drift racing");
+                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("2D drift racing game").x) * 0.5f);
+                ImGui::TextUnformatted("2D drift racing game");
 
                 ImGui::Separator();
 
