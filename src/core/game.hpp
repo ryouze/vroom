@@ -483,25 +483,6 @@ struct CarConfig final {
 class BaseCar {
   public:
     /**
-     * @brief Enum that represents the current gear of the car.
-     *
-     * The simplest possible gearbox with three gears: Forward, Neutral, and Backward.
-     */
-    enum class Gear {
-        /**
-         * @brief Normal: Go forward when holding the gas pedal and brake when holding the brake pedal.
-         */
-        Forward,
-
-        /**
-         * @brief Flip: Go backward when pressing the brake pedal and brake when pressing the gas pedal.
-         *
-         * @note This doesn't really make sense IRL, but it's the easiest to implement and it works that way in most arcade racing games, such as this one.
-         */
-        Backward,
-    };
-
-    /**
      * @brief Construct a new BaseCar object.
      *
      * @param texture Reference to the SFML texture used for the car sprite. This is expected to be around 71x131 pixels.
@@ -522,7 +503,6 @@ class BaseCar {
           // Private
           last_position_(this->track_.get_finish_position()),  // Get spawn point from the track
           velocity_(0.0f, 0.0f),
-          gear_(Gear::Forward),
           is_accelerating_(false),
           is_braking_(false),
           is_steering_left_(false),
@@ -592,16 +572,6 @@ class BaseCar {
     [[nodiscard]] float get_speed() const
     {
         return std::hypot(this->velocity_.x, this->velocity_.y);
-    }
-
-    /**
-     * @brief Get the current gear of the car.
-     *
-     * @return Current gear of the car (e.g., "Forward", "Neutral", "Backward").
-     */
-    [[nodiscard]] Gear get_gear() const
-    {
-        return this->gear_;
     }
 
     /**
@@ -699,18 +669,6 @@ class BaseCar {
     BaseCar &operator=(const BaseCar &) = delete;
 
   protected:
-    /**
-     * @brief Set the car's gear.
-     *
-     * @param gear Gear to set (e.g., "Forward", "Neutral", "Backward").
-     *
-     * @note This is set explicitly by derived classes that implement their own gear logic. For the player, automatic gear shifting when holding the brake for X amount of time makes sense. For AI, it might be better to always use "Forward" gear, unless it is explicitly trying to reverse out of a wall after crashing.
-     */
-    void set_gear(const Gear gear)
-    {
-        this->gear_ = gear;
-    }
-
     /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      */
@@ -905,13 +863,6 @@ class BaseCar {
     sf::Vector2f velocity_;
 
     /**
-     * @brief Current gear of the car.
-     *
-     * This is used to determine the car's behavior when gas and brake are pressed.
-     */
-    Gear gear_;
-
-    /**
      * @brief Set to true via "gas()" to accelerate the car.
      */
     bool is_accelerating_;
@@ -958,29 +909,6 @@ class PlayerCar final : public BaseCar {
 
     // Ensure compilation fails if BaseCar's destructor ever stops being virtual
     ~PlayerCar() override = default;
-
-    // TODO: Override this to implement switching to reverse when holding for X amount of time
-    // We probably need to store "dt" from "update()" in a member variable to do this?
-    void gas() override
-    {
-        BaseCar::gas();
-
-        // If below minimum speed and holding the gas for long enough, switch to forward gear
-    }
-
-    void brake() override
-    {
-        BaseCar::brake();
-
-        // If below minimum speed and holding the brake for long enough, switch to reverse gear
-    }
-
-  private:
-    // Minimum speed at which we allow the car to switch gears
-    static constexpr float minimum_speed_for_gear_switch = 5.f;
-
-    // Time to wait in seconds before switching to reverse gear, must be holding the gas or brake pedal for that
-    static constexpr float time_to_switch_to_reverse = 0.5f;
 };
 /**
  * @brief AI-controlled car class.
