@@ -24,13 +24,13 @@ struct TrackConfig final {
     /**
      * @brief Number of horizontal tiles, i.e., width (e.g., "8").
      *
-     * @note If detours are enabled, +1 tile may be added to each side when a detour occurs, increasing the effective total width, even though the core "horizontal_count" remains unchanged
+     * @note If detours are enabled, +1 tile may be added to each side when a detour occurs, increasing the effective total width, even though the core "horizontal_count" remains unchanged.
      */
     std::size_t horizontal_count = 7;
 
-/**
- * @brief Number of vertical tiles, i.e., height (e.g., "6").
- */
+    /**
+     * @brief Number of vertical tiles, i.e., height (e.g., "6").
+     */
 #ifndef NDEBUG  // Debug, remove later
     std::size_t vertical_count = 7;
 #else
@@ -40,7 +40,7 @@ struct TrackConfig final {
     /**
      * @brief Size of each tile in pixels (e.g., "256").
      *
-     * @note This does not depend on the size of the texture; it will be scaled to this size.
+     * @note This determines the rendered size of each track tile and does not depend on the source texture size, which will be scaled to the size provided here accordingly.
      *
      * @details The default texture size is 128x128px, so we are scaling it up 6 times.
      */
@@ -49,7 +49,7 @@ struct TrackConfig final {
     /**
      * @brief Probability in the range [0.0, 1.0] that a detour bubble will be generated on each vertical edge segment.
      *
-     * @note A value of 0.0 disables detours entirely; 1.0 maximizes detour frequency.
+     * @note A value of 0.0 disables detours entirely, while 1.0 maximizes detour frequency. Horizontal edges always remain straight regardless of this setting.
      */
 #ifndef NDEBUG
     float detour_probability = 1.0f;
@@ -131,6 +131,7 @@ class Track final {
          * XXX
          *   X
          *   X
+         * ```
          */
         const sf::Texture &top_right;
 
@@ -142,6 +143,7 @@ class Track final {
          *   X
          *   X
          * XXX
+         * ```
          */
         const sf::Texture &bottom_right;
 
@@ -153,6 +155,7 @@ class Track final {
          * X
          * X
          * XXX
+         * ```
          */
         const sf::Texture &bottom_left;
 
@@ -164,6 +167,7 @@ class Track final {
          *  X
          *  X
          *  X
+         * ```
          */
         const sf::Texture &vertical;
 
@@ -175,6 +179,7 @@ class Track final {
          *
          * XXX
          *
+         * ```
          */
         const sf::Texture &horizontal;
 
@@ -186,6 +191,7 @@ class Track final {
          *
          * XXX
          *
+         * ```
          */
         const sf::Texture &horizontal_finish;
     };
@@ -227,7 +233,7 @@ class Track final {
     /**
      * @brief Check whether a given world-space point lies within any track tile boundary.
      *
-     * This is a simple check that treats every tile as a rectangle, regardless of its actual shape. So while it's technically possible to go outside the curves, the collision detection is simple and fast.
+     * This performs a simple rectangular collision check against all track tile bounds using pre-cached collision rectangles. While it's technically possible to go outside curved tile shapes visually, this approach is simple and fast.
      *
      * @param world_position Coordinates in world space to test.
      *
@@ -289,18 +295,16 @@ class Track final {
      *
      * @param config Configuration for the track, possibly containing invalid values.
      *
-     * @return Copy of the configuration with ubvakud values clamped to safe values (e.g., "horizontal_count" and "vertical_count" must be at least "3" or higher).
+     * @return Copy of the configuration with invalid values clamped to safe values (e.g., "horizontal_count" and "vertical_count" must be at least "3", "size_px" must be at least "256", and "detour_probability" must be in range [0.0, 1.0]).
      *
      * @note Always use this during construction or configuration changes to prevent catastrophic errors.
      */
     [[nodiscard]] TrackConfig validate_config(const TrackConfig &config) const;
 
     /**
-     * @brief Build the track layout using on current configuration and textures.
+     * @brief Build the track layout using the current configuration and textures.
      *
-     * This fills in the sprite array, collision bounds, waypoint sequence, and finish-line data.
-     *
-     * Random detour bubbles are inserted on vertical edges according to detour probability, whereas the horizontal edges are always straight.
+     * This creates the complete track by placing corner tiles, horizontal/vertical edge tiles, and optional detour bubbles. It also generates collision bounds, waypoint sequences for AI navigation, and identifies the finish line position. Random detour bubbles are inserted on vertical edges according to detour probability, while horizontal edges remain straight.
      *
      * @note This is marked as private, because we only want to build the track on construction and explicit config changes.
      */
@@ -309,29 +313,37 @@ class Track final {
     /**
      * @brief Tile textures used for building the track.
      *
-     * @details A copy is required to prevent segfault.
+     * This contains references to all track tile textures including curves, straights, and finish line.
+     *
+     * @details A complete copy is stored to prevent segfaults if the original texture references become invalid.
      */
     const Textures tiles_;
 
     /**
-     * @brief Random number generator used for making the track layout more interesting/unpredictable.
+     * @brief Random number generator used for procedural track generation.
+     *
+     * This determines random detour placement along vertical track edges according to the configured detour probability. Each edge segment uses this RNG to decide whether to generate a detour bubble.
      */
     std::mt19937 &rng_;
 
     /**
      * @brief Current validated track configuration.
+     *
+     * This dontains all track parameters after validation and clamping. Values are guaranteed to be within safe ranges to prevent crashes or invalid track generation.
      */
     TrackConfig config_;
 
     /**
      * @brief Collection of sprite objects for each tile in the track layout.
      *
-     * @note This should be drawn every frame to display the track on the screen.
+     * This contains all track tile sprites positioned and scaled according to the track configuration. Sprites are created during track building and ready for rendering each frame.
      */
     std::vector<sf::Sprite> sprites_;
 
     /**
      * @brief Axis-aligned bounding rectangles used for collision detection against each sprite.
+     *
+     * This contains pre-cached collision bounds for efficient track boundary checking. Each rectangle corresponds to a sprite in the "sprites_" vector.
      *
      * @note This ensures that we don't need to call "getGlobalBounds()" on each sprite every time we want to check for collisions.
      */
@@ -339,11 +351,15 @@ class Track final {
 
     /**
      * @brief Ordered sequence of waypoints defining the AI navigation path around the track.
+     *
+     * This contains waypoints placed at each tile center with appropriate driving type classification (straight or corner). AI cars follow this sequence to navigate around the track efficiently.
      */
     std::vector<TrackWaypoint> waypoints_;
 
     /**
      * @brief Center position of the finish-line sprite, used as a spawn point for vehicles.
+     *
+     * This contains the world coordinates of the finish line tile center where cars are initially placed. Set during track building when the finish line tile is positioned on the top edge.
      */
     sf::Vector2f finish_point_;
 
