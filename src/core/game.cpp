@@ -2,10 +2,13 @@
  * @file game.cpp
  */
 
-#include <array>    // for std::array
-#include <cstddef>  // for std::size_t
-#include <random>   // for std::mt19937, std::uniform_real_distribution, std::uniform_int_distribution
-#include <vector>   // for std::vector
+#include <algorithm>  // for std::clamp, std::min, std::max
+#include <array>      // for std::array
+#include <cmath>      // for std::hypot, std::remainder, std::atan2, std::sin, std::cos, std::lerp, std::abs
+#include <cstddef>    // for std::size_t
+#include <numbers>    // for std::numbers
+#include <random>     // for std::mt19937, std::uniform_real_distribution, std::uniform_int_distribution
+#include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
