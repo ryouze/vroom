@@ -39,27 +39,30 @@ Track::Track(const Textures tiles,
 
 void Track::set_config(const TrackConfig &config)
 {
-    // SPDLOG_DEBUG("Setting new config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
-    //              config.horizontal_count,
-    //              config.vertical_count,
-    //              config.size_px,
-    //              config.detour_probability);
-    // Rebuild only when necessary
-    // if (this->config_ != config) [[likely]] {  // Probably likely if the user is calling this method
-    //     SPDLOG_DEBUG("Config changed, rebuilding track...");
-    this->config_ = this->validate_config(config);
-    this->build();
-    //     SPDLOG_DEBUG("Track rebuilt successfully!");
-    // }
-    // else {
-    //     SPDLOG_DEBUG("Config is the same, skipping rebuild...");
-    // }
+    const TrackConfig validated_config = this->validate_config(config);
+    // Only rebuild if the configuration actually changes
+    if (!(this->config_ == validated_config)) {
+        SPDLOG_DEBUG("Config changed, rebuilding track...");
+        this->config_ = validated_config;
+        this->build();
+    }
+    else {
+        SPDLOG_DEBUG("Config unchanged, skipping track rebuild!");
+    }
 }
 
 void Track::reset()
 {
-    this->config_ = this->validate_config(TrackConfig{});  // Validate default compile-time config anyway
-    this->build();
+    const TrackConfig default_config = this->validate_config(TrackConfig{});  // Validate default compile-time config anyway
+    // Only rebuild if the configuration actually changes
+    if (!(this->config_ == default_config)) {
+        SPDLOG_DEBUG("Config changed during reset, rebuilding track...");
+        this->config_ = default_config;
+        this->build();
+    }
+    else {
+        SPDLOG_DEBUG("Config is already default, skipping track rebuild!");
+    }
 }
 
 bool Track::is_on_track(const sf::Vector2f &world_position) const

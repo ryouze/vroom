@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cmath>    // for std::abs
 #include <cstddef>  // for std::size_t
 #include <random>   // for std::mt19937
 #include <vector>   // for std::vector
@@ -54,14 +55,17 @@ struct TrackConfig final {
     float detour_probability = 0.4f;
 #endif
 
-    // /**
-    //  * @brief Default three-way comparison operator.
-    //  *
-    //  * This automatically generates "operator==", "operator<", "operator<=", "operator>", and "operator>=".
-    //  */
-    // [[nodiscard]] auto operator<=>(const TrackConfig &) const = default;
-
-    // Comparing floats might be a bad idea,
+    /**
+     * @brief Equality comparison operator with epsilon-based float comparison.
+     */
+    [[nodiscard]] bool operator==(const TrackConfig &other) const noexcept
+    {
+        constexpr float epsilon = 1e-6f;
+        return horizontal_count == other.horizontal_count &&
+               vertical_count == other.vertical_count &&
+               size_px == other.size_px &&
+               std::abs(detour_probability - other.detour_probability) < epsilon;
+    }
 };
 
 /**
