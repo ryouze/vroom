@@ -228,7 +228,7 @@ void Track::build()
     std::uniform_real_distribution<float> detour_dist{0.0f, 1.0f};
 
     // Process the edge, walking downward and laying optional detours
-    const auto process_edge_down = [&](float main_x,
+    const auto process_edge_down = [&](const float main_x,
                                        const float detour_x,
                                        const sf::Texture &top_detour,
                                        const sf::Texture &top_main,
@@ -300,7 +300,7 @@ void Track::build()
     };
 
     // Process the edge, walking upward and laying optional detours
-    const auto process_edge_up = [&](float main_x,
+    const auto process_edge_up = [&](const float main_x,
                                      const float detour_x,
                                      const sf::Texture &bottom_detour,
                                      const sf::Texture &bottom_main,
