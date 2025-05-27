@@ -412,7 +412,7 @@ struct CarConfig final {
      *
      * Higher values cause the car to self-straighten more rapidly.
      */
-    float steering_autocenter_rate_degrees_per_second = 580.0f;
+    float steering_autocenter_rate_degrees_per_second = 780.0f;
 
     /**
      * @brief The maximum allowed steering wheel angle, in degrees.
@@ -440,16 +440,16 @@ struct CarConfig final {
     /**
      * @brief Lateral slip damping coefficient per second.
      *
-     * Higher values reduce sideways sliding more aggressively, promoting stable handling in turns.
+     * Higher values reduce sideways sliding more aggressively, promoting stable handling in turns. Less makes the car more prone to drifting.
      */
-    float lateral_slip_damping_coefficient_per_second = 12.0f;
+    float lateral_slip_damping_coefficient_per_second = 3.0f;  // Make it drift
 
     /**
      * @brief Fraction of velocity retained after a collision bounce.
      *
      * 0.0 means a full stop on impact; 1.0 means a perfectly elastic bounce.
      */
-    float collision_velocity_retention_ratio = 0.5f;
+    float collision_velocity_retention_ratio = 0.25f;
 
     /**
      * @brief Minimum speed required (in pixels per second) for a bounce to occur.
@@ -1216,7 +1216,7 @@ class AICar final : public BaseCar {
                 // Reset button
                 if (ImGui::Button("Reset to Defaults", ImVec2(-1.0f, 0.0f))) {
                     this->waypoint_reach_factor_ = 0.75f;
-                    this->collision_distance_ = 0.75f;
+                    this->collision_distance_ = 0.65f;
                     this->straight_steering_threshold_ = 0.25f;
                     this->corner_steering_threshold_ = 0.08f;
                     this->minimum_straight_steering_difference_ = 0.1f;
