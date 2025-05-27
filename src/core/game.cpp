@@ -9,6 +9,9 @@
 
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
+#ifndef NDEBUG  // Debug, remove later
+#include <imgui.h>
+#endif
 
 #include "game.hpp"
 
@@ -442,6 +445,483 @@ void Track::build()
     this->waypoints_.shrink_to_fit();
     this->collision_bounds_.shrink_to_fit();
     SPDLOG_DEBUG("Track consisting of '{}' tiles built successfully!", this->sprites_.size());
+}
+
+BaseCar::BaseCar(const sf::Texture &texture,
+                 std::mt19937 &rng,
+                 const Track &track,
+                 const CarConfig &config)
+    : sprite_(texture),
+      track_(track),
+      config_(config),
+      rng_(rng),
+      // Private
+      last_position_(this->track_.get_finish_position()),  // Get spawn point from the track
+      velocity_(0.0f, 0.0f),
+      is_accelerating_(false),
+      is_braking_(false),
+      is_steering_left_(false),
+      is_steering_right_(false),
+      is_handbraking_(false),
+      steering_wheel_angle_(0.0f)
+{
+    // Center the sprite origin for correct rotation and positioning
+    this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
+    // Set initial position of the car sprite based on the spawn point from the track, as set in the initializer list
+    this->sprite_.setPosition(this->last_position_);
+}
+
+void BaseCar::reset()
+{
+    const sf::Vector2f spawn_point = this->track_.get_finish_position();
+    this->sprite_.setPosition(spawn_point);
+    this->sprite_.setRotation(sf::degrees(0.0f));
+    this->last_position_ = spawn_point;
+    this->velocity_ = {0.0f, 0.0f};
+    this->steering_wheel_angle_ = 0.0f;
+}
+
+[[nodiscard]] sf::Vector2f BaseCar::get_position() const
+{
+    return this->sprite_.getPosition();
+}
+
+[[nodiscard]] sf::Vector2f BaseCar::get_velocity() const
+{
+    return this->velocity_;
+}
+
+[[nodiscard]] float BaseCar::get_speed() const
+{
+    return std::hypot(this->velocity_.x, this->velocity_.y);
+}
+
+[[nodiscard]] float BaseCar::get_steering_angle() const
+{
+    return this->steering_wheel_angle_;
+}
+
+void BaseCar::gas()
+{
+    this->is_accelerating_ = true;
+}
+
+void BaseCar::brake()
+{
+    this->is_braking_ = true;
+}
+
+void BaseCar::steer_left()
+{
+    this->is_steering_left_ = true;
+}
+
+void BaseCar::steer_right()
+{
+    this->is_steering_right_ = true;
+}
+
+void BaseCar::handbrake()
+{
+    this->is_handbraking_ = true;
+}
+
+void BaseCar::update(const float dt)
+{
+    this->apply_physics_step(dt);
+}
+
+void BaseCar::draw(sf::RenderTarget &target) const
+{
+    target.draw(this->sprite_);
+}
+
+void BaseCar::apply_physics_step(const float dt)
+{
+    constexpr float stopped_speed_threshold = 0.01f;             // Car counts as stopped below this speed
+    constexpr float steering_autocenter_epsilon_degrees = 0.1f;  // Steering snaps to zero inside this range
+    constexpr float minimum_speed_for_rotation = 1.0f;           // Absolute forward speed required for sprite rotation
+
+    // Cancel opposite steering inputs
+    if (this->is_steering_left_ && this->is_steering_right_) {
+        this->is_steering_left_ = false;
+        this->is_steering_right_ = false;
+    }
+
+    // Compute forward unit vector from current heading
+    const float heading_angle_radians = this->sprite_.getRotation().asRadians();
+    const sf::Vector2f forward_unit_vector = {std::cos(heading_angle_radians), std::sin(heading_angle_radians)};
+
+    // Storage for current speed
+    float current_speed = this->get_speed();
+
+    // Apply gas throttle along forward axis
+    if (this->is_accelerating_) {
+        this->velocity_ += forward_unit_vector * (this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt);
+        current_speed = this->get_speed();
+    }
+
+    // Apply foot brake deceleration
+    if (this->is_braking_ && current_speed > stopped_speed_threshold) {
+        const float brake_reduction = std::min(this->config_.brake_deceleration_rate_pixels_per_second_squared * dt, current_speed);
+        const sf::Vector2f velocity_unit_vector = this->velocity_ / current_speed;
+        this->velocity_ -= velocity_unit_vector * brake_reduction;
+        current_speed -= brake_reduction;
+    }
+
+    // Apply handbrake deceleration
+    if (this->is_handbraking_ && current_speed > stopped_speed_threshold) {
+        const float new_speed = current_speed - this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
+        if (new_speed < 0.1f) {
+            this->velocity_ = {0.0f, 0.0f};
+            current_speed = 0.0f;
+        }
+        else {
+            const sf::Vector2f velocity_unit_vector = this->velocity_ / current_speed;
+            this->velocity_ = velocity_unit_vector * new_speed;
+            current_speed = new_speed;
+        }
+    }
+
+    // Apply passive engine drag when no controls are active
+    if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && current_speed > stopped_speed_threshold) {
+        const float drag = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
+        const float speed_after_drag = std::max(current_speed - drag, 0.0f);
+        const float drag_scale = (current_speed > 0.0f) ? speed_after_drag / current_speed : 0.0f;
+        this->velocity_.x *= drag_scale;
+        this->velocity_.y *= drag_scale;
+        current_speed = speed_after_drag;
+    }
+
+    // Cap speed to configured maximum
+    if (current_speed > this->config_.maximum_movement_pixels_per_second) {
+        const float max_speed_scale = this->config_.maximum_movement_pixels_per_second / current_speed;
+        this->velocity_.x *= max_speed_scale;
+        this->velocity_.y *= max_speed_scale;
+        current_speed = this->config_.maximum_movement_pixels_per_second;
+    }
+
+    // Separate velocity into forward and lateral components
+    const float signed_forward_speed = forward_unit_vector.x * this->velocity_.x + forward_unit_vector.y * this->velocity_.y;
+    const sf::Vector2f forward_velocity_vector = forward_unit_vector * signed_forward_speed;
+    const sf::Vector2f lateral_velocity_vector = this->velocity_ - forward_velocity_vector;
+
+    // Dampen lateral slip for arcade feel
+    const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
+    this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
+
+    // Update steering wheel angle from input
+    if (this->is_steering_left_) {
+        this->steering_wheel_angle_ -= this->config_.steering_turn_rate_degrees_per_second * dt;
+    }
+    if (this->is_steering_right_) {
+        this->steering_wheel_angle_ += this->config_.steering_turn_rate_degrees_per_second * dt;
+    }
+
+    // Auto center steering wheel when no steering input is active
+    if (!this->is_steering_left_ && !this->is_steering_right_) {
+        if (std::abs(this->steering_wheel_angle_) > steering_autocenter_epsilon_degrees && current_speed > 0.0f) {
+            const float centering_factor = std::clamp(this->config_.steering_autocenter_rate_degrees_per_second * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
+            this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_factor);
+        }
+        else {
+            this->steering_wheel_angle_ = 0.0f;
+        }
+    }
+
+    // Clamp steering wheel angle to physical limits
+    this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
+
+    // Rotate sprite if moving forward or backward faster than threshold
+    if (std::abs(signed_forward_speed) > minimum_speed_for_rotation) {
+        const float speed_ratio = std::clamp(current_speed / this->config_.maximum_movement_pixels_per_second, 0.0f, 1.0f);
+        const float steering_sensitivity = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
+        const float direction_sign = (signed_forward_speed >= 0.0f) ? 1.0f : -1.0f;
+        // Flip steering when reversing
+        this->sprite_.rotate(sf::degrees(direction_sign * this->steering_wheel_angle_ * steering_sensitivity * dt));
+    }
+
+    // Move sprite according to velocity
+    this->sprite_.move(this->velocity_ * dt);
+
+    // Handle collision with track boundaries
+    if (!this->track_.is_on_track(this->sprite_.getPosition())) {
+        this->sprite_.setPosition(this->last_position_);
+        // Restore last legal position
+        this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
+        current_speed = this->get_speed();
+        // If below minimum speed, stop the car completely to avoid jitter
+        if (current_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
+            this->velocity_ = {0.0f, 0.0f};
+            // SPDLOG_DEBUG("Collision below minimum bounce speed; now stopping car!");
+        }
+        // Otherwise, bounce it randomly with speed-scaled angles to avoid jitter at low speeds
+        // This is a simple approximation of a bounce, not a real physics simulation; we use a random angle to make the bounce direction unpredictable
+        else {
+            // Calculate speed ratio from 0.0 (minimum bounce speed) to 1.0 (maximum speed)
+            const float speed_ratio = std::clamp((current_speed - this->config_.collision_minimum_bounce_speed_pixels_per_second) / (this->config_.maximum_movement_pixels_per_second - this->config_.collision_minimum_bounce_speed_pixels_per_second), 0.0f, 1.0f);
+
+            // Interpolate between minimum and maximum jitter angles based on speed
+            const float max_jitter_angle_degrees = this->config_.collision_minimum_random_bounce_angle_degrees * (1.0f - speed_ratio) + this->config_.collision_maximum_random_bounce_angle_degrees * speed_ratio;
+
+            // Generate random angle within the calculated range
+            std::uniform_real_distribution<float> speed_scaled_jitter_dist(-max_jitter_angle_degrees, max_jitter_angle_degrees);
+            const float random_jitter_degrees = speed_scaled_jitter_dist(this->rng_);
+            const float random_jitter_radians = sf::degrees(random_jitter_degrees).asRadians();
+            const float cosine_jitter = std::cos(random_jitter_radians);
+            const float sine_jitter = std::sin(random_jitter_radians);
+            const sf::Vector2f original_velocity = this->velocity_;
+            this->velocity_.x = original_velocity.x * cosine_jitter - original_velocity.y * sine_jitter;
+            this->velocity_.y = original_velocity.x * sine_jitter + original_velocity.y * cosine_jitter;
+            this->sprite_.rotate(sf::degrees(random_jitter_degrees));
+            // SPDLOG_DEBUG("Collision above minimum bounce speed, current speed '{}' results in a speed ratio of '{}'; now bouncing back with a random angle of '{}' degrees!", current_speed, speed_ratio, random_jitter_degrees);
+        }
+    }
+
+    // Store last legal position for next frame
+    this->last_position_ = this->sprite_.getPosition();
+
+    // Reset control flags for next frame
+    this->is_accelerating_ = false;
+    this->is_braking_ = false;
+    this->is_steering_left_ = false;
+    this->is_steering_right_ = false;
+    this->is_handbraking_ = false;
+}
+
+AICar::AICar(const sf::Texture &texture,
+             std::mt19937 &rng,
+             const Track &track,
+             const CarConfig &config)
+    : BaseCar(texture, rng, track, config),
+      current_waypoint_index_number_(this->track_.get_finish_index() + 1)  // Start at the finish waypoint index + 1
+{
+}
+
+void AICar::reset()
+{
+    // Call base class reset to handle sprite and physics
+    BaseCar::reset();
+
+    // Must also reset the current waypoint index, but ignore the spawn point (so we add 1)
+    this->current_waypoint_index_number_ = this->track_.get_finish_index() + 1;
+}
+
+void AICar::update(const float dt)
+{
+    // Get basic info
+    const auto &waypoints = this->track_.get_waypoints();
+    const std::size_t current_index = this->current_waypoint_index_number_;
+    const std::size_t next_index = (current_index + 1) % waypoints.size();
+    const TrackWaypoint &current_waypoint = waypoints[current_index];
+    const TrackWaypoint &next_waypoint = waypoints[next_index];
+    const sf::Vector2f car_position = this->sprite_.getPosition();
+    const float tile_size = static_cast<float>(this->track_.get_config().size_px);
+    const float current_speed = this->get_speed();
+
+    // Calculate distances
+    const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
+    const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
+    const float waypoint_reach_distance = tile_size * this->waypoint_reach_factor_;
+
+    // Simple collision detection - just check one point ahead
+    bool collision_detected = false;
+    const sf::Vector2f car_velocity = this->get_velocity();
+    const float velocity_magnitude = std::hypot(car_velocity.x, car_velocity.y);
+    if (velocity_magnitude > 10.0f) {
+        const sf::Vector2f velocity_normalized = car_velocity / velocity_magnitude;
+        const sf::Vector2f check_point = car_position + velocity_normalized * (tile_size * this->collision_distance_);
+        collision_detected = !this->track_.is_on_track(check_point);
+    }
+
+    // Simple steering logic with early corner turning
+    const float desired_heading_radians = std::atan2(vector_to_current_waypoint.y, vector_to_current_waypoint.x);
+    const float current_heading_radians = this->sprite_.getRotation().asRadians();
+    const float heading_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
+
+    // Look ahead for early corner turning - check if next waypoint is a corner
+    const bool approaching_corner = (next_waypoint.type == TrackWaypoint::DrivingType::Corner);
+    const bool at_corner = (current_waypoint.type == TrackWaypoint::DrivingType::Corner);
+
+    // Use more aggressive steering when approaching or at corners with slight randomness
+    float steering_threshold;
+    if (at_corner || approaching_corner) {
+        steering_threshold = this->corner_steering_threshold_ * this->get_random_variation();
+    }
+    else {
+        steering_threshold = this->straight_steering_threshold_ * this->get_random_variation();
+    }
+
+    // Early corner turning: if approaching corner and close enough, use corner threshold with randomness
+    if (approaching_corner && distance_to_current_waypoint < tile_size * this->early_corner_turn_distance_ * this->get_random_variation()) {
+        steering_threshold = this->corner_steering_threshold_ * this->get_random_variation();
+    }
+
+    // Only steer if we need to turn significantly or there's a collision
+    const bool should_steer = collision_detected || std::abs(heading_difference_radians) > steering_threshold;
+
+    // Add steering smoothing to reduce wiggling - require minimum heading difference for straights
+    const bool is_on_straight = !at_corner && !approaching_corner;
+    const float minimum_steering_difference = is_on_straight ? this->minimum_straight_steering_difference_ : 0.001f;
+
+    if (should_steer && std::abs(heading_difference_radians) > minimum_steering_difference) {
+        if (heading_difference_radians < 0.0f) {
+            this->steer_left();
+        }
+        else {
+            this->steer_right();
+        }
+    }
+
+    // Speed management with slight randomness to create variety
+    const float base_target_speed =
+        (current_waypoint.type == TrackWaypoint::DrivingType::Corner || next_waypoint.type == TrackWaypoint::DrivingType::Corner)
+            ? tile_size * this->corner_speed_factor_
+            : tile_size * this->straight_speed_factor_;
+
+    const float target_speed = base_target_speed * this->get_random_variation();
+    const float brake_distance = tile_size * this->brake_distance_factor_ * this->get_random_variation();
+
+    // More intelligent braking logic with randomness
+    const bool approaching_corner_too_fast = (next_waypoint.type == TrackWaypoint::DrivingType::Corner) &&
+                                             (distance_to_current_waypoint < brake_distance) &&
+                                             (current_speed > target_speed * (1.5f * this->get_random_variation()));
+
+    const bool speed_too_high = current_speed > target_speed * (2.0f * this->get_random_variation());  // Only brake if way too fast
+
+    const bool should_brake = collision_detected || speed_too_high || approaching_corner_too_fast;
+
+    if (should_brake) {
+        this->brake();
+    }
+    else if (current_speed < target_speed * (0.8f * this->get_random_variation())) {  // Start accelerating sooner
+        this->gas();
+    }
+
+    // Advance waypoint with slight randomness in reach distance
+    const float randomized_waypoint_reach_distance = waypoint_reach_distance * this->get_random_variation();
+    if (distance_to_current_waypoint < randomized_waypoint_reach_distance) {
+        this->current_waypoint_index_number_ = next_index;
+    }
+
+#ifndef NDEBUG
+    // Runtime-configurable debug window
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 10.0f, vp->WorkPos.y + 10.0f), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImVec2(450.0f, 550.0f), ImGuiCond_Always);
+
+    if (ImGui::Begin("AI", nullptr,
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing)) {
+
+        // Telemetry section
+        if (ImGui::CollapsingHeader("Telemetry", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent();
+
+            // Speed info
+            ImGui::Text("Speed: %.0f px/s", static_cast<double>(current_speed));
+            ImGui::Text("Target Speed: %.0f px/s", static_cast<double>(target_speed));
+
+            ImGui::Separator();
+
+            // Distance info
+            ImGui::Text("Distance to Waypoint: %.0f px", static_cast<double>(distance_to_current_waypoint));
+            ImGui::Text("Brake Distance: %.0f px", static_cast<double>(brake_distance));
+
+            ImGui::Separator();
+
+            // Steering info
+            ImGui::Text("Heading Diff: %.3f rad", static_cast<double>(heading_difference_radians));
+
+            ImGui::Separator();
+
+            // Status info
+            ImGui::Text("Current Type: %s", current_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
+            ImGui::Text("Next Type: %s", next_waypoint.type == TrackWaypoint::DrivingType::Corner ? "Corner" : "Straight");
+
+            // Status indicators
+            ImGui::Text("Collision: %s", collision_detected ? "YES" : "NO");
+            ImGui::Text("Should Brake: %s", should_brake ? "YES" : "NO");
+            ImGui::Text("Approaching Corner Fast: %s", approaching_corner_too_fast ? "YES" : "NO");
+            ImGui::Text("Speed Too High: %s", speed_too_high ? "YES" : "NO");
+            ImGui::Text("Approaching Corner: %s", approaching_corner ? "YES" : "NO");
+            ImGui::Text("At Corner: %s", at_corner ? "YES" : "NO");
+
+            ImGui::Unindent();
+        }
+
+        // AI Settings section
+        if (ImGui::CollapsingHeader("Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent();
+
+            // Basic settings
+            ImGui::SeparatorText("Basic Parameters:");
+            ImGui::PushItemWidth(-180.0f);  // Make sliders narrower to fit window
+
+            ImGui::SliderFloat("Waypoint Reach", &this->waypoint_reach_factor_, 0.1f, 2.0f, "%.2fx");
+            ImGui::TextWrapped("How close the car must get to a waypoint before targeting the next one. Lower = more precise but may miss waypoints.");
+
+            ImGui::SliderFloat("Collision Distance", &this->collision_distance_, 0.1f, 2.0f, "%.2fx");
+            ImGui::TextWrapped("How far ahead the car looks for track boundaries to avoid crashes. Higher = earlier collision avoidance.");
+
+            // Steering settings
+            ImGui::SeparatorText("Steering Parameters");
+
+            ImGui::SliderFloat("Straight Threshold", &this->straight_steering_threshold_, 0.05f, 1.57f, "%.3f rad");
+            ImGui::TextWrapped("How much the car heading must differ from target direction before steering on straights. Higher = less wiggling but slower corrections.");
+
+            ImGui::SliderFloat("Corner Threshold", &this->corner_steering_threshold_, 0.001f, 0.2f, "%.3f rad");
+            ImGui::TextWrapped("How much the car heading must differ from target direction before steering in corners. Lower = more responsive turning.");
+
+            ImGui::SliderFloat("Min Straight Steer", &this->minimum_straight_steering_difference_, 0.01f, 0.1f, "%.3f rad");
+            ImGui::TextWrapped("Minimum heading difference required to steer on straights. Prevents tiny steering corrections that cause wiggling.");
+
+            ImGui::SliderFloat("Early Corner Turn", &this->early_corner_turn_distance_, 0.5f, 3.0f, "%.2fx");
+            ImGui::TextWrapped("How far before a corner the car starts using corner steering settings. Higher = starts turning sooner for smoother cornering.");
+
+            // Speed settings
+            ImGui::SeparatorText("Speed Parameters");
+
+            ImGui::SliderFloat("Corner Speed", &this->corner_speed_factor_, 0.3f, 3.0f, "%.2fx");
+            ImGui::TextWrapped("Target speed multiplier for corners. Lower = slower and safer cornering, higher = faster but riskier.");
+
+            ImGui::SliderFloat("Straight Speed", &this->straight_speed_factor_, 0.5f, 4.0f, "%.2fx");
+            ImGui::TextWrapped("Target speed multiplier for straight sections. Higher = faster top speed on straights.");
+
+            ImGui::SliderFloat("Brake Distance", &this->brake_distance_factor_, 0.1f, 3.0f, "%.2fx");
+            ImGui::TextWrapped("How far before corners the car starts braking. Higher = earlier braking for safer cornering.");
+
+            ImGui::PopItemWidth();
+
+            ImGui::Spacing();
+
+            // Reset button
+            if (ImGui::Button("Reset to Defaults", ImVec2(-1.0f, 0.0f))) {
+                this->waypoint_reach_factor_ = 0.75f;
+                this->collision_distance_ = 0.65f;
+                this->straight_steering_threshold_ = 0.25f;
+                this->corner_steering_threshold_ = 0.08f;
+                this->minimum_straight_steering_difference_ = 0.1f;
+                this->early_corner_turn_distance_ = 1.0f;
+                this->corner_speed_factor_ = 1.2f;
+                this->straight_speed_factor_ = 3.0f;
+                this->brake_distance_factor_ = 3.0f;
+            }
+
+            ImGui::Unindent();
+        }
+    }
+    ImGui::End();
+#endif
+
+    // Apply physics
+    BaseCar::update(dt);
+}
+
+[[nodiscard]] float AICar::get_random_variation() const
+{
+    std::uniform_real_distribution<float> distribution(0.95f, 1.05f);  // TODO: Make this configurable later instead of hardcoding
+    return distribution(this->rng_);
 }
 
 }  // namespace core::game
