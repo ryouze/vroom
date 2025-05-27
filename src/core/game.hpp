@@ -999,9 +999,6 @@ class AICar final : public BaseCar {
         : BaseCar(texture, rng, track, config),
           current_waypoint_index_number_(this->track_.get_finish_index() + 1)  // Start at the finish waypoint index + 1
     {
-        // Setup debug shape
-        this->debug_shape_.setFillColor({255, 0, 0, 64});  // 25% opacity red
-        this->debug_shape_.setOrigin(this->debug_shape_.getLocalBounds().getCenter());
     }
 
     // Ensure compilation fails if BaseCar's destructor ever stops being virtual
@@ -1021,15 +1018,6 @@ class AICar final : public BaseCar {
 
         // Must also reset the current waypoint index, but ignore the spawn point (so we add 1)
         this->current_waypoint_index_number_ = this->track_.get_finish_index() + 1;
-    }
-
-    void draw(sf::RenderTarget &target) const override
-    {
-        // Draw the debug shape
-        target.draw(this->debug_shape_);
-
-        // Draw the base class sprite
-        BaseCar::draw(target);
     }
 
     /**
@@ -1134,11 +1122,6 @@ class AICar final : public BaseCar {
             this->current_waypoint_index_number_ = next_index;
         }
 
-        // Update debug shape
-        this->debug_shape_.setRadius(waypoint_reach_distance);
-        this->debug_shape_.setOrigin(this->debug_shape_.getLocalBounds().getCenter());  // Recalculate origin after radius change
-        this->debug_shape_.setPosition(current_waypoint.position);
-
 #ifndef NDEBUG
         // Runtime-configurable debug window
         const ImGuiViewport *vp = ImGui::GetMainViewport();
@@ -1236,7 +1219,7 @@ class AICar final : public BaseCar {
                     this->collision_distance_ = 0.75f;
                     this->straight_steering_threshold_ = 0.25f;
                     this->corner_steering_threshold_ = 0.08f;
-                    this->minimum_straight_steering_difference_ = 0.5f;
+                    this->minimum_straight_steering_difference_ = 0.1f;
                     this->early_corner_turn_distance_ = 1.0f;
                     this->corner_speed_factor_ = 1.2f;
                     this->straight_speed_factor_ = 3.0f;
@@ -1254,19 +1237,16 @@ class AICar final : public BaseCar {
     }
 
   private:
-    // Runtime-configurable AI parameters (exposed in debug window)
+    // AI parameters
     float waypoint_reach_factor_ = 0.75f;                // Waypoint reach distance as fraction of tile size
     float collision_distance_ = 0.75f;                   // Collision check distance as fraction of tile size
     float straight_steering_threshold_ = 0.25f;          // Steering threshold on straights (higher = less wiggling)
     float corner_steering_threshold_ = 0.08f;            // Steering threshold in corners (lower = more responsive)
-    float minimum_straight_steering_difference_ = 0.5f;  // Minimum heading difference to steer on straights (reduces wiggling)
+    float minimum_straight_steering_difference_ = 0.1f;  // Minimum heading difference to steer on straights (reduces wiggling)
     float early_corner_turn_distance_ = 1.0f;            // Distance before corner to start turning early (as fraction of tile size)
     float corner_speed_factor_ = 1.2f;                   // Target speed in corners as fraction of tile size
     float straight_speed_factor_ = 3.0f;                 // Target speed on straights as fraction of tile size
     float brake_distance_factor_ = 3.0f;                 // Brake distance as fraction of tile size
-
-    // Debug shape for visualization
-    sf::CircleShape debug_shape_{250.0f};
 
     /**
      * @brief Index of the current target waypoint.
