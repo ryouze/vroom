@@ -518,8 +518,8 @@ class BaseCar {
         : sprite_(texture),
           track_(track),
           config_(config),
-          // Private
           rng_(rng),
+          // Private
           last_position_(this->track_.get_finish_position()),  // Get spawn point from the track
           velocity_(0.0f, 0.0f),
           gear_(Gear::Forward),
@@ -726,6 +726,11 @@ class BaseCar {
      */
     const CarConfig config_;
 
+    /**
+     * @brief Random number generator.
+     */
+    std::mt19937 &rng_;
+
   private:
     /**
      * @brief Apply physics step to the car - combines all forces, slip, and collisions.
@@ -888,11 +893,6 @@ class BaseCar {
         this->is_steering_right_ = false;
         this->is_handbraking_ = false;
     }
-
-    /**
-     * @brief Random number generator.
-     */
-    std::mt19937 &rng_;
 
     /**
      * @brief Last valid position of the car sprite in world coordinates (pixels).
@@ -1063,18 +1063,18 @@ class AICar final : public BaseCar {
         const bool approaching_corner = (next_waypoint.type == TrackWaypoint::DrivingType::Corner);
         const bool at_corner = (current_waypoint.type == TrackWaypoint::DrivingType::Corner);
 
-        // Use more aggressive steering when approaching or at corners
+        // Use more aggressive steering when approaching or at corners with slight randomness
         float steering_threshold;
         if (at_corner || approaching_corner) {
-            steering_threshold = this->corner_steering_threshold_;
+            steering_threshold = this->corner_steering_threshold_ * this->get_random_variation();
         }
         else {
-            steering_threshold = this->straight_steering_threshold_;
+            steering_threshold = this->straight_steering_threshold_ * this->get_random_variation();
         }
 
-        // Early corner turning: if approaching corner and close enough, use corner threshold
-        if (approaching_corner && distance_to_current_waypoint < tile_size * this->early_corner_turn_distance_) {
-            steering_threshold = this->corner_steering_threshold_;
+        // Early corner turning: if approaching corner and close enough, use corner threshold with randomness
+        if (approaching_corner && distance_to_current_waypoint < tile_size * this->early_corner_turn_distance_ * this->get_random_variation()) {
+            steering_threshold = this->corner_steering_threshold_ * this->get_random_variation();
         }
 
         // Only steer if we need to turn significantly or there's a collision
@@ -1093,32 +1093,34 @@ class AICar final : public BaseCar {
             }
         }
 
-        // Speed management - fixed logic to prevent getting stuck
-        const float target_speed =
+        // Speed management with slight randomness to create variety
+        const float base_target_speed =
             (current_waypoint.type == TrackWaypoint::DrivingType::Corner || next_waypoint.type == TrackWaypoint::DrivingType::Corner)
                 ? tile_size * this->corner_speed_factor_
                 : tile_size * this->straight_speed_factor_;
 
-        const float brake_distance = tile_size * this->brake_distance_factor_;
+        const float target_speed = base_target_speed * this->get_random_variation();
+        const float brake_distance = tile_size * this->brake_distance_factor_ * this->get_random_variation();
 
-        // More intelligent braking logic
+        // More intelligent braking logic with randomness
         const bool approaching_corner_too_fast = (next_waypoint.type == TrackWaypoint::DrivingType::Corner) &&
                                                  (distance_to_current_waypoint < brake_distance) &&
-                                                 (current_speed > target_speed * 1.5f);
+                                                 (current_speed > target_speed * (1.5f * this->get_random_variation()));
 
-        const bool speed_too_high = current_speed > target_speed * 2.0f;  // Only brake if way too fast
+        const bool speed_too_high = current_speed > target_speed * (2.0f * this->get_random_variation());  // Only brake if way too fast
 
         const bool should_brake = collision_detected || speed_too_high || approaching_corner_too_fast;
 
         if (should_brake) {
             this->brake();
         }
-        else if (current_speed < target_speed * 0.8f) {  // Start accelerating sooner
+        else if (current_speed < target_speed * (0.8f * this->get_random_variation())) {  // Start accelerating sooner
             this->gas();
         }
 
-        // Advance waypoint
-        if (distance_to_current_waypoint < waypoint_reach_distance) {
+        // Advance waypoint with slight randomness in reach distance
+        const float randomized_waypoint_reach_distance = waypoint_reach_distance * this->get_random_variation();
+        if (distance_to_current_waypoint < randomized_waypoint_reach_distance) {
             this->current_waypoint_index_number_ = next_index;
         }
 
@@ -1237,6 +1239,17 @@ class AICar final : public BaseCar {
     }
 
   private:
+    /**
+     * @brief Get a small random variation factor for AI decisions to make them less predictable.
+     *
+     * @return Float between 0.95 and 1.05 (±5% variation).
+     */
+    [[nodiscard]] float get_random_variation() const
+    {
+        std::uniform_real_distribution<float> distribution(0.95f, 1.05f);  // TODO: Make this configurable later instead of hardcoding
+        return distribution(this->rng_);
+    }
+
     // AI parameters
     float waypoint_reach_factor_ = 0.75f;                // Waypoint reach distance as fraction of tile size
     float collision_distance_ = 0.75f;                   // Collision check distance as fraction of tile size
