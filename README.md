@@ -51,7 +51,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - Also, scale the braking value (e.g., 0.4f) dynamically using `CarConfig`'s brake and acceleration strength, rather than relying on hardcoded values.
 - Implement configuration loading and saving for screen resolution, VSync, and other graphical settings. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
   - Decide whether to use a custom file format or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
-- Improve the driving and control mechanics. The vehicles take too long to turn.
 
 **Ideas**:
 - In `BaseCar`, add a private member `std::size_t closest_waypoint_`, which is updated in `apply_physics_step()`. Alternatively, perform per-frame scanning of all waypoints in `app.cpp` to determine which waypoint each car is at, and thus identifying the race leader. However, tracking the closest waypoint internally may assist with AI logic, such as recovering from a crash by reverting to the previous waypoint. But sharing it across all derived classes, including the player, might be stupid. A scan-based approach is likely better.
@@ -59,7 +58,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - In `Track::build()`, shift the starting tile position to the actual finish/spawn point to eliminate the need for the `finish_index_` workaround.
   - This is harder than it looks.
 - Consider converting `PlayerCar` into a subclass of `AICar`, with a toggle to enable AI control of the player vehicle in ImGui. I liked that feature in trainers for old NFS games; it would also enable stability testing if left running overnight or at speeds faster than real-time (cf. Cheat Engine's speed hack).
-- In `game.hpp`, revise all Doxygen documentation to accurately reflect actual code behavior. For example, in `BaseCar`, note that internal booleans are overwritten each frame by `apply_physics_step()`, and so on.
 - Integrate parallel algorithms. Many STL algorithms (e.g., `copy`, `find`, `sort`) support parallel execution policies such as `seq`, `par`, and `par_unseq`, corresponding to "sequential", "parallel", and "parallel unsequenced", respectively. E.g., `auto result1 = std::find(std::execution::par, std::begin(longVector), std::end(longVector), 2);`.
   - This could be particularly useful for collision checking, which involves iterating over all track tiles until a collision is detected.
 - Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
