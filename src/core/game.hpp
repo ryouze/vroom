@@ -56,7 +56,7 @@ struct TrackConfig final {
      * @note A value of 0.0 disables detours entirely; 1.0 maximizes detour frequency.
      */
 #ifndef NDEBUG
-    float detour_probability = 0.0f;
+    float detour_probability = 1.0f;
 #else
     float detour_probability = 0.4f;
 #endif
@@ -1193,37 +1193,37 @@ class AICar final : public BaseCar {
                 ImGui::SeparatorText("Basic Parameters:");
                 ImGui::PushItemWidth(-180.0f);  // Make sliders narrower to fit window
 
-                ImGui::SliderFloat("Waypoint Reach", &this->waypoint_reach_factor_, 0.1f, 1.0f, "%.2fx");
+                ImGui::SliderFloat("Waypoint Reach", &this->waypoint_reach_factor_, 0.1f, 2.0f, "%.2fx");
                 ImGui::TextWrapped("How close the car must get to a waypoint before targeting the next one. Lower = more precise but may miss waypoints.");
 
-                ImGui::SliderFloat("Collision Distance", &this->collision_distance_, 0.1f, 1.0f, "%.2fx");
+                ImGui::SliderFloat("Collision Distance", &this->collision_distance_, 0.1f, 2.0f, "%.2fx");
                 ImGui::TextWrapped("How far ahead the car looks for track boundaries to avoid crashes. Higher = earlier collision avoidance.");
 
                 // Steering settings
                 ImGui::SeparatorText("Steering Parameters");
 
-                ImGui::SliderFloat("Straight Threshold", &this->straight_steering_threshold_, 0.05f, 0.5f, "%.3f rad");
+                ImGui::SliderFloat("Straight Threshold", &this->straight_steering_threshold_, 0.05f, 1.57f, "%.3f rad");
                 ImGui::TextWrapped("How much the car heading must differ from target direction before steering on straights. Higher = less wiggling but slower corrections.");
 
-                ImGui::SliderFloat("Corner Threshold", &this->corner_steering_threshold_, 0.001f, 0.1f, "%.3f rad");
+                ImGui::SliderFloat("Corner Threshold", &this->corner_steering_threshold_, 0.001f, 0.2f, "%.3f rad");
                 ImGui::TextWrapped("How much the car heading must differ from target direction before steering in corners. Lower = more responsive turning.");
 
-                ImGui::SliderFloat("Min Straight Steer", &this->minimum_straight_steering_difference_, 0.01f, 0.2f, "%.3f rad");
+                ImGui::SliderFloat("Min Straight Steer", &this->minimum_straight_steering_difference_, 0.01f, 0.1f, "%.3f rad");
                 ImGui::TextWrapped("Minimum heading difference required to steer on straights. Prevents tiny steering corrections that cause wiggling.");
 
-                ImGui::SliderFloat("Early Corner Turn", &this->early_corner_turn_distance_, 0.5f, 2.0f, "%.2fx");
+                ImGui::SliderFloat("Early Corner Turn", &this->early_corner_turn_distance_, 0.5f, 3.0f, "%.2fx");
                 ImGui::TextWrapped("How far before a corner the car starts using corner steering settings. Higher = starts turning sooner for smoother cornering.");
 
                 // Speed settings
                 ImGui::SeparatorText("Speed Parameters");
 
-                ImGui::SliderFloat("Corner Speed", &this->corner_speed_factor_, 0.5f, 2.0f, "%.2fx");
+                ImGui::SliderFloat("Corner Speed", &this->corner_speed_factor_, 0.3f, 3.0f, "%.2fx");
                 ImGui::TextWrapped("Target speed multiplier for corners. Lower = slower and safer cornering, higher = faster but riskier.");
 
-                ImGui::SliderFloat("Straight Speed", &this->straight_speed_factor_, 1.0f, 3.0f, "%.2fx");
+                ImGui::SliderFloat("Straight Speed", &this->straight_speed_factor_, 0.5f, 4.0f, "%.2fx");
                 ImGui::TextWrapped("Target speed multiplier for straight sections. Higher = faster top speed on straights.");
 
-                ImGui::SliderFloat("Brake Distance", &this->brake_distance_factor_, 0.2f, 2.0f, "%.2fx");
+                ImGui::SliderFloat("Brake Distance", &this->brake_distance_factor_, 0.1f, 3.0f, "%.2fx");
                 ImGui::TextWrapped("How far before corners the car starts braking. Higher = earlier braking for safer cornering.");
 
                 ImGui::PopItemWidth();
@@ -1232,15 +1232,15 @@ class AICar final : public BaseCar {
 
                 // Reset button
                 if (ImGui::Button("Reset to Defaults", ImVec2(-1.0f, 0.0f))) {
-                    this->waypoint_reach_factor_ = 0.5f;
-                    this->collision_distance_ = 0.5f;
-                    this->straight_steering_threshold_ = 0.36f;
-                    this->corner_steering_threshold_ = 0.02f;
-                    this->minimum_straight_steering_difference_ = 0.05f;
+                    this->waypoint_reach_factor_ = 0.75f;
+                    this->collision_distance_ = 0.75f;
+                    this->straight_steering_threshold_ = 0.25f;
+                    this->corner_steering_threshold_ = 0.08f;
+                    this->minimum_straight_steering_difference_ = 0.5f;
                     this->early_corner_turn_distance_ = 1.0f;
                     this->corner_speed_factor_ = 1.2f;
-                    this->straight_speed_factor_ = 2.0f;
-                    this->brake_distance_factor_ = 1.0f;
+                    this->straight_speed_factor_ = 3.0f;
+                    this->brake_distance_factor_ = 3.0f;
                 }
 
                 ImGui::Unindent();
@@ -1255,15 +1255,15 @@ class AICar final : public BaseCar {
 
   private:
     // Runtime-configurable AI parameters (exposed in debug window)
-    float waypoint_reach_factor_ = 0.5f;                  // Waypoint reach distance as fraction of tile size
-    float collision_distance_ = 0.5f;                     // Collision check distance as fraction of tile size
-    float straight_steering_threshold_ = 0.2f;            // Steering threshold on straights (higher = less wiggling)
-    float corner_steering_threshold_ = 0.02f;             // Steering threshold in corners (lower = more responsive)
-    float minimum_straight_steering_difference_ = 0.05f;  // Minimum heading difference to steer on straights (reduces wiggling)
-    float early_corner_turn_distance_ = 1.0f;             // Distance before corner to start turning early (as fraction of tile size)
-    float corner_speed_factor_ = 1.2f;                    // Target speed in corners as fraction of tile size
-    float straight_speed_factor_ = 2.0f;                  // Target speed on straights as fraction of tile size
-    float brake_distance_factor_ = 1.0f;                  // Brake distance as fraction of tile size
+    float waypoint_reach_factor_ = 0.75f;                // Waypoint reach distance as fraction of tile size
+    float collision_distance_ = 0.75f;                   // Collision check distance as fraction of tile size
+    float straight_steering_threshold_ = 0.25f;          // Steering threshold on straights (higher = less wiggling)
+    float corner_steering_threshold_ = 0.08f;            // Steering threshold in corners (lower = more responsive)
+    float minimum_straight_steering_difference_ = 0.5f;  // Minimum heading difference to steer on straights (reduces wiggling)
+    float early_corner_turn_distance_ = 1.0f;            // Distance before corner to start turning early (as fraction of tile size)
+    float corner_speed_factor_ = 1.2f;                   // Target speed in corners as fraction of tile size
+    float straight_speed_factor_ = 3.0f;                 // Target speed on straights as fraction of tile size
+    float brake_distance_factor_ = 3.0f;                 // Brake distance as fraction of tile size
 
     // Debug shape for visualization
     sf::CircleShape debug_shape_{250.0f};
