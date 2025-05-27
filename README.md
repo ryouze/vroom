@@ -134,10 +134,20 @@ Follow these steps to build the project:
     cmake ..
     ```
 
-    Optionally, you can disable compile warnings by setting `ENABLE_COMPILE_FLAGS` to `OFF`:
+    The default configuration (`cmake ..`) is recommended for most users and is also used by CI/CD to build the project.
+
+    However, the build configuration can be customized using the following options:
+
+    - `ENABLE_COMPILE_FLAGS` (default: ON) - Enables strict compiler warnings and treats warnings as errors. When ON, any code warnings will cause compilation to fail, ensuring clean code. When OFF, warnings are allowed and compilation continues. Disable if you encounter compilation issues due to warnings (although CI should catch such issues).
+    - `ENABLE_STRIP` (default: ON) - Strips debug symbols from Release builds to reduce binary size. When ON, creates smaller executables but removes debugging information. When OFF, keeps full debugging symbols (useful for debugging crashes). Only affects Release builds.
+    - `ENABLE_LTO` (default: ON) - Enables Link Time Optimization for Release builds, producing smaller and faster binaries. When ON, performs cross-module optimizations during linking. When OFF, skips LTO (faster compilation but larger/slower binary). Automatically disabled if compiler doesn't support LTO.
+    - `ENABLE_CCACHE` (default: ON) - Optionally uses ccache to cache compilation results for faster rebuilds. When ON and ccache is installed, dramatically speeds up recompilation. When ON but ccache not installed, silently continues without ccache. When OFF, never uses ccache even if available.
+    - `BUILD_TESTS` (default: OFF) - Builds unit tests alongside the main executable. When ON, creates test binaries that can be run with `ctest`. When OFF, skips test compilation for faster builds. See [Testing](#testing) for usage.
+
+    Example command to disable strict compile flags and LTO:
 
     ```sh
-    cmake .. -DENABLE_COMPILE_FLAGS=OFF
+    cmake .. -DENABLE_COMPILE_FLAGS=OFF -DENABLE_LTO=OFF
     ```
 
 3. **Compile the project**:
