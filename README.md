@@ -4,7 +4,7 @@
 [![Release](https://github.com/ryouze/vroom/actions/workflows/release.yml/badge.svg)](https://github.com/ryouze/vroom/actions/workflows/release.yml)
 ![Release version](https://img.shields.io/github/v/release/ryouze/vroom)
 
-vroom is a cross-platform 2D racing game with arcade drifting physics, procedurally-generated track, and waypoint AI.
+vroom is a cross-platform 2D racing game with arcade drift physics, procedurally-generated tracks, and waypoint AI.
 
 ![Screenshot](assets/screenshot.jpeg)
 
