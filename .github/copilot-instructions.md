@@ -4,7 +4,6 @@
 - Use plain ASCII in logs and comments; no Unicode.
 - Use American spelling (e.g., `color`).
 - Prefer long, verbose variable names.
-- Always give me full code so I can copy paste it; do not omit stuff for brevity or return a git diff.
 - Do not split long lines across newlines, keep them long - even if it hurts readability. I especially hate when long comments are split across multiple lines.
 
 ### C++
