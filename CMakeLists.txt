@@ -146,27 +146,23 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 # If on macOS, bundle the executable into an app bundle
 if(APPLE)
-  # Set variables for Info.plist
-  set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
-  set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.ryouze.${PROJECT_NAME}")
-  set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
-  set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION})
-  set(MACOSX_BUNDLE_COPYRIGHT "ryouze.net")  # Not by default in macOS bundles
-
-  # Generate the Info.plist file
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/assets/Info.plist.in ${CMAKE_BINARY_DIR}/Info.plist @ONLY)
-
-  # Set macOS-specific properties
+  # Set macOS bundle properties directly on target
   set_target_properties(${PROJECT_NAME} PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/Info.plist
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/cmake/assets/Info.plist.in"
+    MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.ryouze.${PROJECT_NAME}"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_COPYRIGHT "ryouze.net"
+    MACOSX_BUNDLE_ICON_FILE "Icon"
   )
 
   # Copy the icon into the app bundle
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-      ${CMAKE_SOURCE_DIR}/cmake/assets/Icon.icns
-      $<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/Contents/Resources/Icon.icns
-    COMMENT "Copying icon to the app bundle."
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${CMAKE_SOURCE_DIR}/cmake/assets/Icon.icns"
+      "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/Contents/Resources/Icon.icns"
+    COMMENT "Copying icon to app bundle."
   )
 elseif(WIN32)
   # If on Windows, add an icon to the executable
