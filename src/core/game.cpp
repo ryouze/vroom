@@ -26,8 +26,7 @@ Track::Track(const Textures tiles,
     : tiles_(tiles),  //  Copy the small struct to prevent segfaults
       rng_(rng),
       config_(this->validate_config(config)),
-      finish_point_(0.f, 0.f),
-      finish_index_(0)
+      finish_point_(0.f, 0.f)
 {
     // Build the track immediately on construction
     this->build();
@@ -82,11 +81,6 @@ const sf::Vector2f &Track::get_finish_position() const
 {
     // SPDLOG_DEBUG("Returning finish point at ('{}', '{}') px!", this->finish_point_.x, this->finish_point_.y);
     return this->finish_point_;
-}
-
-std::size_t Track::get_finish_index() const
-{
-    return this->finish_index_;
 }
 
 void Track::draw(sf::RenderTarget &target) const
@@ -152,7 +146,6 @@ void Track::build()
     this->collision_bounds_.clear();
     this->waypoints_.clear();
     this->finish_point_ = {0.f, 0.f};  // Perhaps not needed, but just in case
-    this->finish_index_ = 0;           // Perhaps not needed, but just in case
 
     // Reserve capacity
     const std::size_t base_tile_count =
@@ -187,7 +180,12 @@ void Track::build()
     //              top_left_origin.y,
     //              scale_factor);
 
-    // Create a sprite from a texture, scale, center, position it, and optionally record its position as the finish line
+    // Temporary vector to collect waypoints in build order, then reorder them starting from finish line
+    std::vector<TrackWaypoint> temp_waypoints;
+    temp_waypoints.reserve(base_tile_count * 2);
+    std::size_t temp_finish_index = 0;
+
+    // Create a sprite from a texture, scale, center, position it, and collect waypoint data
     const auto place_tile = [&](const sf::Texture &texture,
                                 const sf::Vector2f &position,
                                 const bool is_corner,
@@ -209,15 +207,15 @@ void Track::build()
         // This should be true only once throughout the entire track; you cannot have multiple finish points
         if (is_finish) {
             this->finish_point_ = position;
-            // Use the waypoint size BEFORE emplacing to get the current index
-            this->finish_index_ = this->waypoints_.size();
+            // Record the finish index in the temporary build order
+            temp_finish_index = temp_waypoints.size();
         }
 
-        // If it's a corner tile, add it to the waypoints as a corner, otherwise as a straight line
-        this->waypoints_.emplace_back(TrackWaypoint{position,
-                                                    is_corner
-                                                        ? TrackWaypoint::DrivingType::Corner
-                                                        : TrackWaypoint::DrivingType::Straight});
+        // Add waypoint to temporary collection in build order
+        temp_waypoints.emplace_back(TrackWaypoint{position,
+                                                  is_corner
+                                                      ? TrackWaypoint::DrivingType::Corner
+                                                      : TrackWaypoint::DrivingType::Straight});
     };
 
     // Define bubble sizes allowed for detours
@@ -443,6 +441,21 @@ void Track::build()
     for (const auto &sprite : this->sprites_) {
         this->collision_bounds_.emplace_back(sprite.getGlobalBounds());
     }
+
+    // Reorder waypoints to start from the finish line position
+    // This eliminates the need for finish_index_ workaround in AI navigation
+    SPDLOG_DEBUG("Now reordering waypoints: finish line is at index '{}' (out of '{}' total)", temp_finish_index, temp_waypoints.size());
+
+    this->waypoints_.clear();
+    this->waypoints_.reserve(temp_waypoints.size());
+
+    // Add waypoints starting from finish line, going forward in racing direction
+    for (std::size_t offset = 0; offset < temp_waypoints.size(); ++offset) {
+        const std::size_t index = (temp_finish_index + offset) % temp_waypoints.size();
+        this->waypoints_.emplace_back(temp_waypoints[index]);
+    }
+
+    SPDLOG_DEBUG("Waypoints reordered, now starting from the finish line at index '0' (out of '{}' total)", this->waypoints_.size());
 
     // Shrink containers
     this->sprites_.shrink_to_fit();
@@ -698,7 +711,7 @@ AICar::AICar(const sf::Texture &texture,
              const Track &track,
              const CarConfig &config)
     : BaseCar(texture, rng, track, config),
-      current_waypoint_index_number_(this->track_.get_finish_index() + 1)  // Start at the finish waypoint index + 1
+      current_waypoint_index_number_(1)  // Start at waypoint index 1 (waypoint 0 is the spawn/finish point)
 {
 }
 
@@ -707,8 +720,8 @@ void AICar::reset()
     // Call base class reset to handle sprite and physics
     BaseCar::reset();
 
-    // Must also reset the current waypoint index, but ignore the spawn point (so we add 1)
-    this->current_waypoint_index_number_ = this->track_.get_finish_index() + 1;
+    // Reset waypoint index to 1 (skip spawn point at index 0)
+    this->current_waypoint_index_number_ = 1;
 }
 
 void AICar::update(const float dt)

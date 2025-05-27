@@ -256,19 +256,6 @@ class Track final {
      */
     [[nodiscard]] const sf::Vector2f &get_finish_position() const;
 
-    // TODO: Make it so that the first waypoint (index=0) is always the finish line, instead of requiting the "get_finish_index()" method
-
-    /**
-     * @brief Get the index of the finish-line waypoint in the ordered waypoint sequence (vector).
-     *
-     * @return Zero-based index into the waypoint vector corresponding to the finish point.
-     *
-     * @note This ensures that the AI cars don't immediately U-turn to the waypoint before the finish line.
-     *
-     * @details TODO: Find a way to get rid of this and set the "waypoints_[0]" to the finish point.
-     */
-    [[nodiscard]] std::size_t get_finish_index() const;
-
     /**
      * @brief Draw all track tile sprites onto the provided render target.
      *
@@ -359,15 +346,6 @@ class Track final {
      * This contains the world coordinates of the finish line tile center where cars are initially placed. Set during track building when the finish line tile is positioned on the top edge.
      */
     sf::Vector2f finish_point_;
-
-    /**
-     * @brief Index of the finish-line waypoint within the waypoint vector.
-     *
-     * @note This is used for AI navigation - since the first waypoint is not at the finish point (it's at least 1 tile later), we need to know where the finish point is to start the car there, to prevent it from doing an U-turn to the waypoint before the finish point.
-     *
-     * @details TODO: Find a way to get rid of this and set the "waypoints_[0]" to the finish point.
-     */
-    std::size_t finish_index_;
 };
 
 /**
