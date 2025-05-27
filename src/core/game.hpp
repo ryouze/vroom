@@ -362,7 +362,7 @@ class Track final {
  */
 struct CarConfig final {
     /**
-     * @brief The rate at  expressed in pixels per second squared.
+     * @brief The rate at which throttle input accelerates the car, expressed in pixels per second squared.
      *
      * Higher values make the car accelerate more quickly when the gas pedal is pressed.
      */
@@ -467,6 +467,27 @@ struct CarConfig final {
      * Higher values create more unpredictable bounces at high speeds, which helps prevent getting stuck in walls.
      */
     float collision_maximum_random_bounce_angle_degrees = 35.0f;
+
+    /**
+     * @brief Speed threshold below which the car is considered stopped for physics calculations.
+     *
+     * This prevents jitter and unnecessary calculations at very low speeds.
+     */
+    float stopped_speed_threshold_pixels_per_second = 0.01f;
+
+    /**
+     * @brief Steering wheel angle threshold below which auto-centering snaps to zero.
+     *
+     * This prevents oscillation when the steering wheel is nearly centered.
+     */
+    float steering_autocenter_epsilon_degrees = 0.1f;
+
+    /**
+     * @brief Minimum forward speed required for sprite rotation during steering.
+     *
+     * Below this threshold, the car sprite will not rotate even if steering input is applied.
+     */
+    float minimum_speed_for_rotation_pixels_per_second = 1.0f;
 };
 
 /**
@@ -607,21 +628,29 @@ class BaseCar {
   protected:
     /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
+     *
+     * The sprite handles visual representation, position tracking, and rotation for physics calculations.
      */
     sf::Sprite sprite_;
 
     /**
      * @brief Reference to the race track for collision detection and waypoint data.
+     *
+     * Used for boundary checking, collision detection, spawn point retrieval, and AI waypoint navigation.
      */
     const Track &track_;
 
     /**
      * @brief Configuration of the car.
+     *
+     * Contains all performance parameters including acceleration, braking, steering sensitivity, and collision behavior.
      */
     const CarConfig config_;
 
     /**
      * @brief Random number generator.
+     *
+     * Used for collision bounce randomization and AI decision variation to prevent deterministic behavior.
      */
     std::mt19937 &rng_;
 
@@ -639,43 +668,57 @@ class BaseCar {
 
     /**
      * @brief Last valid position of the car sprite in world coordinates (pixels).
+     *
+     * Stored for collision recovery when the car moves off-track and needs to be restored to a legal position.
      */
     sf::Vector2f last_position_;
 
     /**
      * @brief Current velocity of the car in pixels per second.
+     *
+     * Two-dimensional velocity vector used for physics calculations including acceleration, braking, and collision response.
      */
     sf::Vector2f velocity_;
 
     /**
      * @brief Set to true via "gas()" to accelerate the car.
+     *
+     * Input flag that triggers forward acceleration during the next physics update. Reset to false after each physics step.
      */
     bool is_accelerating_;
 
     /**
      * @brief Set to true via "brake()" to apply the foot brake.
+     *
+     * Input flag that triggers deceleration during the next physics update. Reset to false after each physics step.
      */
     bool is_braking_;
 
     /**
      * @brief Set to true via "steer_left()" to turn the steering wheel left.
+     *
+     * Input flag that triggers left steering during the next physics update. Reset to false after each physics step.
      */
     bool is_steering_left_;
 
     /**
      * @brief Set to true via "steer_right()" to turn the steering wheel right.
+     *
+     * Input flag that triggers right steering during the next physics update. Reset to false after each physics step.
      */
     bool is_steering_right_;
 
     /**
      * @brief Set to true via "handbrake()" to apply the handbrake (emergency brake).
+     *
+     * Input flag that triggers emergency braking during the next physics update. Reset to false after each physics step.
      */
     bool is_handbraking_;
 
     /**
      * @brief Current steering wheel angle in degrees. This emulates a steering wheel via "steer_left()" and "steer_right()". If they are not called, the steering wheel will return to center over time.
      *
-     * Positive values turn the car right, negative values turn it left.
+     * Positive values turn the car right, negative values turn it left. Auto-centers when no steering input is active.
      */
     float steering_wheel_angle_;
 };
@@ -739,19 +782,87 @@ class AICar final : public BaseCar {
      */
     [[nodiscard]] float get_random_variation() const;
 
-    // AI parameters
-    float waypoint_reach_factor_ = 0.75f;                // Waypoint reach distance as fraction of tile size
-    float collision_distance_ = 0.75f;                   // Collision check distance as fraction of tile size
-    float straight_steering_threshold_ = 0.25f;          // Steering threshold on straights (higher = less wiggling)
-    float corner_steering_threshold_ = 0.08f;            // Steering threshold in corners (lower = more responsive)
-    float minimum_straight_steering_difference_ = 0.1f;  // Minimum heading difference to steer on straights (reduces wiggling)
-    float early_corner_turn_distance_ = 1.0f;            // Distance before corner to start turning early (as fraction of tile size)
-    float corner_speed_factor_ = 1.2f;                   // Target speed in corners as fraction of tile size
-    float straight_speed_factor_ = 3.0f;                 // Target speed on straights as fraction of tile size
-    float brake_distance_factor_ = 3.0f;                 // Brake distance as fraction of tile size
+    /**
+     * @brief Waypoint reach distance as fraction of tile size.
+     *
+     * Controls how close the AI car must get to a waypoint before targeting the next one. Lower values require more precision but may cause waypoint misses.
+     */
+    float waypoint_reach_factor_ = 0.75f;
+
+    /**
+     * @brief Collision check distance as fraction of tile size.
+     *
+     * Determines how far ahead the AI car looks for track boundaries to avoid crashes. Higher values enable earlier collision avoidance.
+     */
+    float collision_distance_ = 0.75f;
+
+    /**
+     * @brief Steering threshold on straights in radians.
+     *
+     * How much the car heading must differ from target direction before steering on straight sections. Higher values reduce wiggling but slow corrections.
+     */
+    float straight_steering_threshold_ = 0.25f;
+
+    /**
+     * @brief Steering threshold in corners in radians.
+     *
+     * How much the car heading must differ from target direction before steering in corners. Lower values provide more responsive turning.
+     */
+    float corner_steering_threshold_ = 0.08f;
+
+    /**
+     * @brief Minimum heading difference to steer on straights in radians.
+     *
+     * Prevents tiny steering corrections that cause wiggling on straight sections by requiring a minimum angular difference before steering.
+     */
+    float minimum_straight_steering_difference_ = 0.1f;
+
+    /**
+     * @brief Distance before corner to start turning early as fraction of tile size.
+     *
+     * Controls how far before a corner the AI starts using corner steering settings. Higher values start turning sooner for smoother cornering.
+     */
+    float early_corner_turn_distance_ = 1.0f;
+
+    /**
+     * @brief Target speed in corners as fraction of tile size.
+     *
+     * Speed multiplier for corner sections. Lower values promote safer cornering, higher values enable faster but riskier corner navigation.
+     */
+    float corner_speed_factor_ = 1.2f;
+
+    /**
+     * @brief Target speed on straights as fraction of tile size.
+     *
+     * Speed multiplier for straight sections. Higher values allow faster top speed on straight track segments.
+     */
+    float straight_speed_factor_ = 3.0f;
+
+    /**
+     * @brief Brake distance as fraction of tile size.
+     *
+     * How far before corners the AI starts braking. Higher values promote earlier braking for safer cornering approach.
+     */
+    float brake_distance_factor_ = 3.0f;
+
+    /**
+     * @brief Minimum random variation factor for AI decision making.
+     *
+     * Lower bound of random variation applied to AI decisions to reduce predictability. Value of 0.95 provides 5% reduction.
+     */
+    float random_variation_minimum_ = 0.95f;
+
+    /**
+     * @brief Maximum random variation factor for AI decision making.
+     *
+     * Upper bound of random variation applied to AI decisions to reduce predictability. Value of 1.05 provides 5% increase.
+     */
+    float random_variation_maximum_ = 1.05f;
 
     /**
      * @brief Index of the current target waypoint.
+     *
+     * Tracks which waypoint the AI car is currently navigating towards in the track's waypoint sequence.
      */
     std::size_t current_waypoint_index_number_;
 };

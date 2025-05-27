@@ -538,10 +538,6 @@ void BaseCar::draw(sf::RenderTarget &target) const
 
 void BaseCar::apply_physics_step(const float dt)
 {
-    constexpr float stopped_speed_threshold = 0.01f;             // Car counts as stopped below this speed
-    constexpr float steering_autocenter_epsilon_degrees = 0.1f;  // Steering snaps to zero inside this range
-    constexpr float minimum_speed_for_rotation = 1.0f;           // Absolute forward speed required for sprite rotation
-
     // Cancel opposite steering inputs
     if (this->is_steering_left_ && this->is_steering_right_) {
         this->is_steering_left_ = false;
@@ -562,7 +558,7 @@ void BaseCar::apply_physics_step(const float dt)
     }
 
     // Apply foot brake deceleration
-    if (this->is_braking_ && current_speed > stopped_speed_threshold) {
+    if (this->is_braking_ && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
         const float brake_reduction = std::min(this->config_.brake_deceleration_rate_pixels_per_second_squared * dt, current_speed);
         const sf::Vector2f velocity_unit_vector = this->velocity_ / current_speed;
         this->velocity_ -= velocity_unit_vector * brake_reduction;
@@ -570,7 +566,7 @@ void BaseCar::apply_physics_step(const float dt)
     }
 
     // Apply handbrake deceleration
-    if (this->is_handbraking_ && current_speed > stopped_speed_threshold) {
+    if (this->is_handbraking_ && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
         const float new_speed = current_speed - this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
         if (new_speed < 0.1f) {
             this->velocity_ = {0.0f, 0.0f};
@@ -584,7 +580,7 @@ void BaseCar::apply_physics_step(const float dt)
     }
 
     // Apply passive engine drag when no controls are active
-    if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && current_speed > stopped_speed_threshold) {
+    if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
         const float drag = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
         const float speed_after_drag = std::max(current_speed - drag, 0.0f);
         const float drag_scale = (current_speed > 0.0f) ? speed_after_drag / current_speed : 0.0f;
@@ -620,7 +616,7 @@ void BaseCar::apply_physics_step(const float dt)
 
     // Auto center steering wheel when no steering input is active
     if (!this->is_steering_left_ && !this->is_steering_right_) {
-        if (std::abs(this->steering_wheel_angle_) > steering_autocenter_epsilon_degrees && current_speed > 0.0f) {
+        if (std::abs(this->steering_wheel_angle_) > this->config_.steering_autocenter_epsilon_degrees && current_speed > 0.0f) {
             const float centering_factor = std::clamp(this->config_.steering_autocenter_rate_degrees_per_second * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
             this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_factor);
         }
@@ -633,7 +629,7 @@ void BaseCar::apply_physics_step(const float dt)
     this->steering_wheel_angle_ = std::clamp(this->steering_wheel_angle_, -this->config_.maximum_steering_angle_degrees, this->config_.maximum_steering_angle_degrees);
 
     // Rotate sprite if moving forward or backward faster than threshold
-    if (std::abs(signed_forward_speed) > minimum_speed_for_rotation) {
+    if (std::abs(signed_forward_speed) > this->config_.minimum_speed_for_rotation_pixels_per_second) {
         const float speed_ratio = std::clamp(current_speed / this->config_.maximum_movement_pixels_per_second, 0.0f, 1.0f);
         const float steering_sensitivity = this->config_.steering_sensitivity_at_zero_speed * (1.0f - speed_ratio) + this->config_.steering_sensitivity_at_maximum_speed * speed_ratio;
         const float direction_sign = (signed_forward_speed >= 0.0f) ? 1.0f : -1.0f;
@@ -920,7 +916,7 @@ void AICar::update(const float dt)
 
 [[nodiscard]] float AICar::get_random_variation() const
 {
-    std::uniform_real_distribution<float> distribution(0.95f, 1.05f);  // TODO: Make this configurable later instead of hardcoding
+    std::uniform_real_distribution<float> distribution(this->random_variation_minimum_, this->random_variation_maximum_);
     return distribution(this->rng_);
 }
 
