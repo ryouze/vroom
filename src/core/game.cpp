@@ -648,12 +648,18 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     const float minimum_steering_difference = is_on_straight ? this->minimum_straight_steering_difference_ : 0.001f;
 
     if (should_steer && std::abs(heading_difference_radians) > minimum_steering_difference) {
-        if (heading_difference_radians < 0.0f) {
-            this->current_input_.steering = -1.0f;  // Full left steering
+        // Calculate proportional steering based on heading difference for smoother control
+        // Normalize heading difference to [-1.0, 1.0] range - 45 degrees = full steering
+        const float max_heading_for_full_steer = std::numbers::pi_v<float> * 0.25f;
+        float steering_intensity = std::clamp(heading_difference_radians / max_heading_for_full_steer, -1.0f, 1.0f);
+        
+        // Apply minimum steering amount to avoid too gentle steering
+        const float minimum_steering_intensity = 0.3f;
+        if (std::abs(steering_intensity) > 0.0f) {
+            steering_intensity = std::copysign(std::max(std::abs(steering_intensity), minimum_steering_intensity), steering_intensity);
         }
-        else {
-            this->current_input_.steering = 1.0f;  // Full right steering
-        }
+        
+        this->current_input_.steering = steering_intensity;
     }
 
     // Speed management with slight randomness to create variety
@@ -670,16 +676,30 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
                                              (distance_to_current_waypoint < brake_distance) &&
                                              (current_speed > target_speed * (1.5f * this->get_random_variation()));
 
-    const bool speed_too_high = current_speed > target_speed * (2.0f * this->get_random_variation());  // Only brake if way too fast
+    // Calculate speed difference for analog control
+    const float speed_difference = target_speed - current_speed;
 
-    const bool should_brake = collision_detected || speed_too_high || approaching_corner_too_fast;
+    // Emergency braking for collisions or approaching corners too fast
+    const bool emergency_brake = collision_detected || approaching_corner_too_fast;
 
-    if (should_brake) {
+    if (emergency_brake) {
+        // Full emergency braking
         this->current_input_.brake = 1.0f;
     }
-    else if (current_speed < target_speed * (0.8f * this->get_random_variation())) {  // Start accelerating sooner
-        this->current_input_.throttle = 1.0f;
+    else if (speed_difference < -10.0f) {  // Need to slow down significantly
+        // Proportional braking based on how much we need to slow down
+        const float max_speed_over = target_speed * 0.5f;  // If 50% over target, apply full brake
+        const float speed_over = current_speed - target_speed;
+        const float brake_intensity = std::clamp(speed_over / max_speed_over, 0.0f, 1.0f);
+        this->current_input_.brake = brake_intensity;
     }
+    else if (speed_difference > 5.0f) {  // Need to speed up
+        // Proportional throttle based on how much we need to speed up
+        const float max_speed_under = target_speed * 0.8f;  // If 80% under target, apply full throttle
+        const float throttle_intensity = std::clamp(speed_difference / max_speed_under, 0.0f, 1.0f);
+        this->current_input_.throttle = throttle_intensity;
+    }
+    // If we're close to target speed (within ±5-10 px/s), let engine drag naturally adjust speed
 
     // Advance waypoint with slight randomness in reach distance
     const float randomized_waypoint_reach_distance = waypoint_reach_distance * this->get_random_variation();
@@ -724,9 +744,9 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
 
             // Status indicators
             ImGui::Text("Collision: %s", collision_detected ? "YES" : "NO");
-            ImGui::Text("Should Brake: %s", should_brake ? "YES" : "NO");
+            ImGui::Text("Emergency Brake: %s", emergency_brake ? "YES" : "NO");
             ImGui::Text("Approaching Corner Fast: %s", approaching_corner_too_fast ? "YES" : "NO");
-            ImGui::Text("Speed Too High: %s", speed_too_high ? "YES" : "NO");
+            ImGui::Text("Speed Difference: %.1f px/s", static_cast<double>(speed_difference));
             ImGui::Text("Approaching Corner: %s", approaching_corner ? "YES" : "NO");
             ImGui::Text("At Corner: %s", at_corner ? "YES" : "NO");
 
