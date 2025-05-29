@@ -52,7 +52,7 @@ print_status "Found $CPP_COUNT C++ files to check"
 EXIT_CODE=0
 
 # Check for TODO/HACK comments in C++ files
-TODO_OUTPUT=$(echo "$CPP_FILES" | tr ' ' '\n' | grep -v '^$' | xargs grep -n -i -E '(TODO|HACK)' 2>/dev/null || true)
+TODO_OUTPUT=$(echo "$CPP_FILES" | tr ' ' '\n' | grep -v '^$' | xargs grep -n -i -E '(TODO|HACK|NDEBUG)' 2>/dev/null || true)
 TODO_COUNT=$(echo "$TODO_OUTPUT" | grep -v '^$' | wc -l | tr -d ' ')
 if [ "$TODO_COUNT" -gt 0 ]; then
     print_warning "Found $TODO_COUNT TODO/FIXME/HACK comments in C++ files:"
