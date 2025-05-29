@@ -70,7 +70,6 @@ void run()
     // Get window size, update during game loop
     sf::Vector2u window_size_u = window.get_resolution();
     sf::Vector2f window_size_f = core::backend::to_vector2f(window_size_u);
-    // TODO: Add move "to_vector2f" to backend
 
     // Create a configuration object to load and save settings
     // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
