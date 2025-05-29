@@ -15,19 +15,19 @@ NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {
-    echo -e "${BLUE}[CPP-CHECK]${NC} $1"
+    echo -e "${BLUE}[CODE-CHECK]${NC} $1"
 }
 
 print_success() {
-    echo -e "${GREEN}[CPP-CHECK]${NC} $1"
+    echo -e "${GREEN}[CODE-CHECK]${NC} $1"
 }
 
 print_warning() {
-    echo -e "${YELLOW}[CPP-CHECK]${NC} $1"
+    echo -e "${YELLOW}[CODE-CHECK]${NC} $1"
 }
 
 print_error() {
-    echo -e "${RED}[CPP-CHECK]${NC} $1"
+    echo -e "${RED}[CODE-CHECK]${NC} $1"
 }
 
 # Get all C++ files in src directory
