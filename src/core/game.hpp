@@ -29,11 +29,7 @@ struct TrackConfig final {
     /**
      * @brief Number of vertical tiles, i.e., height (e.g., "6").
      */
-#ifndef NDEBUG  // Debug, remove later
     std::size_t vertical_count = 7;
-#else
-    std::size_t vertical_count = 12;
-#endif
 
     /**
      * @brief Size of each tile in pixels (e.g., "256").
@@ -49,11 +45,7 @@ struct TrackConfig final {
      *
      * @note A value of 0.0 disables detours entirely, while 1.0 maximizes detour frequency. Horizontal edges always remain straight regardless of this setting.
      */
-#ifndef NDEBUG
-    float detour_probability = 1.0f;
-#else
-    float detour_probability = 0.4f;
-#endif
+    float detour_probability = 0.7f;
 
     /**
      * @brief Equality comparison operator with epsilon-based float comparison.

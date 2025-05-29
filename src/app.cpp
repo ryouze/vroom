@@ -289,13 +289,9 @@ void run()
 
             player_car.apply_input(player_input);
             player_car.update(dt);
-            // #ifndef NDEBUG                      // Debug, remove later
-            // ai_cars[0].update(dt);  // Update only the first car so we can focus on AI programming
-            // #else
             for (auto &ai : ai_cars) {
                 ai.update(dt);
             }
-            // #endif
             const sf::Vector2f vehicle_position = selected_vehicle_pointer->get_position();
             camera_view.setCenter(vehicle_position);
             camera_view.setSize(window_size_f);
