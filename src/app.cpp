@@ -86,23 +86,27 @@ void run()
     // Create random number generator
     std::mt19937 rng{std::random_device{}()};
 
-    // Setup texture manager
+    // Setup texture manager and load textures
     // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
     assets::textures::TextureManager textures;
-    // Load road textures
-    textures.load("top_left", {road_sand89::data, road_sand89::size});
-    textures.load("top_right", {road_sand01::data, road_sand01::size});
-    textures.load("bottom_right", {road_sand37::data, road_sand37::size});
-    textures.load("bottom_left", {road_sand35::data, road_sand35::size});
-    textures.load("vertical", {road_sand87::data, road_sand87::size});
-    textures.load("horizontal", {road_sand88::data, road_sand88::size});
-    textures.load("horizontal_finish", {road_sand39::data, road_sand39::size});
-    // Load car textures
-    textures.load("car_black", {car_black_1::data, car_black_1::size});
-    textures.load("car_blue", {car_blue_1::data, car_blue_1::size});
-    textures.load("car_green", {car_green_1::data, car_green_1::size});
-    textures.load("car_red", {car_red_1::data, car_red_1::size});
-    textures.load("car_yellow", {car_yellow_1::data, car_yellow_1::size});
+    for (const auto &[identifier, data, size] : {
+             // Road textures
+             std::tuple{"top_left", road_sand89::data, road_sand89::size},
+             std::tuple{"top_right", road_sand01::data, road_sand01::size},
+             std::tuple{"bottom_right", road_sand37::data, road_sand37::size},
+             std::tuple{"bottom_left", road_sand35::data, road_sand35::size},
+             std::tuple{"vertical", road_sand87::data, road_sand87::size},
+             std::tuple{"horizontal", road_sand88::data, road_sand88::size},
+             std::tuple{"horizontal_finish", road_sand39::data, road_sand39::size},
+             // Car textures
+             std::tuple{"car_black", car_black_1::data, car_black_1::size},
+             std::tuple{"car_blue", car_blue_1::data, car_blue_1::size},
+             std::tuple{"car_green", car_green_1::data, car_green_1::size},
+             std::tuple{"car_red", car_red_1::data, car_red_1::size},
+             std::tuple{"car_yellow", car_yellow_1::data, car_yellow_1::size},
+         }) {
+        textures.load(identifier, {data, size});
+    }
 
     // Create race track
     core::game::Track race_track(
