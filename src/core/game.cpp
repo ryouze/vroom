@@ -25,7 +25,7 @@ Track::Track(const Textures tiles,
              const TrackConfig &config)
     : tiles_(tiles),  //  Copy the small struct to prevent segfaults
       rng_(rng),
-      config_(this->validate_config(config)),
+      config_(Track::validate_config(config)),
       finish_point_(0.f, 0.f)
 {
     // Build the track immediately on construction
@@ -39,7 +39,7 @@ Track::Track(const Textures tiles,
 
 void Track::set_config(const TrackConfig &config)
 {
-    const TrackConfig validated_config = this->validate_config(config);
+    const TrackConfig validated_config = Track::validate_config(config);
     // Only rebuild if the configuration actually changes
     if (!(this->config_ == validated_config)) {
         SPDLOG_DEBUG("Config changed, rebuilding track...");
@@ -53,7 +53,7 @@ void Track::set_config(const TrackConfig &config)
 
 void Track::reset()
 {
-    const TrackConfig default_config = this->validate_config(TrackConfig{});  // Validate default compile-time config anyway
+    const TrackConfig default_config = Track::validate_config(TrackConfig{});  // Validate default compile-time config anyway
     // Only rebuild if the configuration actually changes
     if (!(this->config_ == default_config)) {
         SPDLOG_DEBUG("Config changed during reset, rebuilding track...");
@@ -93,7 +93,7 @@ void Track::draw(sf::RenderTarget &target) const
     }
 }
 
-TrackConfig Track::validate_config(const TrackConfig &config) const
+TrackConfig Track::validate_config(const TrackConfig &config)
 {
     SPDLOG_DEBUG("Validating track config: horizontal_count='{}', vertical_count='{}', size_px='{}', detour_probability='{}'...",
                  config.horizontal_count,

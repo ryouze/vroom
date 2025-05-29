@@ -61,10 +61,10 @@ struct TrackConfig final {
     [[nodiscard]] bool operator==(const TrackConfig &other) const noexcept
     {
         constexpr float epsilon = 1e-6f;
-        return horizontal_count == other.horizontal_count &&
-               vertical_count == other.vertical_count &&
-               size_px == other.size_px &&
-               std::abs(detour_probability - other.detour_probability) < epsilon;
+        return this->horizontal_count == other.horizontal_count &&
+               this->vertical_count == other.vertical_count &&
+               this->size_px == other.size_px &&
+               std::abs(this->detour_probability - other.detour_probability) < epsilon;
     }
 };
 
@@ -287,7 +287,7 @@ class Track final {
      *
      * @note Always use this during construction or configuration changes to prevent catastrophic errors.
      */
-    [[nodiscard]] TrackConfig validate_config(const TrackConfig &config) const;
+    [[nodiscard]] static TrackConfig validate_config(const TrackConfig &config);
 
     /**
      * @brief Build the track layout using the current configuration and textures.
