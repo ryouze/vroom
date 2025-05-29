@@ -95,7 +95,6 @@ add_library(${PROJECT_NAME}-lib STATIC
   src/core/backend.cpp
   src/core/game.cpp
   src/core/io.cpp
-  src/core/misc.cpp
   src/core/platform/posix.cpp
   src/core/platform/windows.cpp
   src/core/ui.cpp

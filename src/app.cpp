@@ -20,7 +20,6 @@
 #include "core/backend.hpp"
 #include "core/game.hpp"
 #include "core/io.hpp"
-#include "core/misc.hpp"
 #include "core/ui.hpp"
 #include "generated.hpp"
 
@@ -70,7 +69,7 @@ void run()
 
     // Get window size, update during game loop
     sf::Vector2u window_size_u = window.get_resolution();
-    sf::Vector2f window_size_f = core::misc::to_vector2f(window_size_u);
+    sf::Vector2f window_size_f = core::backend::to_vector2f(window_size_u);
     // TODO: Add move "to_vector2f" to backend
 
     // Create a configuration object to load and save settings
@@ -285,7 +284,7 @@ void run()
         // // Window was resized
         // else if (event.is<sf::Event::Resized>()) [[unlikely]] {
         //     // macOS fullscreen fix: query the actual size after resizing
-        //     camera_view.setSize(core::misc::to_vector2f(window->getSize()));
+        //     camera_view.setSize(core::backend::to_vector2f(window->getSize()));
         //     camera_view.zoom(camera_zoom_factor);
         // }
 
@@ -301,7 +300,7 @@ void run()
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
         window_size_u = window.get_resolution();
-        window_size_f = core::misc::to_vector2f(window_size_u);
+        window_size_f = core::backend::to_vector2f(window_size_u);
 
         // Currently selected vehicle
         core::game::BaseCar *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];

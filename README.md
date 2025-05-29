@@ -53,7 +53,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - Decide whether to use a custom file format or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
   - Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.).
 - Code cleanup and refactoring:
-  - Move `to_vector2f` from `src/core/misc.cpp` to `src/core/backend.cpp` or a more appropriate location if it's primarily backend-related.
   - Remove debug waypoint display code in `src/app.cpp` once AI cars have internal waypoint handling. [`src/app.cpp:120,150`]
   - Review and improve `const` usage in UI code, particularly in `src/core/ui.hpp` and `src/core/ui.cpp`. [`src/core/ui.hpp:330`]
 - Add keyboard input prompts (game controls on the main menu?). You have already downloaded them from Kenney's website and added to credits.

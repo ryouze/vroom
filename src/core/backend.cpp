@@ -124,4 +124,9 @@ void Window::apply_sync_settings()
     this->window_.setFramerateLimit(this->vsync_enabled_ ? 0u : this->frame_limit_);
 }
 
+sf::Vector2f to_vector2f(const sf::Vector2u &vector)
+{
+    return sf::Vector2f(static_cast<float>(vector.x), static_cast<float>(vector.y));
+}
+
 }  // namespace core::backend
