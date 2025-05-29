@@ -486,26 +486,29 @@ struct CarConfig final {
 };
 
 /**
- * @brief Struct that represents controller input state for analog controls.
+ * @brief Struct that represents unified input state for both keyboard and controller.
+ *
+ * Supports both digital input (keyboard: -1, 0, 1) and analog input (controller: continuous values).
  */
-struct ControllerInput final {
+struct CarInput final {
     /**
-     * @brief Gas/throttle input value in range [0.0, 1.0].
+     * @brief Gas/throttle input value. Range [0.0, 1.0] for analog, or 0.0/1.0 for digital.
      */
     float throttle = 0.0f;
 
     /**
-     * @brief Brake input value in range [0.0, 1.0].
+     * @brief Brake input value. Range [0.0, 1.0] for analog, or 0.0/1.0 for digital.
      */
     float brake = 0.0f;
 
     /**
-     * @brief Steering input value in range [-1.0, 1.0] where negative is left, positive is right.
+     * @brief Steering input value. Range [-1.0, 1.0] for analog, or -1.0/0.0/1.0 for digital.
+     * Negative values steer left, positive values steer right.
      */
     float steering = 0.0f;
 
     /**
-     * @brief Handbrake input (digital, either 0.0 or 1.0).
+     * @brief Handbrake input. Range [0.0, 1.0] for analog, or 0.0/1.0 for digital.
      */
     float handbrake = 0.0f;
 };
@@ -621,48 +624,13 @@ class Car final {
     [[nodiscard]] std::size_t get_current_waypoint_index() const;
 
     /**
-     * @brief Apply gas to the car immediately.
+     * @brief Apply unified input for both keyboard and controller.
      *
-     * @note Only effective in Player mode. Call this every frame to accelerate the car. Do not call it to stop gas.
+     * @param input Input values for throttle, brake, steering, and handbrake.
+     *
+     * @note Only effective in Player mode. Supports both digital (-1/0/1) and analog input values.
      */
-    void gas();
-
-    /**
-     * @brief Apply left foot brake to the car immediately.
-     *
-     * @note Only effective in Player mode. Call this every frame to decelerate the car. Do not call it to stop braking.
-     */
-    void brake();
-
-    /**
-     * @brief Apply left steering to the car with steering wheel emulation (turn the steering wheel left over time until it reaches the maximum angle, at which point it will stay at that angle).
-     *
-     * @note Only effective in Player mode. Call this every frame to steer left. Do not call it to stop steering left and return to center over time.
-     */
-    void steer_left();
-
-    /**
-     * @brief Apply right steering to the car with steering wheel emulation (turn the steering wheel right over time until it reaches the maximum angle, at which point it will stay at that angle).
-     *
-     * @note Only effective in Player mode. Call this every frame to steer right. Do not call it to stop steering right and return to center over time.
-     */
-    void steer_right();
-
-    /**
-     * @brief Apply handbrake (emergency brake) to the car immediately.
-     *
-     * @note Only effective in Player mode. Call this every frame to decelerate the car. Do not call it to stop handbraking.
-     */
-    void handbrake();
-
-    /**
-     * @brief Apply controller input for analog controls.
-     *
-     * @param controller_input Controller input values for throttle, brake, steering, and handbrake.
-     *
-     * @note Only effective in Player mode. This provides analog control as an alternative to keyboard input.
-     */
-    void apply_controller_input(const ControllerInput &controller_input);
+    void apply_input(const CarInput &input);
 
     /**
      * @brief Update the car's physics state over a time interval.
@@ -768,39 +736,12 @@ class Car final {
     sf::Vector2f velocity_;
 
     /**
-     * @brief Set to true via "gas()" or AI logic to accelerate the car.
+     * @brief Current input values for analog/digital control.
      *
-     * Input flag that triggers forward acceleration during the next physics update. Reset to false after each physics step.
+     * Keyboard provides digital values (0.0 or 1.0), controller provides analog values (0.0 to 1.0).
+     * Updated by apply_input() and used directly by physics calculations.
      */
-    bool is_accelerating_;
-
-    /**
-     * @brief Set to true via "brake()" or AI logic to apply the foot brake.
-     *
-     * Input flag that triggers deceleration during the next physics update. Reset to false after each physics step.
-     */
-    bool is_braking_;
-
-    /**
-     * @brief Set to true via "steer_left()" or AI logic to turn the steering wheel left.
-     *
-     * Input flag that triggers left steering during the next physics update. Reset to false after each physics step.
-     */
-    bool is_steering_left_;
-
-    /**
-     * @brief Set to true via "steer_right()" or AI logic to turn the steering wheel right.
-     *
-     * Input flag that triggers right steering during the next physics update. Reset to false after each physics step.
-     */
-    bool is_steering_right_;
-
-    /**
-     * @brief Set to true via "handbrake()" or AI logic to apply the handbrake (emergency brake).
-     *
-     * Input flag that triggers emergency braking during the next physics update. Reset to false after each physics step.
-     */
-    bool is_handbraking_;
+    CarInput current_input_ = {};
 
     /**
      * @brief Current steering wheel angle in degrees. This emulates a steering wheel via "steer_left()" and "steer_right()". If they are not called, the steering wheel will return to center over time.

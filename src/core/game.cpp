@@ -479,11 +479,7 @@ Car::Car(const sf::Texture &texture,
       control_mode_(control_mode),
       last_position_({0.0f, 0.0f}),
       velocity_({0.0f, 0.0f}),
-      is_accelerating_(false),
-      is_braking_(false),
-      is_steering_left_(false),
-      is_steering_right_(false),
-      is_handbraking_(false),
+      current_input_(),
       steering_wheel_angle_(0.0f),
       current_waypoint_index_number_(1),
       waypoint_reach_factor_(0.75f),
@@ -525,11 +521,7 @@ void Car::reset()
     // Clear all physics state
     this->velocity_ = {0.0f, 0.0f};
     this->steering_wheel_angle_ = 0.0f;
-    this->is_accelerating_ = false;
-    this->is_braking_ = false;
-    this->is_steering_left_ = false;
-    this->is_steering_right_ = false;
-    this->is_handbraking_ = false;
+    this->current_input_ = {};  // Reset input values
     this->last_position_ = spawn_position;
 
     // Reset AI state
@@ -566,55 +558,10 @@ void Car::set_control_mode(const CarControlMode control_mode)
     this->control_mode_ = control_mode;
 }
 
-void Car::gas()
+void Car::apply_input(const CarInput &input)
 {
-    this->is_accelerating_ = true;
-}
-
-void Car::brake()
-{
-    this->is_braking_ = true;
-}
-
-void Car::steer_left()
-{
-    this->is_steering_left_ = true;
-}
-
-void Car::steer_right()
-{
-    this->is_steering_right_ = true;
-}
-
-void Car::handbrake()
-{
-    this->is_handbraking_ = true;
-}
-
-void Car::apply_controller_input(const ControllerInput &input)
-{
-    // Apply throttle (analog gas)
-    if (input.throttle > 0.0f) {
-        this->is_accelerating_ = true;
-    }
-
-    // Apply brake (analog brake)
-    if (input.brake > 0.0f) {
-        this->is_braking_ = true;
-    }
-
-    // Apply steering (analog left/right)
-    if (input.steering < -0.1f) {
-        this->is_steering_left_ = true;
-    }
-    else if (input.steering > 0.1f) {
-        this->is_steering_right_ = true;
-    }
-
-    // Apply handbrake (digital)
-    if (input.handbrake > 0.5f) {
-        this->is_handbraking_ = true;
-    }
+    // Store input values directly for analog control
+    this->current_input_ = input;
 }
 
 void Car::update(const float dt)
@@ -635,6 +582,9 @@ void Car::draw(sf::RenderTarget &target) const
 
 void Car::update_ai_behavior([[maybe_unused]] const float dt)
 {
+    // Reset input values at start of AI update
+    this->current_input_ = {};
+
     // Get basic info
     const auto &waypoints = this->track_.get_waypoints();
 
@@ -699,10 +649,10 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
 
     if (should_steer && std::abs(heading_difference_radians) > minimum_steering_difference) {
         if (heading_difference_radians < 0.0f) {
-            this->steer_left();
+            this->current_input_.steering = -1.0f;  // Full left steering
         }
         else {
-            this->steer_right();
+            this->current_input_.steering = 1.0f;  // Full right steering
         }
     }
 
@@ -725,10 +675,10 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     const bool should_brake = collision_detected || speed_too_high || approaching_corner_too_fast;
 
     if (should_brake) {
-        this->brake();
+        this->current_input_.brake = 1.0f;
     }
     else if (current_speed < target_speed * (0.8f * this->get_random_variation())) {  // Start accelerating sooner
-        this->gas();
+        this->current_input_.throttle = 1.0f;
     }
 
     // Advance waypoint with slight randomness in reach distance
@@ -850,12 +800,6 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
 
 void Car::apply_physics_step(const float dt)
 {
-    // Cancel opposite steering inputs
-    if (this->is_steering_left_ && this->is_steering_right_) {
-        this->is_steering_left_ = false;
-        this->is_steering_right_ = false;
-    }
-
     // Compute forward unit vector from current heading
     const float heading_angle_radians = this->sprite_.getRotation().asRadians();
     const sf::Vector2f forward_unit_vector = {std::cos(heading_angle_radians), std::sin(heading_angle_radians)};
@@ -863,23 +807,26 @@ void Car::apply_physics_step(const float dt)
     // Storage for current speed
     float current_speed = this->get_speed();
 
-    // Apply gas throttle along forward axis
-    if (this->is_accelerating_) {
-        this->velocity_ += forward_unit_vector * (this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt);
+    // Apply gas throttle along forward axis (using analog input)
+    if (this->current_input_.throttle > 0.0f) {
+        const float throttle_force = this->current_input_.throttle * this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt;
+        this->velocity_ += forward_unit_vector * throttle_force;
         current_speed = this->get_speed();
     }
 
-    // Apply foot brake deceleration
-    if (this->is_braking_ && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
-        const float brake_reduction = std::min(this->config_.brake_deceleration_rate_pixels_per_second_squared * dt, current_speed);
+    // Apply foot brake deceleration (using analog input)
+    if (this->current_input_.brake > 0.0f && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
+        const float brake_force = this->current_input_.brake * this->config_.brake_deceleration_rate_pixels_per_second_squared * dt;
+        const float brake_reduction = std::min(brake_force, current_speed);
         const sf::Vector2f velocity_unit_vector = this->velocity_ / current_speed;
         this->velocity_ -= velocity_unit_vector * brake_reduction;
         current_speed -= brake_reduction;
     }
 
-    // Apply handbrake deceleration
-    if (this->is_handbraking_ && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
-        const float new_speed = current_speed - this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
+    // Apply handbrake deceleration (using analog input)
+    if (this->current_input_.handbrake > 0.0f && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
+        const float handbrake_force = this->current_input_.handbrake * this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
+        const float new_speed = current_speed - handbrake_force;
         if (new_speed < 0.1f) {
             this->velocity_ = {0.0f, 0.0f};
             current_speed = 0.0f;
@@ -892,7 +839,10 @@ void Car::apply_physics_step(const float dt)
     }
 
     // Apply passive engine drag when no controls are active
-    if (!this->is_accelerating_ && !this->is_braking_ && !this->is_handbraking_ && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
+    const bool has_throttle_input = this->current_input_.throttle > 0.0f;
+    const bool has_brake_input = this->current_input_.brake > 0.0f;
+    const bool has_handbrake_input = this->current_input_.handbrake > 0.0f;
+    if (!has_throttle_input && !has_brake_input && !has_handbrake_input && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
         const float drag = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
         const float speed_after_drag = std::max(current_speed - drag, 0.0f);
         const float drag_scale = (current_speed > 0.0f) ? speed_after_drag / current_speed : 0.0f;
@@ -918,16 +868,14 @@ void Car::apply_physics_step(const float dt)
     const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
     this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
 
-    // Update steering wheel angle from input
-    if (this->is_steering_left_) {
-        this->steering_wheel_angle_ -= this->config_.steering_turn_rate_degrees_per_second * dt;
+    // Update steering wheel angle from analog input
+    if (std::abs(this->current_input_.steering) > 0.01f) {
+        // Apply steering based on analog input value (-1.0 to 1.0)
+        const float steering_rate = this->current_input_.steering * this->config_.steering_turn_rate_degrees_per_second * dt;
+        this->steering_wheel_angle_ += steering_rate;
     }
-    if (this->is_steering_right_) {
-        this->steering_wheel_angle_ += this->config_.steering_turn_rate_degrees_per_second * dt;
-    }
-
-    // Auto center steering wheel when no steering input is active
-    if (!this->is_steering_left_ && !this->is_steering_right_) {
+    else {
+        // Auto center steering wheel when no steering input is active
         if (std::abs(this->steering_wheel_angle_) > this->config_.steering_autocenter_epsilon_degrees && current_speed > 0.0f) {
             const float centering_factor = std::clamp(this->config_.steering_autocenter_rate_degrees_per_second * dt / std::abs(this->steering_wheel_angle_), 0.0f, 1.0f);
             this->steering_wheel_angle_ = std::lerp(this->steering_wheel_angle_, 0.0f, centering_factor);
@@ -992,13 +940,6 @@ void Car::apply_physics_step(const float dt)
 
     // Store last legal position for next frame
     this->last_position_ = this->sprite_.getPosition();
-
-    // Reset control flags for next frame
-    this->is_accelerating_ = false;
-    this->is_braking_ = false;
-    this->is_steering_left_ = false;
-    this->is_steering_right_ = false;
-    this->is_handbraking_ = false;
 }
 
 [[nodiscard]] float Car::get_random_variation() const

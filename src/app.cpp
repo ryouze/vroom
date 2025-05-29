@@ -280,21 +280,14 @@ void run()
 
         // Playing state, this is what is gonna happen 99% of the time
         if (current_state == GameState::Playing) [[likely]] {
-            if (key_states.gas) {
-                player_car.gas();
-            }
-            if (key_states.brake) {
-                player_car.brake();
-            }
-            if (key_states.left) {
-                player_car.steer_left();
-            }
-            if (key_states.right) {
-                player_car.steer_right();
-            }
-            if (key_states.handbrake) {
-                player_car.handbrake();
-            }
+            // Create unified input from keyboard state
+            core::game::CarInput player_input = {};
+            player_input.throttle = key_states.gas ? 1.0f : 0.0f;
+            player_input.brake = key_states.brake ? 1.0f : 0.0f;
+            player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
+            player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
+
+            player_car.apply_input(player_input);
             player_car.update(dt);
 #ifndef NDEBUG                      // Debug, remove later
             ai_cars[0].update(dt);  // Update only the first car so we can focus on AI programming
