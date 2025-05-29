@@ -49,24 +49,31 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - Study the `sf::View` class in detail to ensure the camera is handled correctly.
 - In `AICar`, move all AI-related variables to private class scope as `static constexpr` instead of defining them inside the `update()` function.
   - Also, scale the braking value (e.g., 0.4f) dynamically using `CarConfig`'s brake and acceleration strength, rather than relying on hardcoded values.
-- Implement configuration loading and saving for screen resolution, VSync, and other graphical settings. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
+- Implement configuration loading and saving for screen resolution, VSync, and other graphical settings using the `Config` class in `src/core/io.hpp`. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
   - Decide whether to use a custom file format or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
+  - Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.).
+- Code cleanup and refactoring:
+  - Move `to_vector2f` from `src/core/misc.cpp` to `src/core/backend.cpp` or a more appropriate location if it's primarily backend-related.
+  - Remove debug waypoint display code in `src/app.cpp` once AI cars have internal waypoint handling. [`src/app.cpp:120,150`]
+  - Review and improve `const` usage in UI code, particularly in `src/core/ui.hpp` and `src/core/ui.cpp`. [`src/core/ui.hpp:330`]
+- Add keyboard input prompts (game controls on the main menu?). You have already downloaded them from Kenney's website and added to credits.
 
-**Ideas**:
-- In `BaseCar`, add a private member `std::size_t closest_waypoint_`, which is updated in `apply_physics_step()`. Alternatively, perform per-frame scanning of all waypoints in `app.cpp` to determine which waypoint each car is at, and thus identifying the race leader. However, tracking the closest waypoint internally may assist with AI logic, such as recovering from a crash by reverting to the previous waypoint. But sharing it across all derived classes, including the player, might be stupid. A scan-based approach is likely better.
+**Ideas**
+- In `BaseCar` (within `src/core/game.hpp`), add a private member `std::size_t closest_waypoint_`, which is updated in `apply_physics_step()`. Alternatively, perform per-frame scanning of all waypoints in `app.cpp` to determine which waypoint each car is at, and thus identifying the race leader. However, tracking the closest waypoint internally may assist with AI logic, such as recovering from a crash by reverting to the previous waypoint. But sharing it across all derived classes, including the player, might be stupid. A scan-based approach is likely better.
   - If choosing to store the closest waypoint internally, add a public getter `get_closest_waypoint()`. The distance threshold for waypoint changes should be retrieved from `Track::get_config()`, which must include the tile size (e.g., `512`). To do so, also add a private variable that is set by `Track::build()` based on the texture size to ensure consistent tile and track scaling.
-- Consider converting `PlayerCar` into a subclass of `AICar`, with a toggle to enable AI control of the player vehicle in ImGui. I liked that feature in trainers for old NFS games; it would also enable stability testing if left running overnight or at speeds faster than real-time (cf. Cheat Engine's speed hack).
+- Consider converting `PlayerCar` into a subclass of `AICar` (both in `src/core/game.hpp`), with a toggle to enable AI control of the player vehicle in ImGui. I liked that feature in trainers for old NFS games; it would also enable stability testing if left running overnight or at speeds faster than real-time (cf. Cheat Engine's speed hack).
 - Integrate parallel algorithms. Many STL algorithms (e.g., `copy`, `find`, `sort`) support parallel execution policies such as `seq`, `par`, and `par_unseq`, corresponding to "sequential", "parallel", and "parallel unsequenced", respectively. E.g., `auto result1 = std::find(std::execution::par, std::begin(longVector), std::end(longVector), 2);`.
-  - This could be particularly useful for collision checking, which involves iterating over all track tiles until a collision is detected.
+  - This could be particularly useful for collision checking in `src/core/game.cpp`, which involves iterating over all track tiles until a collision is detected.
 - Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
   - Also implement compile-time enums and switch-case validation (I forgot why I wanted this?).
-- Use the `contains` method for associative containers (e.g., sets, maps) instead of the traditional "find and compare to end" idiom.
+- Use the `contains` method for associative containers (e.g., sets, maps) instead of the traditional "find and compare to end" idiom. This applies to areas like texture management in `src/assets/textures.cpp`.
 - Use `std::pair` for grouping related values to avoid creating separate variables or structs. Example: `Coordinate = std::pair<int, int>;`.
-- Ensure that the minimap's internal resolution either scales automatically with the window size or is configurable through the settings menu.
+- Ensure that the minimap's internal resolution either scales automatically with the window size or is configurable through the settings menu. This relates to `Minimap` in `src/core/ui.hpp` and its rendering in `src/app.cpp`.
   - Perhaps we could do both. The minimap is quite expensive to render, so we should definitely allow a lot of customization, in addition to the ability to disable it completely, which is already implemented.
-* Display the game controls on the main menu screen. Consider using [Input Prompts](https://www.kenney.nl/assets/input-prompts) sprites to visually represent the controls.
+- Review the debug UI sections in `src/app.cpp` (e.g., lines around 409, 428, 492) and consider if any of this debug information should be exposed in a more polished way or removed.
+- Evaluate the necessity of the `#ifndef NDEBUG` blocks for ImGui includes in `src/core/game.cpp` and `src/core/backend.cpp`. Determine if these are still needed or if ImGui should be a standard part of the debug/dev experience.
 
-**Finishing Touches**:
+**Finishing Touches**
 - Add basic audio support, with sound effects for the car engine. Avoid adding music, as it would bloat the file size.
 - Add gamepad support, if feasible.
   - We'd need to bypass the steering wheel emulation. The pedals are simple on/off switches, which is also annoying.
