@@ -120,12 +120,12 @@ void run()
         rng);
 
     // Create cars
-    core::game::PlayerCar player_car(textures.get("car_black"), rng, race_track);
-    std::array<core::game::AICar, 4> ai_cars = {
-        core::game::AICar(textures.get("car_blue"), rng, race_track),
-        core::game::AICar(textures.get("car_green"), rng, race_track),
-        core::game::AICar(textures.get("car_red"), rng, race_track),
-        core::game::AICar(textures.get("car_yellow"), rng, race_track)};
+    core::game::Car player_car(textures.get("car_black"), rng, race_track, core::game::CarControlMode::Player);
+    std::array<core::game::Car, 4> ai_cars = {
+        core::game::Car(textures.get("car_blue"), rng, race_track, core::game::CarControlMode::AI),
+        core::game::Car(textures.get("car_green"), rng, race_track, core::game::CarControlMode::AI),
+        core::game::Car(textures.get("car_red"), rng, race_track, core::game::CarControlMode::AI),
+        core::game::Car(textures.get("car_yellow"), rng, race_track, core::game::CarControlMode::AI)};
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&player_car, &ai_cars]() {
@@ -204,7 +204,7 @@ void run()
     };
 
     // List of vehicles
-    const std::array<core::game::BaseCar *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
+    const std::array<core::game::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
 
     // Vehicle names
     static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "AI 1", "AI 2", "AI 3", "AI 4"};
@@ -276,7 +276,7 @@ void run()
         window_size_f = core::backend::to_vector2f(window_size_u);
 
         // Currently selected vehicle
-        core::game::BaseCar *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
+        core::game::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
         // Playing state, this is what is gonna happen 99% of the time
         if (current_state == GameState::Playing) [[likely]] {

@@ -486,35 +486,71 @@ struct CarConfig final {
 };
 
 /**
- * @brief Base class for all cars in the game world, designed to be inherited by custom car classes.
- *
- * Provides core physics simulation, rendering, and collision handling.
- *
- * On construction, the car is initialized with a texture, position, alongside other parameters.
+ * @brief Struct that represents controller input state for analog controls.
  */
-class BaseCar {
+struct ControllerInput final {
+    /**
+     * @brief Gas/throttle input value in range [0.0, 1.0].
+     */
+    float throttle = 0.0f;
+
+    /**
+     * @brief Brake input value in range [0.0, 1.0].
+     */
+    float brake = 0.0f;
+
+    /**
+     * @brief Steering input value in range [-1.0, 1.0] where negative is left, positive is right.
+     */
+    float steering = 0.0f;
+
+    /**
+     * @brief Handbrake input (digital, either 0.0 or 1.0).
+     */
+    float handbrake = 0.0f;
+};
+
+/**
+ * @brief Enum for car control modes.
+ */
+enum class CarControlMode {
+    /**
+     * @brief Player control mode - responds to keyboard/controller input.
+     */
+    Player,
+
+    /**
+     * @brief AI control mode - follows waypoints automatically.
+     */
+    AI
+};
+
+/**
+ * @brief Unified car class that supports both player and AI control modes.
+ *
+ * Provides core physics simulation, rendering, collision handling, and AI navigation in a single class.
+ * Control mode can be switched both at construction time and during runtime.
+ *
+ * On construction, the car is initialized with a texture, position, and control mode.
+ */
+class Car final {
   public:
     /**
-     * @brief Construct a new BaseCar object.
+     * @brief Construct a new Car object.
      *
      * @param texture Reference to the SFML texture used for the car sprite. This is expected to be around 71x131 pixels.
      * @param rng Reference to a random number generator used for random decision making (e.g., collision bounces).
      * @param track Reference to the race track object for boundary, spawnpoint and waypoint information.
+     * @param control_mode Initial control mode (Player or AI).
      * @param config Configuration parameters controlling acceleration, braking, steering, and collision behavior.
      *
      * @note This uses the internal track reference to place the car at the track's spawn point.
      */
-    explicit BaseCar(const sf::Texture &texture,
-                     std::mt19937 &rng,
-                     const Track &track,
-                     const CarConfig &config = CarConfig());  // Use default config
-
-    /**
-     * @brief Destroy the BaseCar object.
-     *
-     * Virtual destructor to ensure proper cleanup in derived classes.
-     */
-    virtual ~BaseCar() = default;
+    explicit Car(const sf::Texture &texture,
+                 std::mt19937 &rng,
+                 const Track &track,
+                 const CarControlMode control_mode = CarControlMode::Player,
+                 const CarConfig &config = CarConfig());  // Use default config
 
     /**
      * @brief Reset the car's position, rotation, velocity, and steering to initial state.
@@ -523,7 +559,7 @@ class BaseCar {
      *
      * @note This uses the internal track reference to place the car at the track's spawn point.
      */
-    virtual void reset();
+    void reset();
 
     /**
      * @brief Get the current position of the car.
@@ -560,48 +596,82 @@ class BaseCar {
     [[nodiscard]] float get_steering_angle() const;
 
     /**
+     * @brief Get the current control mode.
+     *
+     * @return Current control mode (Player or AI).
+     */
+    [[nodiscard]] CarControlMode get_control_mode() const;
+
+    /**
+     * @brief Set the control mode at runtime.
+     *
+     * @param control_mode New control mode (Player or AI).
+     *
+     * @note When switching to AI mode, the current waypoint index is reset to ensure proper navigation.
+     */
+    void set_control_mode(const CarControlMode control_mode);
+
+    /**
+     * @brief Get the current waypoint index for race position tracking.
+     *
+     * @return Current waypoint index that the car is targeting or has passed.
+     *
+     * @note This is useful for determining race positions relative to other cars.
+     */
+    [[nodiscard]] std::size_t get_current_waypoint_index() const;
+
+    /**
      * @brief Apply gas to the car immediately.
      *
-     * @note Call this every frame to accelerate the car. Do not call it to stop gas.
+     * @note Only effective in Player mode. Call this every frame to accelerate the car. Do not call it to stop gas.
      */
-    virtual void gas();
+    void gas();
 
     /**
      * @brief Apply left foot brake to the car immediately.
      *
-     * @note Call this every frame to decelerate the car. Do not call it to stop braking.
+     * @note Only effective in Player mode. Call this every frame to decelerate the car. Do not call it to stop braking.
      */
-    virtual void brake();
+    void brake();
 
     /**
      * @brief Apply left steering to the car with steering wheel emulation (turn the steering wheel left over time until it reaches the maximum angle, at which point it will stay at that angle).
      *
-     * @note Call this every frame to steer left. Do not call it to stop steering left and return to center over time.
+     * @note Only effective in Player mode. Call this every frame to steer left. Do not call it to stop steering left and return to center over time.
      */
     void steer_left();
 
     /**
      * @brief Apply right steering to the car with steering wheel emulation (turn the steering wheel right over time until it reaches the maximum angle, at which point it will stay at that angle).
      *
-     * @note Call this every frame to steer right. Do not call it to stop steering right and return to center over time.
+     * @note Only effective in Player mode. Call this every frame to steer right. Do not call it to stop steering right and return to center over time.
      */
     void steer_right();
 
     /**
      * @brief Apply handbrake (emergency brake) to the car immediately.
      *
-     * @note Call this every frame to decelerate the car. Do not call it to stop handbraking.
+     * @note Only effective in Player mode. Call this every frame to decelerate the car. Do not call it to stop handbraking.
      */
     void handbrake();
+
+    /**
+     * @brief Apply controller input for analog controls.
+     *
+     * @param controller_input Controller input values for throttle, brake, steering, and handbrake.
+     *
+     * @note Only effective in Player mode. This provides analog control as an alternative to keyboard input.
+     */
+    void apply_controller_input(const ControllerInput &controller_input);
 
     /**
      * @brief Update the car's physics state over a time interval.
      *
      * @param dt Time passed since the previous frame, in seconds.
      *
-     * @note Call this method once per frame before calling "draw()". It will call the internal "apply_physics_step()" function to apply all the physics calculations, such as acceleration, slip, collision, etc.
+     * @note Call this method once per frame before calling "draw()". In AI mode, this will also perform AI calculations to determine steering and throttle/brake inputs based on waypoints.
      */
-    virtual void update(const float dt);
+    void update(const float dt);
 
     /**
      * @brief Draw the car on the provided render target.
@@ -613,14 +683,41 @@ class BaseCar {
     void draw(sf::RenderTarget &target) const;
 
     // Disable move semantics
-    BaseCar(BaseCar &&) = delete;
-    BaseCar &operator=(BaseCar &&) = delete;
+    Car(Car &&) = delete;
+    Car &operator=(Car &&) = delete;
 
     // Disable copy semantics
-    BaseCar(const BaseCar &) = delete;
-    BaseCar &operator=(const BaseCar &) = delete;
+    Car(const Car &) = delete;
+    Car &operator=(const Car &) = delete;
 
-  protected:
+  private:
+    /**
+     * @brief Apply physics step to the car - combines all forces, slip, and collisions.
+     *
+     * This processes the member input flags, then runs the entire physics pipeline.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note Always call this as the final step in the update loop from "update()", before drawing the car via "draw()".
+     */
+    void apply_physics_step(const float dt);
+
+    /**
+     * @brief Update AI behavior - handles waypoint navigation and control decisions.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note This is called automatically during "update()" when in AI mode.
+     */
+    void update_ai_behavior(const float dt);
+
+    /**
+     * @brief Get a small random variation factor for AI decisions to make them less predictable.
+     *
+     * @return Float between 0.95 and 1.05 (±5% variation).
+     */
+    [[nodiscard]] float get_random_variation() const;
+
     /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      *
@@ -649,17 +746,12 @@ class BaseCar {
      */
     std::mt19937 &rng_;
 
-  private:
     /**
-     * @brief Apply physics step to the car - combines all forces, slip, and collisions.
+     * @brief Current control mode (Player or AI).
      *
-     * This processeds the member input flags, then runs the entire physics pipeline.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     *
-     * @note Always call this as the final step in the update loop from "update()", before drawing the car via "draw()".
+     * Determines whether the car responds to player input or follows AI waypoint navigation.
      */
-    void apply_physics_step(const float dt);
+    CarControlMode control_mode_;
 
     /**
      * @brief Last valid position of the car sprite in world coordinates (pixels).
@@ -676,35 +768,35 @@ class BaseCar {
     sf::Vector2f velocity_;
 
     /**
-     * @brief Set to true via "gas()" to accelerate the car.
+     * @brief Set to true via "gas()" or AI logic to accelerate the car.
      *
      * Input flag that triggers forward acceleration during the next physics update. Reset to false after each physics step.
      */
     bool is_accelerating_;
 
     /**
-     * @brief Set to true via "brake()" to apply the foot brake.
+     * @brief Set to true via "brake()" or AI logic to apply the foot brake.
      *
      * Input flag that triggers deceleration during the next physics update. Reset to false after each physics step.
      */
     bool is_braking_;
 
     /**
-     * @brief Set to true via "steer_left()" to turn the steering wheel left.
+     * @brief Set to true via "steer_left()" or AI logic to turn the steering wheel left.
      *
      * Input flag that triggers left steering during the next physics update. Reset to false after each physics step.
      */
     bool is_steering_left_;
 
     /**
-     * @brief Set to true via "steer_right()" to turn the steering wheel right.
+     * @brief Set to true via "steer_right()" or AI logic to turn the steering wheel right.
      *
      * Input flag that triggers right steering during the next physics update. Reset to false after each physics step.
      */
     bool is_steering_right_;
 
     /**
-     * @brief Set to true via "handbrake()" to apply the handbrake (emergency brake).
+     * @brief Set to true via "handbrake()" or AI logic to apply the handbrake (emergency brake).
      *
      * Input flag that triggers emergency braking during the next physics update. Reset to false after each physics step.
      */
@@ -716,67 +808,16 @@ class BaseCar {
      * Positive values turn the car right, negative values turn it left. Auto-centers when no steering input is active.
      */
     float steering_wheel_angle_;
-};
-
-/**
- * @brief Player-controlled car class.
- *
- * Inherits core physics and rendering from BaseCar.
- *
- * On construction, it runs the base class constructor.
- */
-class PlayerCar final : public BaseCar {
-  public:
-    // Inherit the constructor from BaseCar
-    using BaseCar::BaseCar;
-
-    // Ensure compilation fails if BaseCar's destructor ever stops being virtual
-    ~PlayerCar() override = default;
-};
-/**
- * @brief AI-controlled car class.
- *
- * Inherits core physics and rendering from BaseCar, implements waypoint‑following logic to drive around the track.
- *
- * On construction, it runs the base class constructor.
- */
-class AICar final : public BaseCar {
-  public:
-    // Inherit from BaseCar but also set waypoint index
-    explicit AICar(const sf::Texture &texture,
-                   std::mt19937 &rng,
-                   const Track &track,
-                   const CarConfig &config = CarConfig());  // Use default config
-
-    // Ensure compilation fails if BaseCar's destructor ever stops being virtual
-    ~AICar() override = default;
 
     /**
-     * @brief Reset the car's position, rotation, velocity, and steering to initial state.
+     * @brief Index of the current target waypoint for AI navigation.
      *
-     * This is useful when rebuilding the track or resetting the game.
-     *
-     * @note This uses the internal track reference to get the current spawn point. This also resets the current AI waypoint index to 1, skipping the spawn point (index 0) to prevent issues.
+     * Tracks which waypoint the AI car is currently navigating towards in the track's waypoint sequence.
+     * Also used for race position tracking regardless of control mode.
      */
-    void reset() override;
+    std::size_t current_waypoint_index_number_;
 
-    /**
-     * @brief Update the AI car's steering and throttle/brake decisions based on waypoints over a time interval, then update the car's physics state.
-     *
-     * @param dt Time passed since the previous frame, in seconds.
-     *
-     * @note Call this method once per frame before calling "draw()". It will perform AI calculations to determine the best steering and throttle/brake inputs based on the current track and waypoints, then call the base class "update()" method to apply the physics calculations.
-     */
-    void update(const float dt) override;
-
-  private:
-    /**
-     * @brief Get a small random variation factor for AI decisions to make them less predictable.
-     *
-     * @return Float between 0.95 and 1.05 (±5% variation).
-     */
-    [[nodiscard]] float get_random_variation() const;
-
+    // AI-specific parameters for fine-tuning behavior
     /**
      * @brief Waypoint reach distance as fraction of tile size.
      *
@@ -853,13 +894,6 @@ class AICar final : public BaseCar {
      * Upper bound of random variation applied to AI decisions to reduce predictability. Value of 1.05 provides 5% increase.
      */
     float random_variation_maximum_ = 1.05f;
-
-    /**
-     * @brief Index of the current target waypoint.
-     *
-     * Tracks which waypoint the AI car is currently navigating towards in the track's waypoint sequence.
-     */
-    std::size_t current_waypoint_index_number_;
 };
 
 }  // namespace core::game
