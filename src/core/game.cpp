@@ -478,18 +478,7 @@ Car::Car(const sf::Texture &texture,
       velocity_({0.0f, 0.0f}),
       current_input_(),
       steering_wheel_angle_(0.0f),
-      current_waypoint_index_number_(1),
-      waypoint_reach_factor_(0.75f),
-      collision_distance_(0.65f),
-      straight_steering_threshold_(0.25f),
-      corner_steering_threshold_(0.08f),
-      minimum_straight_steering_difference_(0.1f),
-      early_corner_turn_distance_(1.0f),
-      corner_speed_factor_(1.2f),
-      straight_speed_factor_(3.0f),
-      brake_distance_factor_(3.0f),
-      random_variation_minimum_(0.8f),
-      random_variation_maximum_(1.2f)
+      current_waypoint_index_number_(1)
 {
     this->sprite_.setOrigin({this->sprite_.getTexture().getSize().x / 2.0f, this->sprite_.getTexture().getSize().y / 2.0f});
     this->reset();
@@ -579,16 +568,30 @@ void Car::draw(sf::RenderTarget &target) const
 
 void Car::update_ai_behavior([[maybe_unused]] const float dt)
 {
-    // AI behavior constants - extract magic numbers to improve maintainability
-    static constexpr float collision_velocity_threshold_factor_ = 0.1f;           // Minimum speed for collision checking as fraction of tile size
-    static constexpr float max_heading_for_full_steering_degrees_ = 45.0f;        // Degrees for maximum steering intensity
-    static constexpr float minimum_steering_intensity_ = 0.3f;                    // Minimum steering amount to avoid gentle steering
-    static constexpr float corner_minimum_steering_difference_radians_ = 0.001f;  // Minimum heading difference for corner steering
-    static constexpr float overspeed_braking_threshold_factor_ = 1.5f;            // Speed multiplier for emergency braking
-    static constexpr float significant_speed_reduction_threshold_factor_ = 0.4f;  // Speed difference threshold for significant braking (as fraction of tile size)
-    static constexpr float speed_increase_threshold_factor_ = 0.2f;               // Speed difference threshold for acceleration (as fraction of tile size)
-    static constexpr float braking_speed_overage_factor_ = 0.5f;                  // If this much over target speed, apply full brake
-    static constexpr float throttle_speed_underage_factor_ = 0.8f;                // If this much under target speed, apply full throttle
+    // AI behavior constants
+    static constexpr float waypoint_reach_factor = 0.75f;                        // Distance factor for waypoint reach detection; increase = reach waypoints from farther away, decrease = must get closer to reach waypoints
+    static constexpr float collision_distance = 0.65f;                           // Distance ahead to check for collisions as fraction of tile size; increase = avoid collisions earlier, decrease = check collisions closer to car
+    static constexpr float straight_steering_threshold = 0.25f;                  // Heading difference threshold for steering on straights in radians; increase = less sensitive steering on straights, decrease = more twitchy steering on straights
+    static constexpr float corner_steering_threshold = 0.08f;                    // Heading difference threshold for steering in corners in radians; increase = less responsive cornering, decrease = more aggressive cornering
+    static constexpr float minimum_straight_steering_difference = 0.1f;          // Minimum heading difference for straight steering in radians; increase = reduce steering wobble but less precision, decrease = more precise but potentially jittery steering
+    static constexpr float early_corner_turn_distance = 1.0f;                    // Distance factor for early corner turning; increase = start turning earlier before corners, decrease = turn later and sharper into corners
+    static constexpr float corner_speed_factor = 1.2f;                           // Speed multiplier for corners as fraction of tile size; increase = faster through corners but riskier, decrease = slower and safer through corners
+    static constexpr float straight_speed_factor = 3.0f;                         // Speed multiplier for straights as fraction of tile size; increase = faster on straights, decrease = slower and more conservative on straights
+    static constexpr float brake_distance_factor = 3.0f;                         // Distance factor for braking before corners; increase = start braking earlier before corners, decrease = brake later and more aggressively
+    static constexpr float random_variation_minimum = 0.7f;                      // Minimum random variation multiplier; increase = less variation and more predictable AI, decrease = more erratic AI behavior
+    static constexpr float random_variation_maximum = 1.3f;                      // Maximum random variation multiplier; increase = more chaotic AI behavior, decrease = more consistent and predictable AI
+    static constexpr float collision_velocity_threshold_factor = 0.1f;           // Minimum speed for collision checking as fraction of tile size; increase = only check collisions at higher speeds, decrease = check collisions even at very low speeds
+    static constexpr float max_heading_for_full_steering_degrees = 45.0f;        // Degrees for maximum steering intensity; increase = require larger heading errors for full steering, decrease = apply full steering with smaller heading errors
+    static constexpr float minimum_steering_intensity = 0.9f;                    // Minimum steering amount to avoid gentle steering; increase = always steer aggressively, decrease = allow more gentle steering corrections
+    static constexpr float corner_minimum_steering_difference_radians = 0.001f;  // Minimum heading difference for corner steering in radians; increase = reduce corner steering sensitivity, decrease = increase corner steering sensitivity
+    static constexpr float overspeed_braking_threshold_factor = 1.5f;            // Speed multiplier for emergency braking; increase = allow higher speeds before emergency braking, decrease = trigger emergency braking at lower speeds
+    static constexpr float significant_speed_reduction_threshold_factor = 0.4f;  // Speed difference threshold for significant braking as fraction of tile size; increase = require larger speed differences to brake hard, decrease = brake hard with smaller speed differences
+    static constexpr float speed_increase_threshold_factor = 0.2f;               // Speed difference threshold for acceleration as fraction of tile size; increase = require larger speed deficits to accelerate, decrease = accelerate with smaller speed deficits
+    static constexpr float braking_speed_overage_factor = 0.5f;                  // Fraction over target speed that triggers full brake; increase = tolerate higher speeds before full braking, decrease = apply full brake closer to target speed
+    static constexpr float throttle_speed_underage_factor = 0.8f;                // Fraction under target speed that triggers full throttle; increase = tolerate lower speeds before full throttle, decrease = apply full throttle closer to target speed
+    static constexpr float gentle_speed_difference_threshold_factor = 0.5f;      // Factor for gentle speed adjustments relative to speed_increase_threshold; increase = use gentle adjustments less often, decrease = use gentle adjustments more often
+    static constexpr float gentle_throttle_maximum = 0.3f;                       // Maximum throttle for gentle speed adjustments; increase = more aggressive gentle acceleration, decrease = more conservative gentle acceleration
+    static constexpr float gentle_brake_maximum = 0.3f;                          // Maximum brake for gentle speed adjustments; increase = more aggressive gentle braking, decrease = more conservative gentle braking
 
     // Reset input values at start of AI update
     this->current_input_ = {};
@@ -610,22 +613,25 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     const float tile_size = static_cast<float>(this->track_.get_config().size_px);
     const float current_speed = this->get_speed();
 
-    // Cache random variation to avoid multiple RNG calls
-    const float random_variation = this->get_random_variation();
+    // Cache random variations to avoid multiple RNG calls per parameter
+    std::uniform_real_distribution<float> random_distribution(random_variation_minimum, random_variation_maximum);
+    const float speed_random_variation = random_distribution(this->rng_);
+    const float steering_random_variation = random_distribution(this->rng_);
+    const float distance_random_variation = random_distribution(this->rng_);
 
     // Calculate distances
     const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
     const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
-    const float waypoint_reach_distance = tile_size * this->waypoint_reach_factor_;
+    const float waypoint_reach_distance = tile_size * waypoint_reach_factor;
 
     // Collision detection - check one point ahead based on velocity direction
     bool collision_detected = false;
     const sf::Vector2f car_velocity = this->get_velocity();
     const float velocity_magnitude = std::hypot(car_velocity.x, car_velocity.y);
-    const float collision_velocity_threshold = tile_size * collision_velocity_threshold_factor_;
+    const float collision_velocity_threshold = tile_size * collision_velocity_threshold_factor;
     if (velocity_magnitude > collision_velocity_threshold) {
         const sf::Vector2f velocity_normalized = car_velocity / velocity_magnitude;
-        const sf::Vector2f check_point = car_position + velocity_normalized * (tile_size * this->collision_distance_);
+        const sf::Vector2f check_point = car_position + velocity_normalized * (tile_size * collision_distance);
         collision_detected = !this->track_.is_on_track(check_point);
     }
 
@@ -640,26 +646,26 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     const float heading_difference_radians = std::remainder(desired_heading_radians - current_heading_radians, 2.0f * std::numbers::pi_v<float>);
 
     // Dynamic steering threshold based on context and early corner turning
-    float steering_threshold = in_corner_context ? this->corner_steering_threshold_ : this->straight_steering_threshold_;
-    steering_threshold *= random_variation;
+    float steering_threshold = in_corner_context ? corner_steering_threshold : straight_steering_threshold;
+    steering_threshold *= steering_random_variation;
 
     // Early corner turning: if approaching corner and close enough, use corner threshold
-    if (approaching_corner && distance_to_current_waypoint < tile_size * this->early_corner_turn_distance_ * random_variation) {
-        steering_threshold = this->corner_steering_threshold_ * random_variation;
+    if (approaching_corner && distance_to_current_waypoint < tile_size * early_corner_turn_distance * distance_random_variation) {
+        steering_threshold = corner_steering_threshold * steering_random_variation;
     }
 
     // Apply steering with smoothing to reduce wiggling
     const bool should_steer = collision_detected || std::abs(heading_difference_radians) > steering_threshold;
-    const float minimum_steering_difference = in_corner_context ? corner_minimum_steering_difference_radians_ : this->minimum_straight_steering_difference_;
+    const float minimum_steering_difference = in_corner_context ? corner_minimum_steering_difference_radians : minimum_straight_steering_difference;
 
     if (should_steer && std::abs(heading_difference_radians) > minimum_steering_difference) {
         // Proportional steering based on heading difference for smoother control
-        const float max_heading_for_full_steer = sf::degrees(max_heading_for_full_steering_degrees_).asRadians();
+        const float max_heading_for_full_steer = sf::degrees(max_heading_for_full_steering_degrees).asRadians();
         float steering_intensity = std::clamp(heading_difference_radians / max_heading_for_full_steer, -1.0f, 1.0f);
 
         // Apply minimum steering amount to avoid too gentle steering
         if (std::abs(steering_intensity) > 0.0f) {
-            steering_intensity = std::copysign(std::max(std::abs(steering_intensity), minimum_steering_intensity_), steering_intensity);
+            steering_intensity = std::copysign(std::max(std::abs(steering_intensity), minimum_steering_intensity), steering_intensity);
         }
 
         this->current_input_.steering = steering_intensity;
@@ -667,44 +673,68 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
 
     // Speed management based on driving context
     const float base_target_speed = in_corner_context
-                                        ? tile_size * this->corner_speed_factor_
-                                        : tile_size * this->straight_speed_factor_;
+                                        ? tile_size * corner_speed_factor
+                                        : tile_size * straight_speed_factor;
 
-    const float target_speed = base_target_speed * random_variation;
-    const float brake_distance = tile_size * this->brake_distance_factor_ * random_variation;
+    const float target_speed = base_target_speed * speed_random_variation;
+    const float brake_distance = tile_size * brake_distance_factor * distance_random_variation;
 
     // Intelligent braking logic
     const bool approaching_corner_too_fast = approaching_corner &&
                                              (distance_to_current_waypoint < brake_distance) &&
-                                             (current_speed > target_speed * overspeed_braking_threshold_factor_ * random_variation);
+                                             (current_speed > target_speed * overspeed_braking_threshold_factor * speed_random_variation);
 
     const float speed_difference = target_speed - current_speed;
-    const float significant_speed_reduction_threshold = tile_size * significant_speed_reduction_threshold_factor_;
-    const float speed_increase_threshold = tile_size * speed_increase_threshold_factor_;
+    const float significant_speed_reduction_threshold = tile_size * significant_speed_reduction_threshold_factor;
+    const float speed_increase_threshold = tile_size * speed_increase_threshold_factor;
 
     // Emergency braking for collisions or approaching corners too fast
     const bool emergency_brake = collision_detected || approaching_corner_too_fast;
 
+    // Smooth pedal operation with mutually exclusive throttle/brake logic
     if (emergency_brake) {
         this->current_input_.brake = 1.0f;
+        this->current_input_.throttle = 0.0f;  // Ensure throttle is off during emergency braking
     }
     else if (speed_difference < -significant_speed_reduction_threshold) {
         // Proportional braking based on how much we need to slow down
-        const float max_speed_over = target_speed * braking_speed_overage_factor_;
+        const float max_speed_over = target_speed * braking_speed_overage_factor;
         const float speed_over = current_speed - target_speed;
         const float brake_intensity = std::clamp(speed_over / max_speed_over, 0.0f, 1.0f);
         this->current_input_.brake = brake_intensity;
+        this->current_input_.throttle = 0.0f;  // Ensure throttle is off when braking
     }
     else if (speed_difference > speed_increase_threshold) {
         // Proportional throttle based on how much we need to speed up
-        const float max_speed_under = target_speed * throttle_speed_underage_factor_;
+        const float max_speed_under = target_speed * throttle_speed_underage_factor;
         const float throttle_intensity = std::clamp(speed_difference / max_speed_under, 0.0f, 1.0f);
         this->current_input_.throttle = throttle_intensity;
+        this->current_input_.brake = 0.0f;  // Ensure brake is off when accelerating
     }
-    // If speed difference is small, let engine drag naturally adjust speed
+    else {
+        // Speed is close to target - use gentle control or let engine drag adjust naturally
+        const float gentle_speed_difference_threshold = speed_increase_threshold * gentle_speed_difference_threshold_factor;
+        if (speed_difference > gentle_speed_difference_threshold) {
+            // Apply gentle throttle for fine speed adjustments
+            const float gentle_throttle = std::clamp(speed_difference / speed_increase_threshold, 0.0f, gentle_throttle_maximum);
+            this->current_input_.throttle = gentle_throttle;
+            this->current_input_.brake = 0.0f;
+        }
+        else if (speed_difference < -gentle_speed_difference_threshold) {
+            // Apply gentle braking for fine speed adjustments
+            const float gentle_brake = std::clamp(-speed_difference / significant_speed_reduction_threshold, 0.0f, gentle_brake_maximum);
+            this->current_input_.brake = gentle_brake;
+            this->current_input_.throttle = 0.0f;
+        }
+        else {
+            // Let engine drag naturally adjust speed when very close to target
+            this->current_input_.throttle = 0.0f;
+            this->current_input_.brake = 0.0f;
+        }
+    }
 
     // Advance waypoint with randomized reach distance
-    const float randomized_waypoint_reach_distance = waypoint_reach_distance * random_variation;
+    const float randomized_waypoint_reach_distance = waypoint_reach_distance * distance_random_variation;
     if (distance_to_current_waypoint < randomized_waypoint_reach_distance) {
         this->current_waypoint_index_number_ = next_index;
     }
@@ -852,12 +882,6 @@ void Car::apply_physics_step(const float dt)
 
     // Store last legal position for next frame
     this->last_position_ = this->sprite_.getPosition();
-}
-
-[[nodiscard]] float Car::get_random_variation() const
-{
-    std::uniform_real_distribution<float> distribution(this->random_variation_minimum_, this->random_variation_maximum_);
-    return distribution(this->rng_);
 }
 
 }  // namespace core::game

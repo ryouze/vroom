@@ -276,9 +276,9 @@ class Speedometer final : public IWidget {
     /**
      * @brief Pixel-to-kilometer per hour conversion factor.
      *
-     * @note This is roughly modeled after the Nissan Silvia S14 real-world dimensions ({4.5f, 1.7f}) vs. in-game player car sprite (car_black_1).
+     * @note The original factor was roughly modeled after the Nissan Silvia S14 real-world dimensions ({4.5f, 1.7f}) vs. in-game player car sprite (car_black_1), resulting in "0.1008f". However, that was deemed too high, so it was adjusted to "0.07f" for better scaling.
      */
-    static constexpr float px_to_kph_factor_ = 0.1008f;
+    static constexpr float px_to_kph_factor_ = 0.07f;
 
     /**
      * @brief Maximum speed in kilometers per hour, for scaling the progress bar, in pixels.

@@ -680,13 +680,6 @@ class Car final {
     void update_ai_behavior(const float dt);
 
     /**
-     * @brief Get a small random variation factor for AI decisions to make them less predictable.
-     *
-     * @return Float between 0.95 and 1.05 (±5% variation).
-     */
-    [[nodiscard]] float get_random_variation() const;
-
-    /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      *
      * The sprite handles visual representation, position tracking, and rotation for physics calculations.
@@ -757,84 +750,6 @@ class Car final {
      * Also used for race position tracking regardless of control mode.
      */
     std::size_t current_waypoint_index_number_;
-
-    // AI-specific parameters for fine-tuning behavior
-    /**
-     * @brief Waypoint reach distance as fraction of tile size.
-     *
-     * Controls how close the AI car must get to a waypoint before targeting the next one. Lower values require more precision but may cause waypoint misses.
-     */
-    float waypoint_reach_factor_ = 0.75f;
-
-    /**
-     * @brief Collision check distance as fraction of tile size.
-     *
-     * Determines how far ahead the AI car looks for track boundaries to avoid crashes. Higher values enable earlier collision avoidance.
-     */
-    float collision_distance_ = 0.75f;
-
-    /**
-     * @brief Steering threshold on straights in radians.
-     *
-     * How much the car heading must differ from target direction before steering on straight sections. Higher values reduce wiggling but slow corrections.
-     */
-    float straight_steering_threshold_ = 0.25f;
-
-    /**
-     * @brief Steering threshold in corners in radians.
-     *
-     * How much the car heading must differ from target direction before steering in corners. Lower values provide more responsive turning.
-     */
-    float corner_steering_threshold_ = 0.08f;
-
-    /**
-     * @brief Minimum heading difference to steer on straights in radians.
-     *
-     * Prevents tiny steering corrections that cause wiggling on straight sections by requiring a minimum angular difference before steering.
-     */
-    float minimum_straight_steering_difference_ = 0.1f;
-
-    /**
-     * @brief Distance before corner to start turning early as fraction of tile size.
-     *
-     * Controls how far before a corner the AI starts using corner steering settings. Higher values start turning sooner for smoother cornering.
-     */
-    float early_corner_turn_distance_ = 1.0f;
-
-    /**
-     * @brief Target speed in corners as fraction of tile size.
-     *
-     * Speed multiplier for corner sections. Lower values promote safer cornering, higher values enable faster but riskier corner navigation.
-     */
-    float corner_speed_factor_ = 1.2f;
-
-    /**
-     * @brief Target speed on straights as fraction of tile size.
-     *
-     * Speed multiplier for straight sections. Higher values allow faster top speed on straight track segments.
-     */
-    float straight_speed_factor_ = 3.0f;
-
-    /**
-     * @brief Brake distance as fraction of tile size.
-     *
-     * How far before corners the AI starts braking. Higher values promote earlier braking for safer cornering approach.
-     */
-    float brake_distance_factor_ = 3.0f;
-
-    /**
-     * @brief Minimum random variation factor for AI decision making.
-     *
-     * Lower bound of random variation applied to AI decisions to reduce predictability. Value of 0.95 provides 5% reduction.
-     */
-    float random_variation_minimum_ = 0.95f;
-
-    /**
-     * @brief Maximum random variation factor for AI decision making.
-     *
-     * Upper bound of random variation applied to AI decisions to reduce predictability. Value of 1.05 provides 5% increase.
-     */
-    float random_variation_maximum_ = 1.05f;
 };
 
 }  // namespace core::game
