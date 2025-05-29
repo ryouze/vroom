@@ -224,6 +224,19 @@ For debug builds, the logging level is set to `debug` by default, which is very 
 > While `cmake/External.cmake` defines `SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG` in debug builds, this only affects compile-time filtering. The runtime verbosity is still controlled by `spdlog::set_level()`, which must be called to see `debug`-level messages during execution. This is done in `main.cpp`.
 
 
+### Code Quality Check
+
+To perform a simple quality check on the `src` directory, use the following command from the root of the project:
+
+```sh
+./code-check.sh
+```
+
+This prints messages for the following issues:
+- Missing header guards or `#pragma once` in header files
+- TODO/FIXME/HACK comments
+
+
 ### Testing
 
 Tests are included in the project but are not built by default.
