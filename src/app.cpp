@@ -115,10 +115,6 @@ void run()
          .horizontal_finish = textures.get("horizontal_finish")},
         rng);
 
-    // AI waypoints (need to be overwritten on reset)
-    // TODO: Get rid of this after debug display is no longer needed, because each AI car gets its own waypoints internally
-    std::vector<core::game::TrackWaypoint> waypoints = race_track.get_waypoints();
-
     // Create cars
     core::game::PlayerCar player_car(textures.get("car_black"), rng, race_track);
     std::array<core::game::AICar, 4> ai_cars = {
@@ -128,9 +124,7 @@ void run()
         core::game::AICar(textures.get("car_yellow"), rng, race_track)};
 
     // Function to reset the cars to their spawn point and reset their speed
-    const auto reset_cars = [&race_track, &player_car, &ai_cars, &waypoints]() {
-        // Update waypoints reference for debug display
-        waypoints = race_track.get_waypoints();
+    const auto reset_cars = [&player_car, &ai_cars]() {
         // Reset positions of all cars to spawn point
         player_car.reset();
         for (auto &ai_car : ai_cars) {
@@ -143,27 +137,6 @@ void run()
         race_track.reset();  // Rebuild track with default settings
         reset_cars();
         camera_zoom_factor = 2.5f;
-    };
-
-    // Function to draw waypoints
-    // TODO: Get rid of this debug display, then also get rid of explicitly getting waypoints
-    const auto draw_waypoints = [&window, &camera_view, &waypoints]() {
-        ImDrawList *foreground_draw_list = ImGui::GetForegroundDrawList();
-        for (std::size_t idx = 0; idx < waypoints.size(); ++idx) {
-            const core::game::TrackWaypoint &waypoint = waypoints[idx];
-
-            // World to screen
-            const sf::Vector2i pixel_position = window.raw().mapCoordsToPixel(waypoint.position, camera_view);
-            ImVec2 imgui_position = {static_cast<float>(pixel_position.x), static_cast<float>(pixel_position.y)};
-            const std::string label = std::format("Waypoint {}\n({}, {})", idx, waypoint.position.x, waypoint.position.y);
-            const ImVec2 text_size = ImGui::CalcTextSize(label.c_str());
-
-            // Center on waypoint
-            imgui_position.x -= text_size.x * 0.5f;
-            imgui_position.y -= text_size.y * 0.5f;
-
-            foreground_draw_list->AddText(imgui_position, waypoint.type == core::game::TrackWaypoint::DrivingType::Corner ? IM_COL32(255, 0, 0, 255) : IM_COL32(0, 0, 255, 255), label.c_str());
-        }
     };
 
     // Player input states
@@ -231,11 +204,7 @@ void run()
 
     // Vehicle names
     static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "AI 1", "AI 2", "AI 3", "AI 4"};
-#ifndef NDEBUG  // Debug, remove later
-    int selected_vehicle_index = 1;
-#else
     int selected_vehicle_index = 0;
-#endif
 
     // Function to draw the game entities (race track and cars) in the window and minimap
     const auto draw_game_entities = [&race_track, &player_car, &ai_cars](sf::RenderTarget &rt) {
@@ -563,7 +532,6 @@ void run()
         if (current_state == GameState::Playing) [[likely]] {
             rt.clear(window_colors.game);
             draw_game_entities(rt);
-            draw_waypoints();
         }
         else if (current_state == GameState::Paused) {
             rt.clear(window_colors.settings);
