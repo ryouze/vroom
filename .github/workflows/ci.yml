@@ -7,14 +7,20 @@ on:
     branches:
       - main
     paths-ignore:
+      - "**/*.md"
+      - "assets/**"
+      - "code-check.sh"
       - "LICENSE"
-      - "README.md"
+      #- ".gitignore"
   pull_request:
     branches:
       - main
     paths-ignore:
+      - "**/*.md"
+      - "assets/**"
+      - "code-check.sh"
       - "LICENSE"
-      - "README.md"
+      #- ".gitignore"
 
 jobs:
   build:
