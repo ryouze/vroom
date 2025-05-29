@@ -1,17 +1,27 @@
-## General Programming Guidelines
+This is `vroom`, a cross-platform 2D racing game with arcade drift physics, procedurally-generated tracks, and waypoint AI.
 
-### All Languages
-- Use plain ASCII in logs and comments; no Unicode.
-- Use American spelling (e.g., `color`).
+## Technology Stack
+- Language: C++20.
+- Graphics: SFML3.
+- UI: Dear ImGui.
+- Logging: spdlog.
+- Target Platforms (in order of importance): macOS, Linux, Windows.
+- Development Environment: macOS/Clang/CMake.
+
+## All Languages
+- Use plain ASCII in logs and comments; avoid Unicode.
+- Use American English spelling (e.g., `color`).
 - Prefer long, verbose variable names.
 - Do not split long lines across newlines, keep them long - even if it hurts readability. I especially hate when long comments are split across multiple lines.
 
-### C++
-- Always use `this->` when referring to member variables.
-- Use snake_case everywhere, apart for class and struct names, which should use CamelCase. I hate pascalCase.
-- Use `const` and `constexpr` everywhere whenever possible.
-- Use trailing underscore for member variables in classes (e.g., `zoom_ratio_`) but plain names in structs (e.g., `zoom_ratio`).
-- Use CMake in the `build` directory.
+## C++
+- Always prefix member variables with `this->`.
+- Use `snake_case` for all identifiers, except for class and struct names, which must use `CamelCase`. Avoid `pascalCase` at all costs.
+- Use `const`, `constexpr`, and `[[nodiscard]]` whenever possible.
+- Class member variables must have a trailing underscore (e.g., `zoom_ratio_`), while struct fields should not (e.g., `zoom_ratio`).
+- Use CMake from the `build` directory, e.g., `cmake --build . --parallel`.
+- All files in `src/core/` (e.g., `game.hpp`, `backend.hpp`, `ui.hpp`) must be completely independent - they cannot `#include` other core modules. Each core file should only depend on standard library, SFML, and external libraries. This creates a "flat" architecture where higher-level code (like `app.cpp`) can freely import any core modules without circular dependency issues. Think of core modules as independent building blocks that can be mixed and matched by the application layer.
+- Do not use `noexcept`.
 - Use modern C++20 features and SFML3. SFML3 uses C++17 and has the following differences from SFML2:
 ```md
 ### 1. Vectors, rects, sizes
@@ -57,4 +67,17 @@
 ### 6. Types and threading
 * `sf::Int32`, `sf::Uint32`, ... → `std::int32_t`, `std::uint32_t`, ...
 * `sf::Lock`, `sf::Mutex`, `sf::Thread` → `<thread>` equivalents (`std::lock_guard`, `std::mutex`, `std::thread` or `std::jthread`).
+```
+- Always format function or method declarations so the first parameter stays on the same line as the function name, and all remaining parameters are placed on their own lines. For example:
+```cpp
+void run(const event_callback_type &on_event,
+         const update_callback_type &on_update,
+         const render_callback_type &on_render);
+```
+- Always use `=` for variable initialization, never brace-initialization. For example:
+```cpp
+sf::Vector2u resolution = {1280, 720};
+unsigned fps = 144;
+bool vsync = false;
+unsigned anti_aliasing = 8;
 ```

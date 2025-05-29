@@ -317,7 +317,7 @@ class Track final {
     /**
      * @brief Current validated track configuration.
      *
-     * This dontains all track parameters after validation and clamping. Values are guaranteed to be within safe ranges to prevent crashes or invalid track generation.
+     * This contains all track parameters after validation and clamping. Values are guaranteed to be within safe ranges to prevent crashes or invalid track generation.
      */
     TrackConfig config_;
 
