@@ -60,7 +60,7 @@ std::filesystem::path get_local_appdata_directory()
     if (const HRESULT com_init_result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         // S_OK means success, S_FALSE means already initialized
         com_init_result != S_OK && com_init_result != S_FALSE) [[unlikely]] {
-        throw std::runtime_error("Failed to initialize COM for Known Folders");
+        throw std::runtime_error("Failed to initialize COM for Windows Known Folders API");
     }
     SPDLOG_DEBUG("COM initialized successfully, now retrieving LocalAppData path...");
 
@@ -78,10 +78,9 @@ std::filesystem::path get_local_appdata_directory()
     // RAII; CoTaskMemFree(nullptr) does nothing, so it's OK to pass nullptr
     auto holder = std::unique_ptr<wchar_t, decltype(&CoTaskMemFree)>(raw_path, &CoTaskMemFree);
     SPDLOG_DEBUG("RAII guard created, checking for errors...");
-
     if (FAILED(folder_path_result) || raw_path == nullptr) [[unlikely]] {
         CoUninitialize();  // Can't be bothered with RAII for this
-        throw std::runtime_error("Failed to get LocalAppData path");
+        throw std::runtime_error("Failed to get LocalAppData directory path using Windows API");
     }
     SPDLOG_DEBUG("No errors, converting to std::filesystem::path...");
 
