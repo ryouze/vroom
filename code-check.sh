@@ -3,7 +3,7 @@
 # Code Quality Check
 # This script runs simple checks on C++ files in the src/ directory.
 #
-# USAGE: ./check-cpp
+# USAGE: ./code-check.sh
 #
 
 # Colors for output

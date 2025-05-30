@@ -6,7 +6,7 @@
 
 #pragma once
 
-#if !defined(_WIN32) // Assumption: if not Windows, then POSIX
+#if !defined(_WIN32)  // Assumption: if not Windows, then POSIX
 
 #include <filesystem>  // for std::filesystem
 
