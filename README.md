@@ -7,6 +7,7 @@
 vroom is a cross-platform 2D racing game with arcade drift physics, procedurally-generated tracks, and waypoint AI.
 
 ![Screenshot](assets/screenshot.jpeg)
+![Settings](assets/settings.jpeg)
 
 
 ## Motivation
