@@ -8,6 +8,8 @@
 
 #include <cstdint>     // for std::uint32_t
 #include <functional>  // for std::function
+#include <string>      // for std::string
+#include <vector>      // for std::vector
 
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
@@ -441,6 +443,81 @@ class Minimap final : public IWidget {
      * @brief Accumulated time since the last texture refresh.
      */
     float accumulation_ = 0.f;
+};
+
+/**
+ * @brief Struct that represents a car's name and drift score for leaderboard display.
+ */
+struct LeaderboardEntry final {
+    /**
+     * @brief Car name (e.g., "You", "Blue", "Red", etc.).
+     */
+    std::string car_name;
+
+    /**
+     * @brief Drift score for the car.
+     */
+    float drift_score;
+};
+
+/**
+ * @brief Class that displays the drift leaderboard in an ImGui overlay.
+ *
+ * Shows the current drift scores for all cars, sorted from highest to lowest score.
+ */
+class Leaderboard final : public IWidget {
+  public:
+    /**
+     * @brief Construct a new Leaderboard object.
+     *
+     * This calculates the pivot point and padding offset based on the provided corner, but does not perform any drawing until "update_and_draw()" is called.
+     *
+     * @param window Target window where the leaderboard will be drawn.
+     * @param corner Corner of the window where the leaderboard will be displayed (default: "TopRight").
+     */
+    explicit Leaderboard(sf::RenderTarget &window,
+                         const Corner corner = Corner::TopRight);
+
+    /**
+     * @brief Update the leaderboard and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
+     *
+     * @param entries Vector of leaderboard entries containing car names and drift scores.
+     *
+     * @note Call this once per frame, before ImGui is rendered to the screen (i.e., before "render()").
+     */
+    void update_and_draw(const std::vector<LeaderboardEntry> &entries) const;
+
+  private:
+    /**
+     * @brief Fraction of the shorter screen edge resolution used to scale the leaderboard window.
+     *
+     * @note This ensures that the leaderboard window scales with the window resolution, instead of using a fixed size.
+     */
+    static constexpr float window_scale_ratio_ = 0.25f;
+
+    /**
+     * @brief Aspect ratio of the leaderboard window.
+     *
+     * @details Size: 150px height, 230px width.
+     */
+    static constexpr float aspect_ratio_ = 150.f / 230.f;
+
+    /**
+     * @brief Target window where the leaderboard will be drawn.
+     */
+    const sf::RenderTarget &window_;
+
+    /**
+     * @brief Pivot point for the leaderboard window.
+     *
+     * @note This is basically the corner of the window where the leaderboard will be displayed. The "x" and "y" values are in the range "[0, 1]", where "(0, 0)" is the top-left corner and "(1, 1)" is the bottom-right corner.
+     */
+    ImVec2 pivot_;
+
+    /**
+     * @brief Padding offset based on the pivot point.
+     */
+    ImVec2 offset_;
 };
 
 }  // namespace core::ui

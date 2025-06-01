@@ -478,7 +478,8 @@ Car::Car(const sf::Texture &texture,
       velocity_({0.0f, 0.0f}),
       current_input_(),
       steering_wheel_angle_(0.0f),
-      current_waypoint_index_number_(1)
+      current_waypoint_index_number_(1),
+      drift_score_(0.0f)
 {
     this->sprite_.setOrigin({this->sprite_.getTexture().getSize().x / 2.0f, this->sprite_.getTexture().getSize().y / 2.0f});
     this->reset();
@@ -512,6 +513,9 @@ void Car::reset()
 
     // Reset AI state
     this->current_waypoint_index_number_ = 1;
+
+    // Reset drift score
+    this->drift_score_ = 0.0f;
 }
 
 [[nodiscard]] float Car::get_speed() const
@@ -537,6 +541,11 @@ void Car::reset()
 [[nodiscard]] std::size_t Car::get_current_waypoint_index() const
 {
     return this->current_waypoint_index_number_;
+}
+
+[[nodiscard]] float Car::get_drift_score() const
+{
+    return this->drift_score_;
 }
 
 void Car::set_control_mode(const CarControlMode control_mode)
@@ -809,6 +818,29 @@ void Car::apply_physics_step(const float dt)
     // Dampen lateral slip for arcade feel
     const float slip_damping_ratio = 1.0f - std::clamp(this->config_.lateral_slip_damping_coefficient_per_second * dt, 0.0f, 1.0f);
     this->velocity_ = forward_velocity_vector + lateral_velocity_vector * slip_damping_ratio;
+
+    // Calculate drift score based on lateral slip velocity and car speed
+    const float lateral_speed = std::hypot(lateral_velocity_vector.x, lateral_velocity_vector.y);
+    const float drift_threshold_pixels_per_second = 50.0f;              // Minimum lateral speed to count as drifting
+    const float speed_multiplier_threshold_pixels_per_second = 100.0f;  // Speed at which drift score multiplier reaches 1.0
+
+    if (lateral_speed > drift_threshold_pixels_per_second && current_speed > drift_threshold_pixels_per_second) {
+        // Calculate drift score multiplier based on forward speed (faster = more points)
+        const float speed_multiplier = std::min(current_speed / speed_multiplier_threshold_pixels_per_second, 2.0f);
+
+        // Calculate drift angle factor (more sideways = more points)
+        const float drift_angle_factor = lateral_speed / (current_speed + 1.0f);  // Avoid division by zero
+
+        // Base drift points per second when drifting
+        const float base_drift_points_per_second = 100.0f;
+
+        // Calculate final drift score increment
+        const float drift_score_increment = base_drift_points_per_second * speed_multiplier * drift_angle_factor * dt;
+        this->drift_score_ += drift_score_increment;
+
+        // Debug logging for drift detection (uncomment for testing)
+        // SPDLOG_DEBUG("Drifting! Lateral speed: {:.1f}, Forward speed: {:.1f}, Score increment: {:.2f}, Total score: {:.1f}", lateral_speed, current_speed, drift_score_increment, this->drift_score_);
+    }
 
     // Update steering wheel angle from analog input
     if (std::abs(this->current_input_.steering) > 0.01f) {

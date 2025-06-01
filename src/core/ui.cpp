@@ -489,4 +489,80 @@ void Minimap::draw() const
     ImGui::End();
 }
 
+Leaderboard::Leaderboard(sf::RenderTarget &window,
+                         const Corner corner)
+    : window_(window),
+      pivot_(compute_pivot(corner)),
+      offset_(compute_offset(this->pivot_))
+{
+    this->enabled = true;  // Enable by default
+    SPDLOG_DEBUG("Leaderboard created at corner '{}', set pivot point to ('{}', '{}') and padding offset to ('{}', '{}') px successfully, exiting constructor!",
+                 static_cast<std::underlying_type_t<Corner>>(corner),
+                 this->pivot_.x,
+                 this->pivot_.y,
+                 this->offset_.x,
+                 this->offset_.y);
+}
+
+void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) const
+{
+    // If disabled, do nothing
+    if (!this->enabled) {
+        return;
+    }
+
+    // Get the current window size
+    const auto [width, height] = this->window_.getSize();
+
+    // Use pivot_.x and pivot_.y to decide how much of the window size to add
+    ImGui::SetNextWindowPos({this->pivot_.x * static_cast<float>(width) + this->offset_.x,
+                             this->pivot_.y * static_cast<float>(height) + this->offset_.y},
+                            ImGuiCond_Always,
+                            this->pivot_);  // Corner of the window
+
+    // Calculate window size based on screen dimensions
+    const ImVec2 window_size = get_scaled_rectangle_size(width, height, this->aspect_ratio_, this->window_scale_ratio_);
+    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+
+    ImGui::Begin("Leaderboard",
+                 nullptr,
+                 base_overlay_flags |
+                     ImGuiWindowFlags_NoResize  // Prevent manual resizing
+    );
+
+    // Create a sorted copy of entries for display (highest score first)
+    std::vector<LeaderboardEntry> sorted_entries = entries;
+    std::sort(sorted_entries.begin(), sorted_entries.end(),
+              [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
+                  return a.drift_score > b.drift_score;  // Descending order
+              });
+
+    // Display header
+    ImGui::Text("Leaderboard");
+    ImGui::Separator();
+
+    // Display entries with position numbers
+    for (std::size_t i = 0; i < sorted_entries.size(); ++i) {
+        const auto &entry = sorted_entries[i];
+
+        // Format score with appropriate precision
+        if (entry.drift_score >= 1000.0f) {
+            ImGui::Text("%zu. %s: %.0f", i + 1, entry.car_name.c_str(), static_cast<double>(entry.drift_score));
+        }
+        else if (entry.drift_score >= 100.0f) {
+            ImGui::Text("%zu. %s: %.1f", i + 1, entry.car_name.c_str(), static_cast<double>(entry.drift_score));
+        }
+        else {
+            ImGui::Text("%zu. %s: %.2f", i + 1, entry.car_name.c_str(), static_cast<double>(entry.drift_score));
+        }
+    }
+
+    // If no entries, show placeholder
+    if (sorted_entries.empty()) {
+        ImGui::Text("No cars detected");
+    }
+
+    ImGui::End();
+}
+
 }  // namespace core::ui

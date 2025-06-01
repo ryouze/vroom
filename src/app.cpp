@@ -135,6 +135,22 @@ void run()
         }
     };
 
+    // Function to collect leaderboard data from all cars
+    const auto collect_leaderboard_data = [&player_car, &ai_cars]() -> std::vector<core::ui::LeaderboardEntry> {
+        std::vector<core::ui::LeaderboardEntry> entries;
+
+        // Add player car
+        entries.push_back({"Player", player_car.get_drift_score()});
+
+        // Add AI cars with names derived from texture identifiers
+        const std::array<std::string, 4> ai_names = {"Blue", "Green", "Red", "Yellow"};
+        for (std::size_t i = 0; i < ai_cars.size(); ++i) {
+            entries.push_back({ai_names[i], ai_cars[i].get_drift_score()});
+        }
+
+        return entries;
+    };
+
     // Full game reset: restore default track layout, reset cars, reset camera
     const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor]() {
         race_track.reset();  // Rebuild track with default settings
@@ -242,6 +258,7 @@ void run()
     core::ui::Minimap minimap{window.raw(), window_colors.game, draw_game_entities};  // Minimap in the top-right corner
     core::ui::FpsCounter fps_counter{window.raw()};                                   // FPS counter in the top-left corner
     core::ui::Speedometer speedometer{window.raw()};                                  // Speedometer in the bottom-right corner
+    core::ui::Leaderboard leaderboard{window.raw()};                                  // Leaderboard in the top-right corner
 
     const auto on_event = [&](const sf::Event &event) {
         // Let ImGui handle the event
@@ -298,6 +315,7 @@ void run()
             window.set_view(camera_view);
             speedometer.update_and_draw(selected_vehicle_pointer->get_speed());
             minimap.update_and_draw(dt, vehicle_position);
+            leaderboard.update_and_draw(collect_leaderboard_data());
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
@@ -434,6 +452,7 @@ void run()
                         ImGui::EndDisabled();
 
                         ImGui::Checkbox("Speedometer", &speedometer.enabled);
+                        ImGui::Checkbox("Leaderboard", &leaderboard.enabled);
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();

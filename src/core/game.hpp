@@ -616,6 +616,13 @@ class Car final {
     [[nodiscard]] std::size_t get_current_waypoint_index() const;
 
     /**
+     * @brief Get the current drift score accumulated by this car.
+     *
+     * @return Current drift score as a float value.
+     */
+    [[nodiscard]] float get_drift_score() const;
+
+    /**
      * @brief Apply unified input for both keyboard and controller.
      *
      * @param input Input values for throttle, brake, steering, and handbrake.
@@ -742,6 +749,13 @@ class Car final {
      * Also used for race position tracking regardless of control mode.
      */
     std::size_t current_waypoint_index_number_;
+
+    /**
+     * @brief Current accumulated drift score for this car.
+     *
+     * Score increases based on drift angle magnitude, speed, and duration while the car is sliding sideways.
+     */
+    float drift_score_ = 0.0f;
 };
 
 }  // namespace core::game
