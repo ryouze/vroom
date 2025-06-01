@@ -358,17 +358,17 @@ void run()
 
                 if (ImGui::BeginTabBar("settings_tabs")) {
                     if (ImGui::BeginTabItem("Game")) {
-                        ImGui::PushItemWidth(-150.f);  // Negative width leaves space for labels
+                        ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
 
                         ImGui::SeparatorText("Hacks");
-                        if (ImGui::Button("Reset Everything")) {
+                        if (ImGui::Button("Reset Game")) {
                             reset_game();
                             // Change to playing for instant visual feedback
                             current_state = GameState::Playing;
                         }
 
                         bool player_ai_controlled = (player_car.get_state().control_mode == core::game::CarControlMode::AI);
-                        if (ImGui::Checkbox("AI Controls Player", &player_ai_controlled)) {
+                        if (ImGui::Checkbox("Enable AI Driver", &player_ai_controlled)) {
                             player_car.set_control_mode(player_ai_controlled ? core::game::CarControlMode::AI : core::game::CarControlMode::Player);
                         }
 
@@ -385,7 +385,7 @@ void run()
                         track_config_changed |= ImGui::SliderInt("Tile Size", &tile_size_pixels, 256, 2048, "%d px");
 
                         // Technically this isn't a percentage, because we go from 0.f to 1.f, but this code will be removed later, and I don't care
-                        if (ImGui::SliderFloat("Shortcut Chance", &detour_probability, 0.0f, 1.0f, "%.2f")) {
+                        if (ImGui::SliderFloat("Detour Probability", &detour_probability, 0.0f, 1.0f, "%.1f")) {
                             detour_probability = std::clamp(detour_probability, 0.0f, 1.0f);
                             track_config_changed = true;
                         }
@@ -398,14 +398,14 @@ void run()
                         }
 
                         ImGui::SeparatorText("Camera");
-                        ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.2fx");
-                        ImGui::Combo("Active Car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
+                        ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.1fx");
+                        ImGui::Combo("Car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
-                        ImGui::PushItemWidth(-150.f);  // Negative width leaves space for labels
+                        ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
                         bool fullscreen = window.is_fullscreen();
                         bool vsync = window.is_vsync_enabled();
 
@@ -432,12 +432,12 @@ void run()
                             ImGui::EndCombo();
                         }
 #if defined(__APPLE__)
-                        ImGui::TextWrapped("macOS only supports borderless fullscreen");
+                        ImGui::TextWrapped("Note: macOS only supports borderless fullscreen mode");
 #endif
                         ImGui::EndDisabled();
 
                         ImGui::SeparatorText("Frame Rate");
-                        if (ImGui::Checkbox("V-sync", &vsync)) {
+                        if (ImGui::Checkbox("V-Sync", &vsync)) {
                             window.set_vsync(vsync);
                             // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
                             fps_index = 8;
@@ -449,12 +449,12 @@ void run()
                         }
                         ImGui::EndDisabled();
 
-                        ImGui::SeparatorText("Overlay");
+                        ImGui::SeparatorText("Widgets");
                         ImGui::Checkbox("FPS Counter", &fps_counter.enabled);
                         ImGui::Checkbox("Minimap", &minimap.enabled);
 
                         ImGui::BeginDisabled(!minimap.enabled);
-                        ImGui::SliderFloat("Minimap Refresh", &minimap.refresh_interval, 0.f, 1.f, "%.2fs");
+                        ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s");
                         ImGui::EndDisabled();
 
                         ImGui::Checkbox("Speedometer", &speedometer.enabled);
@@ -463,7 +463,7 @@ void run()
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
                     }
-                    if (ImGui::BeginTabItem("System")) {
+                    if (ImGui::BeginTabItem("About")) {
                         ImGui::SeparatorText("Build Information");
                         ImGui::BulletText("Version: %s", generated::PROJECT_VERSION);
                         ImGui::BulletText("Build Configuration: %s", generated::BUILD_CONFIGURATION);
