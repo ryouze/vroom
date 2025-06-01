@@ -521,6 +521,48 @@ enum class CarControlMode {
 };
 
 /**
+ * @brief Struct that contains the essential state information of a car.
+ *
+ * This groups commonly accessed properties together to simplify the Car API.
+ */
+struct CarState final {
+    /**
+     * @brief Current position in world coordinates (pixels).
+     */
+    sf::Vector2f position;
+
+    /**
+     * @brief Current velocity in pixels per second.
+     */
+    sf::Vector2f velocity;
+
+    /**
+     * @brief Current speed magnitude in pixels per second.
+     */
+    float speed;
+
+    /**
+     * @brief Current steering wheel angle in degrees.
+     */
+    float steering_angle;
+
+    /**
+     * @brief Current control mode (Player or AI).
+     */
+    CarControlMode control_mode;
+
+    /**
+     * @brief Current waypoint index for race position tracking.
+     */
+    std::size_t waypoint_index;
+
+    /**
+     * @brief Current accumulated drift score.
+     */
+    float drift_score;
+};
+
+/**
  * @brief Unified car class that supports both player and AI control modes.
  *
  * Provides core physics simulation, rendering, collision handling, and AI navigation in a single class.
@@ -557,45 +599,13 @@ class Car final {
     void reset();
 
     /**
-     * @brief Get the current position of the car.
+     * @brief Get the current state of the car.
      *
-     * @return Vector containing the car's position in world coordinates (pixels).
+     * @return CarState struct containing position, velocity, speed, steering angle, control mode, waypoint index, and drift score.
+     *
+     * @note This replaces individual getter methods and provides all commonly needed car information in one call.
      */
-    [[nodiscard]] sf::Vector2f get_position() const;
-
-    /**
-     * @brief Get the current velocity of the car.
-     *
-     * @return Vector containing the car's velocity in pixels per second.
-     *
-     * @note If you want to display speed in a car's speedometer sense, use "get_speed()" instead. This is the raw velocity vector for physics calculations.
-     */
-    [[nodiscard]] sf::Vector2f get_velocity() const;
-
-    /**
-     * @brief Get the current speed of the car based on the current velocity vector.
-     *
-     * @return Speed magnitude in pixels per second (e.g., "100.f").
-     *
-     * @note This calculates the scalar speed from the velocity vector before returning it, making it a bit more expensive than simply returning the velocity vector via "get_velocity()".
-     */
-    [[nodiscard]] float get_speed() const;
-
-    /**
-     * @brief Get current steering wheel angle.
-     *
-     * This is the angle of the steering wheel in degrees, which is used to determine the car's turning radius.
-     *
-     * @return Steering wheel angle in degrees (e.g., "-180.f", "30.f", "180.f").
-     */
-    [[nodiscard]] float get_steering_angle() const;
-
-    /**
-     * @brief Get the current control mode.
-     *
-     * @return Current control mode (Player or AI).
-     */
-    [[nodiscard]] CarControlMode get_control_mode() const;
+    [[nodiscard]] CarState get_state() const;
 
     /**
      * @brief Set the control mode at runtime.
@@ -605,22 +615,6 @@ class Car final {
      * @note When switching to AI mode, the current waypoint index is reset to ensure proper navigation.
      */
     void set_control_mode(const CarControlMode control_mode);
-
-    /**
-     * @brief Get the current waypoint index for race position tracking.
-     *
-     * @return Current waypoint index that the car is targeting or has passed.
-     *
-     * @note This is useful for determining race positions relative to other cars.
-     */
-    [[nodiscard]] std::size_t get_current_waypoint_index() const;
-
-    /**
-     * @brief Get the current drift score accumulated by this car.
-     *
-     * @return Current drift score as a float value.
-     */
-    [[nodiscard]] float get_drift_score() const;
 
     /**
      * @brief Apply unified input for both keyboard and controller.

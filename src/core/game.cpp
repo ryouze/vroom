@@ -518,34 +518,16 @@ void Car::reset()
     this->drift_score_ = 0.0f;
 }
 
-[[nodiscard]] float Car::get_speed() const
+[[nodiscard]] CarState Car::get_state() const
 {
-    return std::hypot(this->velocity_.x, this->velocity_.y);
-}
-
-[[nodiscard]] sf::Vector2f Car::get_velocity() const
-{
-    return this->velocity_;
-}
-
-[[nodiscard]] sf::Vector2f Car::get_position() const
-{
-    return this->sprite_.getPosition();
-}
-
-[[nodiscard]] CarControlMode Car::get_control_mode() const
-{
-    return this->control_mode_;
-}
-
-[[nodiscard]] std::size_t Car::get_current_waypoint_index() const
-{
-    return this->current_waypoint_index_number_;
-}
-
-[[nodiscard]] float Car::get_drift_score() const
-{
-    return this->drift_score_;
+    return CarState{
+        .position = this->sprite_.getPosition(),
+        .velocity = this->velocity_,
+        .speed = std::hypot(this->velocity_.x, this->velocity_.y),
+        .steering_angle = this->steering_wheel_angle_,
+        .control_mode = this->control_mode_,
+        .waypoint_index = this->current_waypoint_index_number_,
+        .drift_score = this->drift_score_};
 }
 
 void Car::set_control_mode(const CarControlMode control_mode)
@@ -620,7 +602,7 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     const TrackWaypoint &next_waypoint = waypoints[next_index];
     const sf::Vector2f car_position = this->sprite_.getPosition();
     const float tile_size = static_cast<float>(this->track_.get_config().size_px);
-    const float current_speed = this->get_speed();
+    const float current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
 
     // Cache random variations to avoid multiple RNG calls per parameter
     std::uniform_real_distribution<float> random_distribution(random_variation_minimum_, random_variation_maximum_);
@@ -634,7 +616,7 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
 
     // Collision detection - check one point ahead based on velocity direction
     bool collision_detected = false;
-    const sf::Vector2f car_velocity = this->get_velocity();
+    const sf::Vector2f car_velocity = this->velocity_;
     const float velocity_magnitude = std::hypot(car_velocity.x, car_velocity.y);
     const float collision_velocity_threshold = tile_size * collision_velocity_threshold_factor;
     if (velocity_magnitude > collision_velocity_threshold) {
@@ -749,13 +731,13 @@ void Car::apply_physics_step(const float dt)
     const sf::Vector2f forward_unit_vector = {std::cos(heading_angle_radians), std::sin(heading_angle_radians)};
 
     // Storage for current speed
-    float current_speed = this->get_speed();
+    float current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
 
     // Apply gas throttle along forward axis (using analog input)
     if (this->current_input_.throttle > 0.0f) {
         const float throttle_force = this->current_input_.throttle * this->config_.throttle_acceleration_rate_pixels_per_second_squared * dt;
         this->velocity_ += forward_unit_vector * throttle_force;
-        current_speed = this->get_speed();
+        current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
     }
 
     // Apply foot brake deceleration (using analog input)
@@ -872,7 +854,7 @@ void Car::apply_physics_step(const float dt)
         this->sprite_.setPosition(this->last_position_);
         // Restore last legal position
         this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;
-        current_speed = this->get_speed();
+        current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
         // If below minimum speed, stop the car completely to avoid jitter
         if (current_speed < this->config_.collision_minimum_bounce_speed_pixels_per_second) {
             this->velocity_ = {0.0f, 0.0f};

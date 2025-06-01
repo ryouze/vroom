@@ -140,12 +140,12 @@ void run()
         std::vector<core::ui::LeaderboardEntry> entries;
 
         // Add player car
-        entries.push_back({"Player", player_car.get_drift_score()});
+        entries.push_back({"Player", player_car.get_state().drift_score});
 
         // Add AI cars with names derived from texture identifiers
         const std::array<std::string, 4> ai_names = {"Blue", "Green", "Red", "Yellow"};
         for (std::size_t i = 0; i < ai_cars.size(); ++i) {
-            entries.push_back({ai_names[i], ai_cars[i].get_drift_score()});
+            entries.push_back({ai_names[i], ai_cars[i].get_state().drift_score});
         }
 
         return entries;
@@ -308,13 +308,13 @@ void run()
             for (auto &ai : ai_cars) {
                 ai.update(dt);
             }
-            const sf::Vector2f vehicle_position = selected_vehicle_pointer->get_position();
-            camera_view.setCenter(vehicle_position);
+            const auto vehicle_state = selected_vehicle_pointer->get_state();
+            camera_view.setCenter(vehicle_state.position);
             camera_view.setSize(window_size_f);
             camera_view.zoom(camera_zoom_factor);
             window.set_view(camera_view);
-            speedometer.update_and_draw(selected_vehicle_pointer->get_speed());
-            minimap.update_and_draw(dt, vehicle_position);
+            speedometer.update_and_draw(vehicle_state.speed);
+            minimap.update_and_draw(dt, vehicle_state.position);
             leaderboard.update_and_draw(collect_leaderboard_data());
         }
 
@@ -366,7 +366,7 @@ void run()
                             current_state = GameState::Playing;
                         }
 
-                        bool player_ai_controlled = (player_car.get_control_mode() == core::game::CarControlMode::AI);
+                        bool player_ai_controlled = (player_car.get_state().control_mode == core::game::CarControlMode::AI);
                         if (ImGui::Checkbox("AI Controls Player", &player_ai_controlled)) {
                             player_car.set_control_mode(player_ai_controlled ? core::game::CarControlMode::AI : core::game::CarControlMode::Player);
                         }
