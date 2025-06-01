@@ -569,7 +569,7 @@ void Car::draw(sf::RenderTarget &target) const
 void Car::update_ai_behavior([[maybe_unused]] const float dt)
 {
     // AI behavior constants
-    static constexpr float waypoint_reach_factor = 0.75f;                        // Distance factor for waypoint reach detection; increase = reach waypoints from farther away, decrease = must get closer to reach waypoints
+    static constexpr float waypoint_reach_factor = 0.65f;                        // Distance factor for waypoint reach detection; increase = reach waypoints from farther away, decrease = must get closer to reach waypoints
     static constexpr float collision_distance = 0.65f;                           // Distance ahead to check for collisions as fraction of tile size; increase = avoid collisions earlier, decrease = check collisions closer to car
     static constexpr float straight_steering_threshold = 0.25f;                  // Heading difference threshold for steering on straights in radians; increase = less sensitive steering on straights, decrease = more twitchy steering on straights
     static constexpr float corner_steering_threshold = 0.08f;                    // Heading difference threshold for steering in corners in radians; increase = less responsive cornering, decrease = more aggressive cornering
@@ -578,8 +578,8 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     static constexpr float corner_speed_factor = 1.2f;                           // Speed multiplier for corners as fraction of tile size; increase = faster through corners but riskier, decrease = slower and safer through corners
     static constexpr float straight_speed_factor = 3.0f;                         // Speed multiplier for straights as fraction of tile size; increase = faster on straights, decrease = slower and more conservative on straights
     static constexpr float brake_distance_factor = 3.0f;                         // Distance factor for braking before corners; increase = start braking earlier before corners, decrease = brake later and more aggressively
-    static constexpr float random_variation_minimum = 0.7f;                      // Minimum random variation multiplier; increase = less variation and more predictable AI, decrease = more erratic AI behavior
-    static constexpr float random_variation_maximum = 1.3f;                      // Maximum random variation multiplier; increase = more chaotic AI behavior, decrease = more consistent and predictable AI
+    static constexpr float random_variation_minimum = 0.8f;                      // Minimum random variation multiplier; increase = less variation and more predictable AI, decrease = more erratic AI behavior
+    static constexpr float random_variation_maximum = 1.2f;                      // Maximum random variation multiplier; increase = more chaotic AI behavior, decrease = more consistent and predictable AI
     static constexpr float collision_velocity_threshold_factor = 0.1f;           // Minimum speed for collision checking as fraction of tile size; increase = only check collisions at higher speeds, decrease = check collisions even at very low speeds
     static constexpr float max_heading_for_full_steering_degrees = 45.0f;        // Degrees for maximum steering intensity; increase = require larger heading errors for full steering, decrease = apply full steering with smaller heading errors
     static constexpr float minimum_steering_intensity = 0.9f;                    // Minimum steering amount to avoid gentle steering; increase = always steer aggressively, decrease = allow more gentle steering corrections
