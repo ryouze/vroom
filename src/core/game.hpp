@@ -36,9 +36,9 @@ struct TrackConfig final {
      *
      * @note This determines the rendered size of each track tile and does not depend on the source texture size, which will be scaled to the size provided here accordingly.
      *
-     * @details The default texture size is 128x128px, so we are scaling it up 6 times.
+     * @details The default texture size is 128x128px, so we are scaling it up 12 times.
      */
-    std::size_t size_px = 768;
+    std::size_t size_px = 1536;
 
     /**
      * @brief Probability in the range [0.0, 1.0] that a detour bubble will be generated on each vertical edge segment.
