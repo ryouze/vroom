@@ -64,8 +64,8 @@ void run()
     GameState current_state = GameState::Menu;
 
     // Create SFML window with sane defaults and ImGui GUI
-    core::backend::Window window;                        // Fullscreen, 144 FPS limit
-    core::ui::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
+    core::backend::Window window;                             // Fullscreen, 144 FPS limit
+    core::backend::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
 
     // Get window size, update during game loop
     sf::Vector2u window_size_u = window.get_resolution();
