@@ -39,7 +39,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
-- None.
+- Fix Leaderboard's width resizing with screen size, it cuts off the bottom of the text.
 
 **Current**:
 - Add ImGui window to backend and test again if everything is working correctly.
