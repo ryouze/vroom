@@ -366,6 +366,11 @@ void run()
                             current_state = GameState::Playing;
                         }
 
+                        bool player_ai_controlled = (player_car.get_control_mode() == core::game::CarControlMode::AI);
+                        if (ImGui::Checkbox("AI Controls Player", &player_ai_controlled)) {
+                            player_car.set_control_mode(player_ai_controlled ? core::game::CarControlMode::AI : core::game::CarControlMode::Player);
+                        }
+
                         ImGui::SeparatorText("Track Layout");
                         const core::game::TrackConfig &track_config = race_track.get_config();
                         int track_width_tiles = static_cast<int>(track_config.horizontal_count);

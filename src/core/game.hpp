@@ -679,6 +679,15 @@ class Car final {
     void update_ai_behavior(const float dt);
 
     /**
+     * @brief Update waypoint tracking for race position regardless of control mode.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note This is called automatically during "update()" for all cars to maintain accurate race position tracking.
+     */
+    void update_waypoint_tracking(const float dt);
+
+    /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      *
      * The sprite handles visual representation, position tracking, and rotation for physics calculations.
@@ -756,6 +765,21 @@ class Car final {
      * Score increases based on drift angle magnitude, speed, and duration while the car is sliding sideways.
      */
     float drift_score_ = 0.0f;
+
+    /**
+     * @brief Distance factor for waypoint reach detection used by both AI and waypoint tracking.
+     *
+     * Increase = reach waypoints from farther away, decrease = must get closer to reach waypoints.
+     */
+    static constexpr float waypoint_reach_factor_ = 0.65f;
+
+    /**
+     * @brief Random variation parameters for waypoint tracking consistency.
+     *
+     * These provide consistent random variations for waypoint reach distance calculations.
+     */
+    static constexpr float random_variation_minimum_ = 0.8f;
+    static constexpr float random_variation_maximum_ = 1.2f;
 };
 
 }  // namespace core::game

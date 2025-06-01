@@ -561,6 +561,9 @@ void Car::apply_input(const CarInput &input)
 
 void Car::update(const float dt)
 {
+    // Update waypoint tracking for all cars to maintain race position
+    this->update_waypoint_tracking(dt);
+
     // Handle AI behavior if in AI mode
     if (this->control_mode_ == CarControlMode::AI) {
         this->update_ai_behavior(dt);
@@ -578,7 +581,6 @@ void Car::draw(sf::RenderTarget &target) const
 void Car::update_ai_behavior([[maybe_unused]] const float dt)
 {
     // AI behavior constants
-    static constexpr float waypoint_reach_factor = 0.65f;                        // Distance factor for waypoint reach detection; increase = reach waypoints from farther away, decrease = must get closer to reach waypoints
     static constexpr float collision_distance = 0.65f;                           // Distance ahead to check for collisions as fraction of tile size; increase = avoid collisions earlier, decrease = check collisions closer to car
     static constexpr float straight_steering_threshold = 0.25f;                  // Heading difference threshold for steering on straights in radians; increase = less sensitive steering on straights, decrease = more twitchy steering on straights
     static constexpr float corner_steering_threshold = 0.08f;                    // Heading difference threshold for steering in corners in radians; increase = less responsive cornering, decrease = more aggressive cornering
@@ -587,8 +589,6 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     static constexpr float corner_speed_factor = 1.2f;                           // Speed multiplier for corners as fraction of tile size; increase = faster through corners but riskier, decrease = slower and safer through corners
     static constexpr float straight_speed_factor = 3.0f;                         // Speed multiplier for straights as fraction of tile size; increase = faster on straights, decrease = slower and more conservative on straights
     static constexpr float brake_distance_factor = 3.0f;                         // Distance factor for braking before corners; increase = start braking earlier before corners, decrease = brake later and more aggressively
-    static constexpr float random_variation_minimum = 0.8f;                      // Minimum random variation multiplier; increase = less variation and more predictable AI, decrease = more erratic AI behavior
-    static constexpr float random_variation_maximum = 1.2f;                      // Maximum random variation multiplier; increase = more chaotic AI behavior, decrease = more consistent and predictable AI
     static constexpr float collision_velocity_threshold_factor = 0.1f;           // Minimum speed for collision checking as fraction of tile size; increase = only check collisions at higher speeds, decrease = check collisions even at very low speeds
     static constexpr float max_heading_for_full_steering_degrees = 45.0f;        // Degrees for maximum steering intensity; increase = require larger heading errors for full steering, decrease = apply full steering with smaller heading errors
     static constexpr float minimum_steering_intensity = 0.9f;                    // Minimum steering amount to avoid gentle steering; increase = always steer aggressively, decrease = allow more gentle steering corrections
@@ -623,7 +623,7 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     const float current_speed = this->get_speed();
 
     // Cache random variations to avoid multiple RNG calls per parameter
-    std::uniform_real_distribution<float> random_distribution(random_variation_minimum, random_variation_maximum);
+    std::uniform_real_distribution<float> random_distribution(random_variation_minimum_, random_variation_maximum_);
     const float speed_random_variation = random_distribution(this->rng_);
     const float steering_random_variation = random_distribution(this->rng_);
     const float distance_random_variation = random_distribution(this->rng_);
@@ -631,7 +631,6 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
     // Calculate distances
     const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
     const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
-    const float waypoint_reach_distance = tile_size * waypoint_reach_factor;
 
     // Collision detection - check one point ahead based on velocity direction
     bool collision_detected = false;
@@ -740,12 +739,6 @@ void Car::update_ai_behavior([[maybe_unused]] const float dt)
             this->current_input_.throttle = 0.0f;
             this->current_input_.brake = 0.0f;
         }
-    }
-
-    // Advance waypoint with randomized reach distance
-    const float randomized_waypoint_reach_distance = waypoint_reach_distance * distance_random_variation;
-    if (distance_to_current_waypoint < randomized_waypoint_reach_distance) {
-        this->current_waypoint_index_number_ = next_index;
     }
 }
 
@@ -914,6 +907,40 @@ void Car::apply_physics_step(const float dt)
 
     // Store last legal position for next frame
     this->last_position_ = this->sprite_.getPosition();
+}
+
+void Car::update_waypoint_tracking([[maybe_unused]] const float dt)
+{
+    // Get basic waypoint info
+    const auto &waypoints = this->track_.get_waypoints();
+
+    // Safety check for empty waypoints
+    if (waypoints.empty()) {
+        SPDLOG_WARN("No waypoints available, cannot update waypoint tracking!");
+        return;
+    }
+
+    // Calculate distances and waypoint reach logic
+    const std::size_t current_index = this->current_waypoint_index_number_;
+    const std::size_t next_index = (current_index + 1) % waypoints.size();
+    const TrackWaypoint &current_waypoint = waypoints[current_index];
+    const sf::Vector2f car_position = this->sprite_.getPosition();
+    const float tile_size = static_cast<float>(this->track_.get_config().size_px);
+
+    // Calculate distance to current waypoint
+    const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
+    const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
+    const float waypoint_reach_distance = tile_size * waypoint_reach_factor_;
+
+    // Apply random variation to waypoint reach distance for more natural behavior
+    std::uniform_real_distribution<float> random_distribution(random_variation_minimum_, random_variation_maximum_);
+    const float distance_random_variation = random_distribution(this->rng_);
+    const float randomized_waypoint_reach_distance = waypoint_reach_distance * distance_random_variation;
+
+    // Advance waypoint if close enough
+    if (distance_to_current_waypoint < randomized_waypoint_reach_distance) {
+        this->current_waypoint_index_number_ = next_index;
+    }
 }
 
 }  // namespace core::game
