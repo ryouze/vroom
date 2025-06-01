@@ -309,7 +309,6 @@ FpsCounter::FpsCounter(sf::RenderTarget &window,
       frames_(0),
       fps_(144)  // Default value, will overwritten immediately by internal calculations
 {
-    this->enabled = false;  // Disable by default
     SPDLOG_DEBUG("FPS counter created at corner '{}', set pivot point to ('{}', '{}') successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
                  this->pivot_.x,
@@ -495,7 +494,6 @@ Leaderboard::Leaderboard(sf::RenderTarget &window,
       pivot_(compute_pivot(corner)),
       offset_(compute_offset(this->pivot_))
 {
-    this->enabled = true;  // Enable by default
     SPDLOG_DEBUG("Leaderboard created at corner '{}', set pivot point to ('{}', '{}') and padding offset to ('{}', '{}') px successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
                  this->pivot_.x,
