@@ -2,11 +2,13 @@
  * @file ui.cpp
  */
 
-#include <algorithm>    // for std::clamp
+#include <algorithm>    // for std::clamp, std::sort
+#include <cstddef>      // for std::size_t
 #include <cstdint>      // for std::uint32_t
 #include <format>       // for std::format
 #include <type_traits>  // for std::underlying_type_t
 #include <utility>      // for std::move
+#include <vector>       // for std::vector
 
 #include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>

@@ -11,8 +11,7 @@
 #include <string>      // for std::string
 
 #include <SFML/Graphics.hpp>
-#include <imgui.h>
-
+// #include <imgui.h>
 #include "generated.hpp"
 
 namespace core::backend {

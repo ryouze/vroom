@@ -6,14 +6,15 @@
 #include <array>      // for std::array
 #include <cstddef>    // for std::size_t
 #include <format>     // for std::format
-#include <random>     // for std::random_device, std::mt19937
+#include <random>     // for std::mt19937, std::random_device
 #include <string>     // for std::string
+#include <tuple>      // for std::tuple
 #include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>
-#include <imgui-SFML.h>  // Required for some implicit conversions, e.g., "ImGui::Image(minimap_texture.getTexture(), ...);"
+// #include <imgui-SFML.h>  // Required for some implicit conversions, e.g., "ImGui::Image(minimap_texture.getTexture(), ...);"
 #include <imgui.h>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 #include "app.hpp"
 #include "assets/textures.hpp"
