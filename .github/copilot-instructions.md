@@ -81,3 +81,4 @@ unsigned fps = 144;
 bool vsync = false;
 unsigned anti_aliasing = 8;
 ```
+- Every member variable (whether within a struct, class, or enum) must always have a `@brief` doxygen explanation.
