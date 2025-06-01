@@ -742,7 +742,7 @@ class Car final {
      * Keyboard provides digital values (0.0 or 1.0), controller provides analog values (0.0 to 1.0).
      * Updated by apply_input() and used directly by physics calculations.
      */
-    CarInput current_input_ = {};
+    CarInput current_input_;
 
     /**
      * @brief Current steering wheel angle in degrees. This emulates a steering wheel via "steer_left()" and "steer_right()". If they are not called, the steering wheel will return to center over time.
@@ -764,7 +764,7 @@ class Car final {
      *
      * Score increases based on drift angle magnitude, speed, and duration while the car is sliding sideways.
      */
-    float drift_score_ = 0.0f;
+    float drift_score_;
 
     /**
      * @brief Distance factor for waypoint reach detection used by both AI and waypoint tracking.
