@@ -24,7 +24,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
 - Single binary distribution with embedded assets thanks to [asset-packer](https://github.com/ryouze/asset-packer).
-- Responsive UI and world scaling, with support for ultra-wide resolutions.
 
 
 ## Known Issues
@@ -39,7 +38,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
-- Fix Leaderboard's width resizing with screen size, it cuts off the bottom of the text.
+- Nothing.
 
 **Current**:
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.

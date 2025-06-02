@@ -74,62 +74,6 @@ constexpr ImGuiWindowFlags base_overlay_flags =
     ImGuiWindowFlags_NoMove |                 // Prevent the window from being moved
     ImGuiWindowFlags_NoTitleBar;              // Remove the window title bar
 
-/**
- * @brief Get the scaled size of a rectangle based on the smaller of the two dimensions of the window. Only the width is scaled by the ratio, while the height is calculated based on the aspect ratio.
- *
- * This is useful for creating rectangles that dynamically scale with the window size.
- *
- * @param window_width Window width (e.g., "1920").
- * @param window_height Window height (e.g., "1080").
- * @param aspect_ratio Aspect ratio (e.g., "16.0f / 9.0f"). You can also use "30.f / 200.f" for 30px height and 200px width.
- * @param scale_ratio Scale ratio (e.g., "0.2f").
- *
- * @return Size of the rectangle (e.g., "384x216").
- *
- * @note By taking the smaller of the two dimensions, we ensure that ultrawide monitors and other weird aspect ratios don't break the UI.
- */
-[[nodiscard]] inline ImVec2 get_scaled_rectangle_size(const unsigned window_width,
-                                                      const unsigned window_height,
-                                                      const float aspect_ratio,
-                                                      const float scale_ratio)
-{
-    // Pick the smaller of the screen dimensions
-    const float shorter = static_cast<float>((window_width < window_height)
-                                                 ? window_width
-                                                 : window_height);
-    // Scale it by the ratio
-    const float width = shorter * scale_ratio;
-    // Return the the scaled with, with the height calculated based on the aspect ratio, perfect for a menu
-    return {width, width * aspect_ratio};
-}
-
-/**
- * @brief Get the size of a square based on the smaller of the two dimensions of the window. Both width and height are scaled by the ratio.
- *
- * This is useful for creating square ImGui elements that dynamically scale with the window size.
- *
- * @param window_width Window width (e.g., "1920").
- * @param window_height Window height (e.g., "1080").
- * @param scale_ratio Scale ratio (e.g., "0.2f").
- *
- * @return Size of the square (e.g., "384x384").
- *
- * @note By taking the smaller of the two dimensions, we ensure that ultrawide monitors and other weird aspect ratios don't break the UI.
- */
-[[nodiscard]] inline constexpr ImVec2 get_scaled_square_size(const unsigned window_width,
-                                                             const unsigned window_height,
-                                                             const float scale_ratio)
-{
-    // Pick the smaller of the screen dimensions
-    const float shorter = static_cast<float>((window_width < window_height)
-                                                 ? window_width
-                                                 : window_height);
-    // Scale it by the ratio
-    const float side_length = shorter * scale_ratio;
-    // Return the scaled size as a square, perfect for a box, such as a minimap
-    return {side_length, side_length};
-}
-
 }  // namespace
 
 FpsCounter::FpsCounter(sf::RenderTarget &window,
@@ -233,9 +177,7 @@ void Speedometer::update_and_draw(const float speed) const
     ImGui::ProgressBar(
         // Cast again to ensure consistency with the "display_kph", then clamp to [0, 1]
         std::clamp(static_cast<float>(display_kph) / this->max_kph_, 0.0f, 1.0f),
-        // Calculate the size based on the window size and scale ratio
-        get_scaled_rectangle_size(width, height, this->aspect_ratio_, this->window_scale_ratio_),
-        std::format("{} kp/h", display_kph).c_str());
+        this->window_size_, std::format("{} kp/h", display_kph).c_str());
     ImGui::End();
 }
 
@@ -315,8 +257,7 @@ void Minimap::draw() const
                      ImGuiWindowFlags_AlwaysAutoResize  // Always resize the window to fit its contents
     );
     ImGui::Image(this->render_texture_.getTexture(),
-                 // Calculate the size based on the window size and scale ratio
-                 get_scaled_square_size(width, height, this->window_scale_ratio_));
+                 this->window_size_);
     ImGui::End();
 }
 
@@ -368,9 +309,7 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
                              this->pivot_.y * static_cast<float>(height) + this->offset_.y},
                             ImGuiCond_Always,
                             this->pivot_);  // Corner of the window
-
-    // Set constant window size to prevent text from overflowing
-    ImGui::SetNextWindowSize({this->window_width_, this->window_height_}, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(this->window_size_, ImGuiCond_Always);
 
     ImGui::Begin("Drift Scores",
                  nullptr,
@@ -386,7 +325,7 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
               });
 
     // Display header
-    ImGui::Text("Leaderboard");
+    ImGui::Text("Drift Scores");
     ImGui::Separator();
 
     // Display entries with position numbers

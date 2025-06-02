@@ -174,18 +174,9 @@ class Speedometer final : public IWidget {
 
   private:
     /**
-     * @brief Fraction of the shorter screen edge resolution used to scale the speedometer window.
-     *
-     * @note This ensures that the speedometer window scales with the window resolution, instead of using a fixed size.
+     * @brief Size of the speedometer window in pixels (width, height).
      */
-    static constexpr float window_scale_ratio_ = 0.20f;
-
-    /**
-     * @brief Aspect ratio of the speedometer window.
-     *
-     * @details Size: 30px height, 200px width.
-     */
-    static constexpr float aspect_ratio_ = 30.f / 200.f;
+    static constexpr ImVec2 window_size_ = {200.f, 30.f};
 
     /**
      * @brief Pixel-to-kilometer per hour conversion factor.
@@ -316,11 +307,9 @@ class Minimap final : public IWidget {
     static constexpr sf::Vector2f capture_size_ = {8000.f, -8000.f};
 
     /**
-     * @brief Fraction of the shorter screen edge resolution used to scale the minimap window.
-     *
-     * @note This ensures that the minimap window scales with the window resolution, instead of using a fixed size.
+     * @brief Size of the minimap window in pixels (width, height).
      */
-    static constexpr float window_scale_ratio_ = 0.20f;
+    static constexpr ImVec2 window_size_ = {150.f, 150.f};
 
     /**
      * @brief Target window where the minimap will be drawn.
@@ -413,14 +402,9 @@ class Leaderboard final : public IWidget {
 
   private:
     /**
-     * @brief Constant width of the leaderboard window in pixels.
+     * @brief Size of the leaderboard window  in pixels (width, height).
      */
-    static constexpr float window_width_ = 220.0f;
-
-    /**
-     * @brief Constant height of the leaderboard window in pixels.
-     */
-    static constexpr float window_height_ = 160.0f;
+    static constexpr ImVec2 window_size_ = {250.0f, 160.0f};
 
     /**
      * @brief Target window where the leaderboard will be drawn.
