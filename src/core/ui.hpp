@@ -413,18 +413,14 @@ class Leaderboard final : public IWidget {
 
   private:
     /**
-     * @brief Fraction of the shorter screen edge resolution used to scale the leaderboard window.
-     *
-     * @note This ensures that the leaderboard window scales with the window resolution, instead of using a fixed size.
+     * @brief Constant width of the leaderboard window in pixels.
      */
-    static constexpr float window_scale_ratio_ = 0.25f;
+    static constexpr float window_width_ = 220.0f;
 
     /**
-     * @brief Aspect ratio of the leaderboard window.
-     *
-     * @details Size: 150px height, 230px width.
+     * @brief Constant height of the leaderboard window in pixels.
      */
-    static constexpr float aspect_ratio_ = 150.f / 230.f;
+    static constexpr float window_height_ = 160.0f;
 
     /**
      * @brief Target window where the leaderboard will be drawn.

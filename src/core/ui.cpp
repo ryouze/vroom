@@ -369,11 +369,10 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
                             ImGuiCond_Always,
                             this->pivot_);  // Corner of the window
 
-    // Calculate window size based on screen dimensions
-    const ImVec2 window_size = get_scaled_rectangle_size(width, height, this->aspect_ratio_, this->window_scale_ratio_);
-    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+    // Set constant window size to prevent text from overflowing
+    ImGui::SetNextWindowSize({this->window_width_, this->window_height_}, ImGuiCond_Always);
 
-    ImGui::Begin("Leaderboard",
+    ImGui::Begin("Drift Scores",
                  nullptr,
                  base_overlay_flags |
                      ImGuiWindowFlags_NoResize  // Prevent manual resizing
@@ -394,16 +393,10 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
     for (std::size_t i = 0; i < sorted_entries.size(); ++i) {
         const auto &entry = sorted_entries[i];
 
-        // Format score with appropriate precision
-        if (entry.drift_score >= 1000.0f) {
-            ImGui::Text("%zu. %s: %.0f", i + 1, entry.car_name.c_str(), static_cast<double>(entry.drift_score));
-        }
-        else if (entry.drift_score >= 100.0f) {
-            ImGui::Text("%zu. %s: %.1f", i + 1, entry.car_name.c_str(), static_cast<double>(entry.drift_score));
-        }
-        else {
-            ImGui::Text("%zu. %s: %.2f", i + 1, entry.car_name.c_str(), static_cast<double>(entry.drift_score));
-        }
+        // Format score as integer (no decimals)
+        // const int display_score = static_cast<int>(entry.drift_score);
+        const std::string display_score = std::format("{:.0f} pts", entry.drift_score);
+        ImGui::Text("%zu. %s: %s", i + 1, entry.car_name.c_str(), display_score.c_str());
     }
 
     // If no entries, show placeholder
