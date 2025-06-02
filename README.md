@@ -42,6 +42,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Fix Leaderboard's width resizing with screen size, it cuts off the bottom of the text.
 
 **Current**:
+- Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
+  - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
 - Add ImGui window to backend and test again if everything is working correctly.
 - Tweak variable names in the `game` module (`.hpp` & `.cpp`).
 - Implement configuration loading and saving for screen resolution, VSync, and other graphical settings using the `Config` class in `src/core/io.hpp`. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
