@@ -244,12 +244,13 @@ Minimap::Minimap(sf::RenderTarget &window,
                  GameEntitiesDrawer game_entities_drawer,
                  const Corner corner)
     : refresh_interval(0.1f),  // 0.1 second; lower values = more frequent updates but worse performance
+      resolution_(default_resolution_),
       window_(window),
       background_color_(background_color),
       game_entities_drawer_(std::move(game_entities_drawer)),
       pivot_(compute_pivot(corner)),
       offset_(compute_offset(this->pivot_)),
-      render_texture_(resolution_)
+      render_texture_(this->resolution_)
 {
     // Prepare view and texture
     this->view_.setSize(this->capture_size_);  // Set how much of the world to capture (zoom factor, basicallly)
@@ -317,6 +318,25 @@ void Minimap::draw() const
                  // Calculate the size based on the window size and scale ratio
                  get_scaled_square_size(width, height, this->window_scale_ratio_));
     ImGui::End();
+}
+
+void Minimap::set_resolution(const sf::Vector2u &new_resolution)
+{
+    SPDLOG_DEBUG("Setting minimap resolution from ('{}', '{}') to ('{}', '{}')", this->resolution_.x, this->resolution_.y, new_resolution.x, new_resolution.y);
+    this->resolution_ = new_resolution;
+    if (!this->render_texture_.resize(this->resolution_)) [[unlikely]] {
+        throw std::runtime_error(std::format("Failed to resize minimap render texture to ('{}', '{}')",
+                                             this->resolution_.x,
+                                             this->resolution_.y));
+    }
+    // Maintain smoothing after resize
+    this->render_texture_.setSmooth(true);
+    SPDLOG_DEBUG("Minimap resolution changed successfully to ('{}', '{}')", this->resolution_.x, this->resolution_.y);
+}
+
+sf::Vector2u Minimap::get_resolution() const
+{
+    return this->resolution_;
 }
 
 Leaderboard::Leaderboard(sf::RenderTarget &window,

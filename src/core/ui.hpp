@@ -261,14 +261,21 @@ class Minimap final : public IWidget {
      */
     float refresh_interval;
 
-    // void set_resolution(const sf::Vector2u &new_resolution)
-    // {
-    //     if (!this->render_texture_.resize(new_resolution)) [[unlikely]] {
-    //         throw std::runtime_error(std::format("Failed to resize minimap render texture to ('{}', '{}')",
-    //                                              new_resolution.x,
-    //                                              new_resolution.y));
-    //     }
-    // }
+    /**
+     * @brief Set the resolution of the internal render texture.
+     *
+     * @param new_resolution New resolution for the minimap texture, in pixels.
+     *
+     * @throws std::runtime_error if the texture resize operation fails.
+     */
+    void set_resolution(const sf::Vector2u &new_resolution);
+
+    /**
+     * @brief Get the current resolution of the internal render texture.
+     *
+     * @return Current resolution of the minimap texture, in pixels.
+     */
+    [[nodiscard]] sf::Vector2u get_resolution() const;
 
   private:
     /**
@@ -290,11 +297,16 @@ class Minimap final : public IWidget {
     void draw() const;
 
     /**
-     * @brief Default resolution of the internal render texture, in pixels.
+     * @brief Resolution of the internal render texture, in pixels.
      *
      * @note This is the resolution of the actual minimap texture; we use a low resolution to improve performance.
      */
-    static constexpr sf::Vector2u resolution_ = {256u, 256u};
+    sf::Vector2u resolution_;
+
+    /**
+     * @brief Default resolution of the internal render texture, in pixels.
+     */
+    static constexpr sf::Vector2u default_resolution_ = {256u, 256u};
 
     /**
      * @brief Size of the view used for rendering into the internal texture, in pixels.
