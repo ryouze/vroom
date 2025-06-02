@@ -43,12 +43,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 **Current**:
 - Add ImGui window to backend and test again if everything is working correctly.
-- Track at which waypoint each car is, regardless of whether it is the player or AI car.
-  - OLD NOTE: One option is to store `closest_waypoint_` as a private member in `Car`, updated each frame in `apply_physics_step()`, with a public getter `get_closest_waypoint()`. An alternative is to scan all cars against all waypoints per frame (e.g. in `app.cpp`), which avoids polluting the `Car` class. Use a distance threshold from `Track::get_config()` to determine waypoint proximity.
-- Allow AI taking control of the Player via a toggle in the settings.
 - Tweak variable names in the `game` module (`.hpp` & `.cpp`).
-- Ensure that the minimap's internal resolution either scales automatically with the window size or is configurable through the settings menu. This relates to `Minimap` in `src/core/ui.hpp` and its rendering in `src/app.cpp`.
-  - Perhaps we could do both. The minimap is quite expensive to render, so we should definitely allow a lot of customization, in addition to the ability to disable it completely, which is already implemented.
 - Implement configuration loading and saving for screen resolution, VSync, and other graphical settings using the `Config` class in `src/core/io.hpp`. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
   - Decide whether to use a custom file format or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
   - Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.).
