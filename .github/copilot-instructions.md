@@ -82,3 +82,4 @@ bool vsync = false;
 unsigned anti_aliasing = 8;
 ```
 - Every member variable (whether within a struct, class, or enum) must always have a `@brief` doxygen explanation.
+- You are not allowed, under any circumstances, to apologize to me or say stupid stuff like "you're right." You must always respond directly.
