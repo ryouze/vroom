@@ -332,10 +332,20 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
     for (std::size_t i = 0; i < sorted_entries.size(); ++i) {
         const auto &entry = sorted_entries[i];
 
+        // Set yellow color for player entries
+        if (entry.is_player) {
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));  // Yellow
+        }
+
         // Format score as integer (no decimals)
         // const int display_score = static_cast<int>(entry.drift_score);
         const std::string display_score = std::format("{:.0f} pts", entry.drift_score);
         ImGui::Text("%zu. %s: %s", i + 1, entry.car_name.c_str(), display_score.c_str());
+
+        // Reset color for player entries
+        if (entry.is_player) {
+            ImGui::PopStyleColor();
+        }
     }
 
     // If no entries, show placeholder

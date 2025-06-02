@@ -371,6 +371,11 @@ struct LeaderboardEntry final {
      * @brief Drift score for the car.
      */
     float drift_score;
+
+    /**
+     * @brief Whether this entry represents the player (for highlighting).
+     */
+    bool is_player = false;
 };
 
 /**

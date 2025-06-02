@@ -141,12 +141,12 @@ void run()
         std::vector<core::ui::LeaderboardEntry> entries;
 
         // Add player car
-        entries.push_back({"Player", player_car.get_state().drift_score});
+        entries.push_back({"Player", player_car.get_state().drift_score, true});
 
         // Add AI cars with names derived from texture identifiers
         const std::array<std::string, 4> ai_names = {"Blue", "Green", "Red", "Yellow"};
         for (std::size_t i = 0; i < ai_cars.size(); ++i) {
-            entries.push_back({ai_names[i], ai_cars[i].get_state().drift_score});
+            entries.push_back({ai_names[i], ai_cars[i].get_state().drift_score, false});
         }
 
         return entries;
