@@ -409,8 +409,8 @@ void run()
                         bool fullscreen = window.is_fullscreen();
                         bool vsync = window.is_vsync_enabled();
 
-                        ImGui::SeparatorText("Debug Info");
-                        ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
+                        // ImGui::SeparatorText("Debug Info");
+                        // ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
 
                         ImGui::SeparatorText("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
