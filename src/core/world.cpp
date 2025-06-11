@@ -2,14 +2,10 @@
  * @file world.cpp
  */
 
-#include <algorithm>  // for std::clamp, std::max, std::min
-#include <array>      // for std::array
-#include <cmath>      // for std::atan2, std::hypot, std::remainder, std::copysign, std::cos, std::sin, std::lerp
-#include <cstddef>    // for std::size_t, std::ptrdiff_t
-#include <cstdlib>    // for std::abs
-#include <numbers>    // for std::numbers
-#include <random>     // for std::mt19937, std::uniform_real_distribution, std::uniform_int_distribution
-#include <vector>     // for std::vector
+#include <array>    // for std::array
+#include <cstddef>  // for std::size_t, std::ptrdiff_t
+#include <random>   // for std::mt19937, std::uniform_real_distribution, std::uniform_int_distribution
+#include <vector>   // for std::vector
 
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>

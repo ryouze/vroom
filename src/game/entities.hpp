@@ -7,9 +7,7 @@
 #pragma once
 
 #include <cstddef>  // for std::size_t
-#include <cstdlib>  // for std::abs
 #include <random>   // for std::mt19937
-#include <vector>   // for std::vector
 
 #include <SFML/Graphics.hpp>
 
