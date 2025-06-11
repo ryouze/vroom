@@ -13,6 +13,7 @@ This is `vroom`, a cross-platform 2D racing game with arcade drift physics, proc
 - Use American English spelling (e.g., `color`).
 - Prefer long, verbose variable names.
 - Do not split long lines across newlines, keep them long - even if it hurts readability. I especially hate when long comments are split across multiple lines.
+- The `timeout` command is not available on macOS.
 
 ## C++
 - Always prefix member variables with `this->`.
