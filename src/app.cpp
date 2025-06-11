@@ -19,9 +19,10 @@
 #include "app.hpp"
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
-#include "core/game.hpp"
 #include "core/io.hpp"
 #include "core/ui.hpp"
+#include "core/world.hpp"
+#include "game/entities.hpp"
 #include "generated.hpp"
 
 // Embedded road textures
@@ -109,7 +110,7 @@ void run()
     }
 
     // Create race track
-    core::game::Track race_track(
+    core::world::Track race_track(
         {.top_left = textures.get("top_left"),
          .top_right = textures.get("top_right"),
          .bottom_right = textures.get("bottom_right"),
@@ -120,12 +121,12 @@ void run()
         rng);
 
     // Create cars
-    core::game::Car player_car(textures.get("car_black"), rng, race_track, core::game::CarControlMode::Player);
-    std::array<core::game::Car, 4> ai_cars = {
-        core::game::Car(textures.get("car_blue"), rng, race_track, core::game::CarControlMode::AI),
-        core::game::Car(textures.get("car_green"), rng, race_track, core::game::CarControlMode::AI),
-        core::game::Car(textures.get("car_red"), rng, race_track, core::game::CarControlMode::AI),
-        core::game::Car(textures.get("car_yellow"), rng, race_track, core::game::CarControlMode::AI)};
+    game::entities::Car player_car(textures.get("car_black"), rng, race_track, game::entities::CarControlMode::Player);
+    std::array<game::entities::Car, 4> ai_cars = {
+        game::entities::Car(textures.get("car_blue"), rng, race_track, game::entities::CarControlMode::AI),
+        game::entities::Car(textures.get("car_green"), rng, race_track, game::entities::CarControlMode::AI),
+        game::entities::Car(textures.get("car_red"), rng, race_track, game::entities::CarControlMode::AI),
+        game::entities::Car(textures.get("car_yellow"), rng, race_track, game::entities::CarControlMode::AI)};
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&player_car, &ai_cars]() {
@@ -220,7 +221,7 @@ void run()
     };
 
     // List of vehicles
-    const std::array<core::game::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
+    const std::array<game::entities::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
 
     // Vehicle names
     static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "Blue", "Green", "Red", "Yellow"};
@@ -293,12 +294,12 @@ void run()
         window_size_f = core::backend::to_vector2f(window_size_u);
 
         // Currently selected vehicle
-        core::game::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
+        game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
         // Playing state, this is what is gonna happen 99% of the time
         if (current_state == GameState::Playing) [[likely]] {
             // Create unified input from keyboard state
-            core::game::CarInput player_input = {};
+            game::entities::CarInput player_input = {};
             player_input.throttle = key_states.gas ? 1.0f : 0.0f;
             player_input.brake = key_states.brake ? 1.0f : 0.0f;
             player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
@@ -367,13 +368,13 @@ void run()
                             current_state = GameState::Playing;
                         }
 
-                        bool player_ai_controlled = (player_car.get_state().control_mode == core::game::CarControlMode::AI);
+                        bool player_ai_controlled = (player_car.get_state().control_mode == game::entities::CarControlMode::AI);
                         if (ImGui::Checkbox("Enable AI Driver", &player_ai_controlled)) {
-                            player_car.set_control_mode(player_ai_controlled ? core::game::CarControlMode::AI : core::game::CarControlMode::Player);
+                            player_car.set_control_mode(player_ai_controlled ? game::entities::CarControlMode::AI : game::entities::CarControlMode::Player);
                         }
 
                         ImGui::SeparatorText("Track Layout");
-                        const core::game::TrackConfig &track_config = race_track.get_config();
+                        const core::world::TrackConfig &track_config = race_track.get_config();
                         int track_width_tiles = static_cast<int>(track_config.horizontal_count);
                         int track_height_tiles = static_cast<int>(track_config.vertical_count);
                         int tile_size_pixels = static_cast<int>(track_config.size_px);
@@ -391,7 +392,7 @@ void run()
                         }
 
                         if (track_config_changed) {
-                            const core::game::TrackConfig new_config{static_cast<std::size_t>(track_width_tiles), static_cast<std::size_t>(track_height_tiles), static_cast<std::size_t>(tile_size_pixels), detour_probability};  // Rebuild
+                            const core::world::TrackConfig new_config{static_cast<std::size_t>(track_width_tiles), static_cast<std::size_t>(track_height_tiles), static_cast<std::size_t>(tile_size_pixels), detour_probability};  // Rebuild
                             // Reset all cars to the new track spawn point
                             race_track.set_config(new_config);
                             reset_cars();

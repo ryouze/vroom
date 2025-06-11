@@ -93,11 +93,12 @@ add_library(${PROJECT_NAME}-lib STATIC
   src/app.cpp
   src/assets/textures.cpp
   src/core/backend.cpp
-  src/core/game.cpp
   src/core/io.cpp
   src/core/platform/posix.cpp
   src/core/platform/windows.cpp
   src/core/ui.cpp
+  src/core/world.cpp
+  src/game/entities.cpp
 )
 
 # Include headers relatively to the src directory, include generated headers
