@@ -223,7 +223,7 @@ void run()
     const std::array<core::game::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
 
     // Vehicle names
-    static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "AI 1", "AI 2", "AI 3", "AI 4"};
+    static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "Blue", "Green", "Red", "Yellow"};
     int selected_vehicle_index = 0;
 
     // Function to draw the game entities (race track and cars) in the window and minimap
