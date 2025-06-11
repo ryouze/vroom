@@ -11,7 +11,7 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "core/world.hpp"
+#include "core/world.hpp" // We depend on the Track class for car collision detection and waypoints
 
 namespace game::entities {
 

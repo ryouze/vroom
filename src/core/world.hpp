@@ -1,7 +1,7 @@
 /**
  * @file world.hpp
  *
- * @brief Game world map abstractions.
+ * @brief Game world abstractions (the race track we drive on).
  */
 
 #pragma once
@@ -28,6 +28,8 @@ struct TrackConfig final {
 
     /**
      * @brief Number of vertical tiles, i.e., height (e.g., "6").
+     *
+     * @note This is not affected by detours; they only occur on horizontal edges.
      */
     std::size_t vertical_count = 7;
 
@@ -36,7 +38,7 @@ struct TrackConfig final {
      *
      * @note This determines the rendered size of each track tile and does not depend on the source texture size, which will be scaled to the size provided here accordingly.
      *
-     * @details The default texture size is 128x128px, so we are scaling it up 12 times.
+     * @details The default texture size is 128x128px, so we are scaling it up 12 times. TODO: Replace with a higher resolution texture.
      */
     std::size_t size_px = 1536;
 
@@ -66,6 +68,8 @@ struct TrackConfig final {
 struct TrackWaypoint final {
     /**
      * @brief Enum that represents the driving type of the waypoint.
+     *
+     * @note This affects how AI behaves when navigating the track, such as whether to slow down for corners or maintain speed on straight segments.
      */
     enum class DrivingType {
         /**
@@ -197,6 +201,8 @@ class Track final {
      * @param tiles Tiles struct containing the textures. It is assumed that all textures are square (e.g., 256x256) for uniform scaling. The caller is responsible for ensuring that these textures remain valid for the lifetime of the Track.
      * @param rng Instance of a random number generator (e.g., std::mt19937) used for generating random detours.
      * @param config Configuration struct containing the track configuration (invalid values will be clamped) (default: "TrackConfig()").
+     *
+     * @details The textures MUST be copied to prevent segfaults.
      */
     explicit Track(const Textures tiles,  //  Copy to prevent segfault
                    std::mt19937 &rng,
