@@ -38,7 +38,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
-- Nothing.
+- Optimize AI update rate; it shouldn't run on every frame.
+  - Perhaps the physics should also be updated at a lower rate.
 
 **Current**:
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
@@ -50,8 +51,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.).
 - Check all headers with `header-warden`.
 - Add gamepad support.
-- Add many different car textures and add more AI cars to the game that use them.
-  - The game is very basic, so we can run A LOT of AI cars at once.
 
 **Later**:
 - Read the SFML documentation.
