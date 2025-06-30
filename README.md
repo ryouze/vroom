@@ -264,7 +264,7 @@ ctest --output-on-failure
 - [PlayCover](https://macosicons.com/#/u/helloman) - App icon.
 - [Racing Pack](https://kenney.nl/assets/racing-pack) - Car and race track assets.
 - [Waifu2x](https://unlimited.waifu2x.net/) - Texture upscaling (for the race track).
-
+  - Used the `swin_unet / art` model with 2x scaling, no denoising, 64×64 tiling (no shuffle), TTA disabled, and alpha channel set to auto.
 
 ## Contributing
 
