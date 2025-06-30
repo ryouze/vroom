@@ -262,7 +262,8 @@ ctest --output-on-failure
 - [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard icons.
 - [Moonlight](https://github.com/Madam-Herta/Moonlight) - ImGui theme.
 - [PlayCover](https://macosicons.com/#/u/helloman) - App icon.
-- [Racing Pack](https://kenney.nl/assets/racing-pack) - Car and track assets.
+- [Racing Pack](https://kenney.nl/assets/racing-pack) - Car and race track assets.
+- [Waifu2x](https://unlimited.waifu2x.net/) - Texture upscaling (for the race track).
 
 
 ## Contributing
