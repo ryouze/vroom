@@ -92,8 +92,10 @@ void Car::set_control_mode(const CarControlMode control_mode)
 
 void Car::apply_input(const CarInput &input)
 {
-    // Store input values directly for analog control
-    this->current_input_ = input;
+    // Only store input values when in Player mode, ignore in AI mode
+    if (this->control_mode_ == CarControlMode::Player) {
+        this->current_input_ = input;
+    }
 }
 
 void Car::update(const float dt)
