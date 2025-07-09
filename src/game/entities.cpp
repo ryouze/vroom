@@ -32,7 +32,8 @@ Car::Car(const sf::Texture &texture,
       current_input_(),
       steering_wheel_angle_(0.0f),
       current_waypoint_index_number_(1),
-      drift_score_(0.0f)
+      drift_score_(0.0f),
+      ai_update_timer_(0.0f)
 {
     this->sprite_.setOrigin({this->sprite_.getTexture().getSize().x / 2.0f, this->sprite_.getTexture().getSize().y / 2.0f});
     this->reset();
@@ -66,6 +67,7 @@ void Car::reset()
 
     // Reset AI state
     this->current_waypoint_index_number_ = 1;
+    this->ai_update_timer_ = 0.0f;
 
     // Reset drift score
     this->drift_score_ = 0.0f;
@@ -113,8 +115,19 @@ void Car::draw(sf::RenderTarget &target) const
     target.draw(this->sprite_);
 }
 
-void Car::update_ai_behavior([[maybe_unused]] const float dt)
+void Car::update_ai_behavior(const float dt)
 {
+    // Accumulate the delta time
+    this->ai_update_timer_ += dt;
+
+    // If the accumulated time does not the update rate, ignore to save performance
+    if (this->ai_update_timer_ < this->ai_accumulation_) {
+        return;
+    }
+
+    // Reset timer for next AI update cycle
+    this->ai_update_timer_ = 0.0f;
+
     // AI behavior constants
     static constexpr float collision_distance = 0.65f;                           // Distance ahead to check for collisions as fraction of tile size; increase = avoid collisions earlier, decrease = check collisions closer to car
     static constexpr float straight_steering_threshold = 0.25f;                  // Heading difference threshold for steering on straights in radians; increase = less sensitive steering on straights, decrease = more twitchy steering on straights

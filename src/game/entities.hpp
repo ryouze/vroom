@@ -11,7 +11,7 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "core/world.hpp" // We depend on the Track class for car collision detection and waypoints
+#include "core/world.hpp"  // We depend on the Track class for car collision detection and waypoints
 
 namespace game::entities {
 
@@ -445,6 +445,20 @@ class Car final {
      */
     static constexpr float random_variation_minimum_ = 0.8f;
     static constexpr float random_variation_maximum_ = 1.2f;
+
+    /**
+     * @brief Time accumulator for AI update throttling.
+     *
+     * This tracks elapsed time since last AI behavior update to limit AI calculations to maximum 30Hz for performance.
+     */
+    float ai_update_timer_ = 0.0f;
+
+    /**
+     * @brief Target interval for AI updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
+     *
+     * AI behavior will only be recalculated when ai_update_timer_ exceeds this interval.
+     */
+    static constexpr float ai_accumulation_ = 1.0f / 30.0f;
 };
 
 }  // namespace game::entities
