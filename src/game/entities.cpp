@@ -128,7 +128,7 @@ void Car::update_ai_behavior(const float dt)
     }
 
     // Reset timer for next AI update cycle
-    this->ai_update_timer_ = 0.0f;
+    this->ai_update_timer_ -= this->ai_accumulation_;  // Keep any overshoot
 
     // AI behavior constants
     static constexpr float collision_distance = 0.65f;                           // Distance ahead to check for collisions as fraction of tile size; increase = avoid collisions earlier, decrease = check collisions closer to car
@@ -321,7 +321,7 @@ void Car::apply_physics_step(const float dt)
     if (this->current_input_.handbrake > 0.0f && current_speed > this->config_.stopped_speed_threshold_pixels_per_second) {
         const float handbrake_force = this->current_input_.handbrake * this->config_.handbrake_deceleration_rate_pixels_per_second_squared * dt;
         const float new_speed = current_speed - handbrake_force;
-        if (new_speed < 0.1f) {
+        if (new_speed < this->config_.stopped_speed_threshold_pixels_per_second) {
             this->velocity_ = {0.0f, 0.0f};
             current_speed = 0.0f;
         }
