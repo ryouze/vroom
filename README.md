@@ -24,6 +24,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
 - Single binary distribution with embedded assets thanks to [asset-packer](https://github.com/ryouze/asset-packer).
+- Highly optimized: consistent 90 FPS while drawing only 3 watts on Steam Deck OLED.
 
 
 ## Known Issues
@@ -38,8 +39,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
-- Optimize AI update rate; it shouldn't run on every frame.
-  - Perhaps the physics should also be updated at a lower rate.
+- Throttle drift score updates.
 
 **Current**:
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
