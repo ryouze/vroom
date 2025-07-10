@@ -42,6 +42,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
+- Allow user to change between keyboard and gamepad in the settings menu if a gamepad is connected.
+  - Currently, the gamepad always takes over keyboard input, which is fine for me, but not for everyone.
 - Throttle drift score updates.
 
 **Current**:
