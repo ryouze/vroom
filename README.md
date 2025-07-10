@@ -20,11 +20,14 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## Features
 
 - Written in modern C++ (C++20).
+- Highly optimized: 90 FPS while drawing only 3 watts on the Steam Deck OLED.
+- Procedurally generated track with user-defined parameters (try it yourself!).
+- Waypoint AI with real-time collision detection and distance-based throttle control.
+- Analog input with support for both keyboard and gamepad (Xbox).
 - Comprehensive documentation with doxygen-style comments.
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
 - Single binary distribution with embedded assets thanks to [asset-packer](https://github.com/ryouze/asset-packer).
-- Highly optimized: 90 FPS while drawing only 3 watts on Steam Deck OLED.
 
 
 ## Known Issues
@@ -50,7 +53,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - Decide whether to use a custom file format or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
   - Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.).
 - Check all headers with `header-warden`.
-- Add gamepad support.
 
 **Later**:
 - Read the SFML documentation.
