@@ -184,10 +184,10 @@ To start the program, simply run the `vroom` executable (`vroom.app` on macOS, `
 #### Keyboard
 
 - **Gas**: Up Arrow (↑)
-- **Handbrake**: Down Arrow (↓)
+- **Brake**: Down Arrow (↓)
 - **Left**: Left Arrow (←)
 - **Right**: Right Arrow (→)
-- **Brake**: Spacebar
+- **Handbrake**: Spacebar
 - **Menu Options**: ESC
 
 #### Gamepad (Xbox layout)

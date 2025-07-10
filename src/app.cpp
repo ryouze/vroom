@@ -374,15 +374,6 @@ void run()
                     if (ImGui::BeginTabItem("Game")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
 
-                        // Display connected controller name if gamepad is available
-                        ImGui::SeparatorText("Controls");
-                        if (gamepad_available) {
-                            ImGui::TextWrapped("Gamepad: %s", core::gamepad::get_name().c_str());
-                        }
-                        else {
-                            ImGui::TextWrapped("Keyboard");
-                        }
-
                         ImGui::SeparatorText("Hacks");
                         if (ImGui::Button("Reset Game")) {
                             reset_game();
@@ -425,6 +416,70 @@ void run()
                         ImGui::Combo("Car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
 
                         ImGui::PopItemWidth();
+                        ImGui::EndTabItem();
+                    }
+                    if (ImGui::BeginTabItem("Controls")) {
+                        // Display connected controller name if gamepad is available
+                        ImGui::SeparatorText("Current Input Device");
+
+                        if (gamepad_available) {
+                            const std::string controller_name = core::gamepad::get_name();
+                            ImGui::Text("Gamepad: %s", controller_name.c_str());
+                        }
+                        else {
+                            ImGui::Text("Keyboard");
+                        }
+
+                        ImGui::Spacing();
+
+                        // if (gamepad_available) {
+                        ImGui::SeparatorText("Gamepad Controls (Xbox layout)");
+                        ImGui::Columns(2, "gamepad_controls", false);
+                        ImGui::TextWrapped("Gas/Brake:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Right Stick (Up/Down)");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Steering:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Left Stick (Left/Right)");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Handbrake:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("A Button");
+                        ImGui::NextColumn();
+                        ImGui::Columns(1);
+                        // }
+                        // else {
+                        ImGui::SeparatorText("Keyboard Controls");
+                        ImGui::Columns(2, "keyboard_controls", false);
+                        ImGui::TextWrapped("Gas:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Up Arrow");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Brake:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Down Arrow");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Steering:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Left/Right Arrow");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Handbrake:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Space");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("Pause/Menu:");
+                        ImGui::NextColumn();
+                        ImGui::TextWrapped("ESC");
+                        ImGui::NextColumn();
+                        ImGui::Columns(1);
+                        // }
+
+                        // ImGui::Spacing();
+                        ImGui::Separator();
+
+                        ImGui::TextWrapped("Note: If a controller is connected, keyboard input is ignored, except for ESC key to pause the game.");
+
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
