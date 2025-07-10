@@ -70,7 +70,7 @@ namespace {
         return true;
     }
 
-    SPDLOG_WARN("Controller with ID '{}' is not connected!", id);
+    // SPDLOG_WARN("Controller with ID '{}' is not connected!", id);
     return false;
 }
 
