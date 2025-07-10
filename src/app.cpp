@@ -303,7 +303,7 @@ void run()
         if (current_state == GameState::Playing) [[likely]] {
             game::entities::CarInput player_input = {};
             if (gamepad_available) {
-                SPDLOG_DEBUG("Controller connected, using gamepad input!");
+                // SPDLOG_DEBUG("Controller connected, using gamepad input!");
                 const float gamepad_throttle = core::gamepad::get_throttle();
                 player_input.throttle = (gamepad_throttle > 0.0f) ? gamepad_throttle : 0.0f;
                 player_input.brake = (gamepad_throttle < 0.0f) ? -gamepad_throttle : 0.0f;
@@ -312,7 +312,7 @@ void run()
             }
             else {
                 // Fallback to keyboard state
-                SPDLOG_DEBUG("Controller not connected, using keyboard input!");
+                // SPDLOG_DEBUG("Controller not connected, using keyboard input!");
                 player_input.throttle = key_states.gas ? 1.0f : 0.0f;
                 player_input.brake = key_states.brake ? 1.0f : 0.0f;
                 player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);

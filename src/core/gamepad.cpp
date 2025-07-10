@@ -37,7 +37,7 @@ namespace {
     // Reference: https://www.sfml-dev.org/tutorials/3.0/window/inputs/#joystick
 
     if (sf::Joystick::isConnected(id)) {
-        SPDLOG_DEBUG("Controller with ID '{}' is connected: '{}'", id, sf::Joystick::getIdentification(id).name.toAnsiString());
+        // SPDLOG_DEBUG("Controller with ID '{}' is connected: '{}'", id, sf::Joystick::getIdentification(id).name.toAnsiString());
 
         // Check if buttons are available
         const unsigned int button_count = sf::Joystick::getButtonCount(id);
@@ -51,7 +51,7 @@ namespace {
             return false;
         }
 
-        SPDLOG_DEBUG("Controller has '{}' buttons", button_count);
+        // SPDLOG_DEBUG("Controller has '{}' buttons", button_count);
 
         // Check if joystick has all the required axes
         // X - steer left/right
