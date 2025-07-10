@@ -14,11 +14,12 @@
 #include <SFML/Graphics.hpp>
 // #include <imgui-SFML.h>  // Required for some implicit conversions, e.g., "ImGui::Image(minimap_texture.getTexture(), ...);"
 #include <imgui.h>
-// #include <spdlog/spdlog.h>
+#include <spdlog/spdlog.h>
 
 #include "app.hpp"
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
+#include "core/gamepad.hpp"
 #include "core/io.hpp"
 #include "core/ui.hpp"
 #include "core/world.hpp"
@@ -296,15 +297,27 @@ void run()
         // Currently selected vehicle
         game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
-        // Playing state, this is what is gonna happen 99% of the time
-        if (current_state == GameState::Playing) [[likely]] {
-            // Create unified input from keyboard state
-            game::entities::CarInput player_input = {};
-            player_input.throttle = key_states.gas ? 1.0f : 0.0f;
-            player_input.brake = key_states.brake ? 1.0f : 0.0f;
-            player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
-            player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
+        // Gamepad is connected and has all required axes/buttons
+        const bool gamepad_available = core::gamepad::is_valid();
 
+        if (current_state == GameState::Playing) [[likely]] {
+            game::entities::CarInput player_input = {};
+            if (gamepad_available) {
+                SPDLOG_DEBUG("Controller connected, using gamepad input!");
+                const float gamepad_throttle = core::gamepad::get_throttle();
+                player_input.throttle = (gamepad_throttle > 0.0f) ? gamepad_throttle : 0.0f;
+                player_input.brake = (gamepad_throttle < 0.0f) ? -gamepad_throttle : 0.0f;
+                player_input.steering = core::gamepad::get_steer();
+                player_input.handbrake = core::gamepad::get_handbrake() ? 1.0f : 0.0f;
+            }
+            else {
+                // Fallback to keyboard state
+                SPDLOG_DEBUG("Controller not connected, using keyboard input!");
+                player_input.throttle = key_states.gas ? 1.0f : 0.0f;
+                player_input.brake = key_states.brake ? 1.0f : 0.0f;
+                player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
+                player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
+            }
             player_car.apply_input(player_input);
             player_car.update(dt);
             for (auto &ai : ai_cars) {

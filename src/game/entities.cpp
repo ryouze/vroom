@@ -95,6 +95,9 @@ void Car::apply_input(const CarInput &input)
     // Only store input values when in Player mode, ignore in AI mode
     if (this->control_mode_ == CarControlMode::Player) {
         this->current_input_ = input;
+        // Uncomment when debugging controller input or whatever
+        // SPDLOG_DEBUG("Applying input: throttle = {:.2f}, brake = {:.2f}, steering = {:.2f}, handbrake = {:.2f}",
+        //              input.throttle, input.brake, input.steering, input.handbrake);
     }
 }
 
