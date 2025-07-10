@@ -24,7 +24,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
 - Single binary distribution with embedded assets thanks to [asset-packer](https://github.com/ryouze/asset-packer).
-- Highly optimized: consistent 90 FPS while drawing only 3 watts on Steam Deck OLED.
+- Highly optimized: 90 FPS while drawing only 3 watts on Steam Deck OLED.
 
 
 ## Known Issues
@@ -220,7 +220,7 @@ The application uses [spdlog](https://github.com/gabime/spdlog) for logging.
 For debug builds, the logging level is set to `debug` by default, which is very verbose. For non-debug (Release) builds, the logging level is kept at the default `info` level, which only shows important messages and warnings.
 
 > [!NOTE]
-> While `cmake/External.cmake` defines `SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG` in debug builds, this only affects compile-time filtering. The runtime verbosity is still controlled by `spdlog::set_level()`, which must be called to see `debug`-level messages during execution. This is done in `main.cpp`.
+> While `cmake/External.cmake` defines `SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG` in debug builds, this only affects compile-time filtering. The runtime verbosity is controlled by `spdlog::set_level()`, which is called in `main.cpp` to enable `debug`-level messages during execution.
 
 
 ### Code Quality Check
