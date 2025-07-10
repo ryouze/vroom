@@ -74,6 +74,12 @@ namespace {
     return false;
 }
 
+std::string get_name(const unsigned id)
+{
+    const std::string name = sf::Joystick::getIdentification(id).name.toAnsiString();
+    return name.empty() ? "Generic Controller" : name;  // Fallback to a generic name if empty
+}
+
 [[nodiscard]] float get_steer(const unsigned id)
 {
     return apply_deadzone(std::clamp(

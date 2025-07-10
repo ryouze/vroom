@@ -374,6 +374,15 @@ void run()
                     if (ImGui::BeginTabItem("Game")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
 
+                        // Display connected controller name if gamepad is available
+                        ImGui::SeparatorText("Controls");
+                        if (gamepad_available) {
+                            ImGui::TextWrapped("Gamepad: %s", core::gamepad::get_name().c_str());
+                        }
+                        else {
+                            ImGui::TextWrapped("Keyboard");
+                        }
+
                         ImGui::SeparatorText("Hacks");
                         if (ImGui::Button("Reset Game")) {
                             reset_game();

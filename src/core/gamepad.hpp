@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <string>  // for std::string
+
 namespace core::gamepad {
 
 /**
@@ -18,6 +20,15 @@ namespace core::gamepad {
  * @note Always run this function before using any other gamepad functions to ensure the controller is connected and has the required axes and buttons.
  */
 [[nodiscard]] bool is_valid(const unsigned id = 0);
+
+/**
+ * @brief Get the name of the controller.
+ *
+ * @param id ID of the gamepad to check (default: "0").
+ *
+ * @return Name of the controller as a string. If not available, "Generic Controller" is returned instead.
+ */
+[[nodiscard]] std::string get_name(const unsigned id = 0);
 
 /**
  * @brief Get the steering input from the controller.
