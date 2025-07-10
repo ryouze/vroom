@@ -44,6 +44,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 **Critical**:
 - Allow user to change between keyboard and gamepad in the settings menu if a gamepad is connected.
   - Currently, the gamepad always takes over keyboard input, which is fine for me, but not for everyone.
+- Research if we are using the correct axis for throttle (I think the current one also combines triggers? Not sure, doesn't work on macOS, need to test on Linux).
+  - The current implementation uses the right stick for throttle and brake, which is not ideal.
 - Throttle drift score updates.
 
 **Current**:
