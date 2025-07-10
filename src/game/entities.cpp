@@ -123,12 +123,12 @@ void Car::update_ai_behavior(const float dt)
     this->ai_update_timer_ += dt;
 
     // If the accumulated time does not the update rate, ignore to save performance
-    if (this->ai_update_timer_ < this->ai_accumulation_) {
+    if (this->ai_update_timer_ < this->ai_update_rate) {
         return;
     }
 
     // Reset timer for next AI update cycle
-    this->ai_update_timer_ -= this->ai_accumulation_;  // Keep any overshoot
+    this->ai_update_timer_ -= this->ai_update_rate;  // Keep any overshoot
 
     // AI behavior constants
     static constexpr float collision_distance = 0.65f;                           // Distance ahead to check for collisions as fraction of tile size; increase = avoid collisions earlier, decrease = check collisions closer to car

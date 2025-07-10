@@ -458,7 +458,7 @@ class Car final {
      *
      * AI behavior will only be recalculated when ai_update_timer_ exceeds this interval.
      */
-    static constexpr float ai_accumulation_ = 1.0f / 30.0f;
+    static constexpr float ai_update_rate = 1.0f / 30.0f;
 };
 
 }  // namespace game::entities
