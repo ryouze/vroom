@@ -22,6 +22,7 @@ This is `vroom`, a cross-platform 2D racing game with arcade drift physics, proc
 - Class member variables must have a trailing underscore (e.g., `zoom_ratio_`), while struct fields should not (e.g., `zoom_ratio`).
 - Use CMake from the `build` directory, e.g., `cmake --build . --parallel`.
 - All files in `src/core/` (e.g., `game.hpp`, `backend.hpp`, `ui.hpp`) must be completely independent - they cannot `#include` other core modules. Each core file should only depend on standard library, SFML, and external libraries. This creates a "flat" architecture where higher-level code (like `app.cpp`) can freely import any core modules without circular dependency issues. Think of core modules as independent building blocks that can be mixed and matched by the application layer.
+- All files `src/game/` (e.g., `entities.hpp`) can import code from `src/core` but they cannot import any code from `src/game` itself. That way, the modules in the `src/game` directory are independent of each other, but can still use the core modules.
 - Do not use `noexcept`.
 - Use modern C++20 features and SFML3. SFML3 uses C++17 and has the following differences from SFML2:
 ```md
