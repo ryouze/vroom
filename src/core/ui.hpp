@@ -12,6 +12,7 @@
 #include <vector>      // for std::vector
 
 #include <SFML/Graphics.hpp>
+#include <imgui.h>
 
 namespace core::ui {
 

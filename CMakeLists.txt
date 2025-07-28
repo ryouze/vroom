@@ -209,9 +209,10 @@ if(BUILD_TESTS)
   # Add test executable
   add_executable(tests
     # find tests -name "*.cpp" | sort
-    tests/assets/test_textures.cpp
-    tests/core/test_backend.cpp
-    tests/core/test_world.cpp
+    tests/assets/textures.test.cpp
+    tests/core/backend.test.cpp
+    tests/core/ui.test.cpp
+    tests/core/world.test.cpp
   )
   target_link_libraries(tests PRIVATE ${PROJECT_NAME}-lib)
 
@@ -221,7 +222,7 @@ if(BUILD_TESTS)
   # Register tests separately with CTest
   add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
   add_test(NAME "[src][core]" COMMAND tests "[src][core]")
-  add_test(NAME "[src][game]" COMMAND tests "[src][game]")
+  #add_test(NAME "[src][game]" COMMAND tests "[src][game]")
 endif()
 
 # Print comprehensive build summary

@@ -1,5 +1,5 @@
 /**
- * @file test_backend.cpp
+ * @file backend.test.cpp
  */
 
 #include <snitch/snitch.hpp>

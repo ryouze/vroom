@@ -1,5 +1,5 @@
 /**
- * @file test_textures.cpp
+ * @file textures.test.cpp
  */
 
 #include <string>

@@ -1,5 +1,5 @@
 /**
- * @file test_world.cpp
+ * @file world.test.cpp
  */
 
 #include <snitch/snitch.hpp>
