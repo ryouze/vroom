@@ -73,3 +73,27 @@ function(fetch_and_link_external_dependencies target)
 
   message(STATUS "Linked dependencies 'ImGui-SFML' and 'spdlog' to target '${target}'.")
 endfunction()
+
+function(fetch_and_link_external_test_dependencies target)
+  if(NOT TARGET ${target})
+    message(FATAL_ERROR "Target '${target}' does not exist. Cannot fetch and link test dependencies.")
+  endif()
+
+  set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+  set(FETCHCONTENT_QUIET OFF)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/deps")
+
+  FetchContent_Declare(
+    snitch
+    URL https://github.com/snitch-org/snitch/archive/refs/tags/v1.3.2.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    EXCLUDE_FROM_ALL
+    SYSTEM
+  )
+  FetchContent_MakeAvailable(snitch)
+
+  # Link test dependencies to target
+  target_link_libraries(${target} PRIVATE snitch::snitch)
+
+  message(STATUS "Linked test dependency 'snitch' to target '${target}'.")
+endfunction()

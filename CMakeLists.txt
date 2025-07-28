@@ -12,7 +12,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Project options
-# option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_TESTS "Build tests" OFF)
 option(ENABLE_COMPILE_FLAGS "Enable compile flags" ON)
 option(ENABLE_STRIP "Enable symbol stripping for Release builds" ON)
 option(ENABLE_LTO "Enable Link Time Optimization" ON)
@@ -200,10 +200,27 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"  # Executable on Linux/Windows
 )
 
-# # Add tests if enabled
-# if(BUILD_TESTS)
-#   message(STATUS "Tests enabled.")
-# endif()
+# Add tests if enabled
+if(BUILD_TESTS)
+  message(STATUS "Tests are enabled, creating test executable...")
+  # Enable testing with CTest
+  enable_testing()
+
+  # Add test executable
+  add_executable(tests
+    # find tests -name "*.cpp" | sort
+    tests/core/test_world.cpp
+  )
+  target_link_libraries(tests PRIVATE ${PROJECT_NAME}-lib)
+
+  # Download and link test dependencies
+  fetch_and_link_external_test_dependencies("tests")
+
+  # Register test executable with CTest
+  add_test(NAME tests COMMAND tests)
+
+  message(STATUS "Test executable 'tests' created and linked with dependencies.")
+endif()
 
 # Print comprehensive build summary
 message(STATUS "")

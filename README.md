@@ -250,7 +250,7 @@ This prints messages for the following issues:
 - TODO/FIXME/HACK comments
 
 
-<!-- ### Testing
+### Testing
 
 Tests are included in the project but are not built by default.
 
@@ -260,7 +260,7 @@ To enable and build the tests manually, run the following commands from the `bui
 cmake .. -DBUILD_TESTS=ON
 cmake --build . --parallel
 ctest --output-on-failure
-``` -->
+```
 
 
 ## Credits
