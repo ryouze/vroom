@@ -217,10 +217,10 @@ if(BUILD_TESTS)
   # Download and link test dependencies
   fetch_and_link_external_test_dependencies("tests")
 
-  # Register test executable with CTest
-  add_test(NAME tests COMMAND tests)
-
-  message(STATUS "Test executable 'tests' created and linked with dependencies.")
+  # Register tests separately with CTest
+  add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
+  add_test(NAME "[src][core]" COMMAND tests "[src][core]")
+  add_test(NAME "[src][game]" COMMAND tests "[src][game]")
 endif()
 
 # Print comprehensive build summary
