@@ -269,6 +269,7 @@ ctest --verbose
 - [Dear ImGui](https://github.com/ocornut/imgui) - GUI, widgets, overlays, etc.
 - [ImGui-SFML](https://github.com/SFML/imgui-sfml) - ImGui-to-SFML binding.
 - [Simple and Fast Multimedia Library](https://github.com/sfml/sfml) - Windowing, graphics, input, etc.
+- [snitch](https://github.com/snitch-org/snitch) - Testing.
 - [spdlog](https://github.com/gabime/spdlog) - Logging.
 
 **Graphics:**
