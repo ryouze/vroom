@@ -6,14 +6,14 @@
 
 #include "core/world.hpp"
 
-TEST_CASE("TrackConfig equality operator works for identical configs", "[core][world]")
+TEST_CASE("TrackConfig equality operator works for identical configs", "[src][core][world.hpp]")
 {
     const core::world::TrackConfig config1;
     const core::world::TrackConfig config2;
     REQUIRE(config1 == config2);
 }
 
-TEST_CASE("TrackConfig equality operator detects different configs", "[core][world]")
+TEST_CASE("TrackConfig equality operator detects different configs", "[src][core][world.hpp]")
 {
     const core::world::TrackConfig config1;
     core::world::TrackConfig config2;

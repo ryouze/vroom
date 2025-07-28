@@ -10,7 +10,7 @@
 
 #include "assets/textures.hpp"
 
-TEST_CASE("TextureManager: load and get texture", "[TextureManager][assets][textures]")
+TEST_CASE("TextureManager: load and get texture", "[src][assets][textures.hpp]")
 {
     assets::textures::TextureManager texture_manager;
     // Create a minimal valid PNG header (not a real image, but enough for SFML to fail gracefully)
@@ -22,13 +22,13 @@ TEST_CASE("TextureManager: load and get texture", "[TextureManager][assets][text
     REQUIRE(texture_manager.size() == 0);
 }
 
-TEST_CASE("TextureManager: get throws for missing texture", "[TextureManager][assets][textures]")
+TEST_CASE("TextureManager: get throws for missing texture", "[src][assets][textures.hpp]")
 {
     const assets::textures::TextureManager texture_manager;
     REQUIRE_THROWS_AS(texture_manager.get("missing"), std::out_of_range);
 }
 
-TEST_CASE("TextureManager: size returns correct count", "[TextureManager][assets][textures]")
+TEST_CASE("TextureManager: size returns correct count", "[src][assets][textures.hpp]")
 {
     assets::textures::TextureManager texture_manager;
     REQUIRE(texture_manager.size() == 0);
