@@ -259,7 +259,7 @@ To enable and build the tests manually, run the following commands from the `bui
 ```sh
 cmake .. -DBUILD_TESTS=ON
 cmake --build . --parallel
-ctest --output-on-failure
+ctest --verbose
 ```
 
 
