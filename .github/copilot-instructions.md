@@ -85,7 +85,7 @@ unsigned anti_aliasing = 8;
 ```
 - Every member variable (whether within a struct, class, or enum) must always have a `@brief` doxygen explanation.
 
-When generating automated tests for code, use the C++20 snitch library.
+When generating automated tests for code, use the C++20 snitch library. Make sure the tag (2nd argument) follows the [DIRECTORY][SUBDIRECTORY][HEADER.HPP] format, e.g., `[src][assets][textures.hpp]`. The full docs can be found below:
 ```
 ## Writing Tests
 
