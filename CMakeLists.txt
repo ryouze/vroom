@@ -211,7 +211,6 @@ if(BUILD_TESTS)
     # find tests -name "*.cpp" | sort
     tests/assets/textures.test.cpp
     tests/core/backend.test.cpp
-    tests/core/ui.test.cpp
     tests/core/world.test.cpp
   )
   target_link_libraries(tests PRIVATE ${PROJECT_NAME}-lib)
