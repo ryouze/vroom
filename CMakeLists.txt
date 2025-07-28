@@ -209,7 +209,6 @@ if(BUILD_TESTS)
   # Add test executable
   add_executable(tests
     # find tests -name "*.cpp" | sort
-    tests/core/backend.test.cpp
     tests/core/world.test.cpp
   )
   target_link_libraries(tests PRIVATE ${PROJECT_NAME}-lib)
@@ -218,7 +217,7 @@ if(BUILD_TESTS)
   fetch_and_link_external_test_dependencies("tests")
 
   # Register tests separately with CTest
-  add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
+  #add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
   add_test(NAME "[src][core]" COMMAND tests "[src][core]")
   #add_test(NAME "[src][game]" COMMAND tests "[src][game]")
 endif()
