@@ -59,6 +59,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Check all headers with `header-warden`.
 
 **Later**:
+- Expand automated tests.
 - Read the SFML documentation.
   - Study the `sf::View` class in detail to ensure the camera is handled correctly.
 - Review and improve `const` usage in UI code, particularly in `src/core/ui.hpp` and `src/core/ui.cpp`. [`src/core/ui.hpp:330`]
@@ -76,7 +77,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 **Finishing Touches**
 - Add basic audio support, with sound effects for the car engine. Avoid adding music, as it would bloat the file size.
-- Implement automated testing once the project reaches a mature state.
   - Use a proper testing framework, such as Catch2.
 - Improve the packaging workflow:
   - Research the use of CPack for cross-platform distribution.
