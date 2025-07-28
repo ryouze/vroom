@@ -209,7 +209,6 @@ if(BUILD_TESTS)
   # Add test executable
   add_executable(tests
     # find tests -name "*.cpp" | sort
-    tests/assets/textures.test.cpp
     tests/core/backend.test.cpp
     tests/core/world.test.cpp
   )
