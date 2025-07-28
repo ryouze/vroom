@@ -2,8 +2,9 @@
  * @file textures.test.cpp
  */
 
-#include <string>
-#include <vector>
+#include <stdexcept>  // for std::runtime_error, std::out_of_range
+#include <string>     // for std::string
+#include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>
 #include <snitch/snitch.hpp>
