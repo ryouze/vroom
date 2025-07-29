@@ -287,20 +287,20 @@ ctest --verbose
 ## Credits
 
 **Libraries:**
-- [Dear ImGui](https://github.com/ocornut/imgui) - GUI, widgets, overlays, etc.
-- [ImGui-SFML](https://github.com/SFML/imgui-sfml) - ImGui-to-SFML binding.
-- [Simple and Fast Multimedia Library](https://github.com/sfml/sfml) - Windowing, graphics, input, etc.
-- [snitch](https://github.com/snitch-org/snitch) - Testing.
-- [spdlog](https://github.com/gabime/spdlog) - Logging.
-- [toml++](https://github.com/marzer/tomlplusplus) - TOML config.
+- [Simple and Fast Multimedia Library](https://github.com/SFML/SFML) - Windowing, graphics, input, etc.
+- [Dear ImGui](https://github.com/ocornut/imgui) - Immediate‑mode GUI.
+- [ImGui‑SFML](https://github.com/SFML/imgui-sfml) - ImGui-to-SFML binding.
+- [snitch](https://github.com/snitch-org/snitch) - Unit‑testing framework.
+- [spdlog](https://github.com/gabime/spdlog) - Logging library.
+- [toml++](https://github.com/marzer/tomlplusplus) - TOML parser and serializer.
 
 **Graphics:**
-- [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard icons.
-- [Moonlight](https://github.com/Madam-Herta/Moonlight) - ImGui theme.
-- [PlayCover](https://macosicons.com/#/u/helloman) - App icon.
-- [Racing Pack](https://kenney.nl/assets/racing-pack) - Car and race track assets.
-- [Waifu2x](https://unlimited.waifu2x.net/) - Texture upscaling (for the race track).
+- [Moonlight](https://github.com/Madam-Herta/Moonlight) - CustomDear ImGui theme.
+- [PlayCover](https://macosicons.com/#/u/helloman) - Application icon.
+- [Racing Pack](https://kenney.nl/assets/racing-pack) - Car sprites and track tile textures.
+- [Waifu2x](https://unlimited.waifu2x.net/) - Image upscaler (for the race track).
   - Used the `swin_unet / art` model with 2x scaling, no denoising, 64×64 tiling (no shuffle), TTA disabled, and alpha channel set to auto.
+<!-- - [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard and gamepad icons. -->
 
 ## Contributing
 
