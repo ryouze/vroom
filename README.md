@@ -49,6 +49,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Throttle drift score updates.
 
 **Current**:
+- Refactor the way config values are read and written (the widgets should read from the Config class, instead of having to set both the widget and the config class values themselves).
+- Add more values to the stored config.
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
   - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
 - Add ImGui window to backend and test again if everything is working correctly.
