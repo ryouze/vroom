@@ -72,16 +72,15 @@ Config::Config(const std::string &filename)
     try {
         // Ensure directory exists before doing anything
         if (!std::filesystem::exists(this->path_.parent_path())) {
-            SPDLOG_DEBUG("Config directory doesn't exist, creating: '{}'", this->path_.parent_path().string());
             std::filesystem::create_directories(this->path_.parent_path());
+            SPDLOG_DEBUG("Created missing config directory: '{}'", this->path_.parent_path().string());
         }
-        else {
-            SPDLOG_DEBUG("Config directory already exists, no need to create it");
-        }
+        // else {
+        //     SPDLOG_DEBUG("Config directory already exists, no need to create it");
+        // }
 
         // If the file exists, load it, otherwise create it with defaults
         if (std::filesystem::exists(this->path_)) {
-            SPDLOG_DEBUG("Config file exists, reading it...");
             const toml::table tbl = toml::parse_file(this->path_.string());
             this->show_fps_counter_ = tbl["show_fps_counter"].value_or(this->show_fps_counter_);
             this->show_minimap_ = tbl["show_minimap"].value_or(this->show_minimap_);
@@ -92,14 +91,13 @@ Config::Config(const std::string &filename)
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
-            SPDLOG_DEBUG("Config file doesn't exist, writing defaults...");
             this->save();
-            SPDLOG_DEBUG("Default values were written!");
+            SPDLOG_DEBUG("Config file was missing, created with default values!");
         }
     }
     catch (const toml::parse_error &err) {
         SPDLOG_ERROR("Failed to parse TOML file '{}': {}", this->path_.string(), err.description());
-        this->save();  // recover with defaults
+        this->save();
     }
     catch (const std::exception &e) {
         SPDLOG_ERROR("Failed to loa TOML file '{}': {}", this->path_.string(), e.what());
@@ -118,7 +116,7 @@ Config::~Config() noexcept
 
 void Config::save() const noexcept
 {
-    SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
+    //     SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
 
     toml::table tbl;
     tbl.insert_or_assign("show_fps_counter", this->show_fps_counter_);
@@ -130,11 +128,11 @@ void Config::save() const noexcept
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {
-        SPDLOG_ERROR("Cannot open config file for writing!");
+        SPDLOG_ERROR("Cannot open config file for writing: '{}'", this->path_.string());
         return;
     }
     ofs << tbl;
-    SPDLOG_DEBUG("Config was saved successfully!");
+    SPDLOG_DEBUG("Config was sucessfully saved to '{}'", this->path_.string());
 }
 
 }  // namespace core::io
