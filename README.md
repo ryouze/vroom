@@ -290,6 +290,7 @@ ctest --verbose
 - [Simple and Fast Multimedia Library](https://github.com/sfml/sfml) - Windowing, graphics, input, etc.
 - [snitch](https://github.com/snitch-org/snitch) - Testing.
 - [spdlog](https://github.com/gabime/spdlog) - Logging.
+- [toml++](https://github.com/marzer/tomlplusplus) - TOML config.
 
 **Graphics:**
 - [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard icons.

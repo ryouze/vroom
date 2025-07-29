@@ -1,5 +1,6 @@
 include(FetchContent)
 
+# Download and link base dependencies (graphics, logging, etc.)
 function(fetch_and_link_external_dependencies target)
   if(NOT TARGET ${target})
     message(FATAL_ERROR "Target '${target}' does not exist. Cannot fetch and link dependencies.")
@@ -56,8 +57,21 @@ function(fetch_and_link_external_dependencies target)
   )
   FetchContent_MakeAvailable(spdlog)
 
+  FetchContent_Declare(
+    tomlplusplus
+    URL https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    EXCLUDE_FROM_ALL
+    SYSTEM
+  )
+  FetchContent_MakeAvailable(tomlplusplus)
+
   # Link dependencies to the target
-  target_link_libraries(${target} PUBLIC ImGui-SFML::ImGui-SFML spdlog::spdlog)  # ImGui-SFML already includes both ImGui and SFML
+  target_link_libraries(${target} PUBLIC
+    ImGui-SFML::ImGui-SFML  # ImGui-SFML already includes both ImGui and SFML
+    spdlog::spdlog
+    tomlplusplus::tomlplusplus
+  )
 
   # Set compile-time log level based on the build type
   # If debug build, set the log level to debug, otherwise keep it default (info)
@@ -74,6 +88,7 @@ function(fetch_and_link_external_dependencies target)
   message(STATUS "Linked dependencies 'ImGui-SFML' and 'spdlog' to target '${target}'.")
 endfunction()
 
+# Download and link test dependencies (automated testing)
 function(fetch_and_link_external_test_dependencies target)
   if(NOT TARGET ${target})
     message(FATAL_ERROR "Target '${target}' does not exist. Cannot fetch and link test dependencies.")
