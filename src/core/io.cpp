@@ -6,6 +6,8 @@
 #include <exception>   // for std::exception
 #include <filesystem>  // for std::filesystem
 #include <format>      // for std::format
+#include <fstream>     // for std::ofstream
+#include <ios>         // for std::ios
 #include <stdexcept>   // for std::runtime_error
 #include <string>      // for std::string
 
