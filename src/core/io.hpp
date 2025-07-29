@@ -7,7 +7,11 @@
 #pragma once
 
 #include <filesystem>  // for std::filesystem
-#include <string>      // for std::string
+#include <fstream>
+#include <string>  // for std::string
+
+#include <spdlog/spdlog.h>  // Remove later once moved to .cpp
+#include <toml++/toml.hpp>
 
 #include "generated.hpp"
 
@@ -31,20 +35,115 @@ namespace core::io {
  */
 [[nodiscard]] std::filesystem::path get_application_storage_location(const std::string &application_name);
 
-// Load and save configuration files to disk
 class Config {
   public:
-    explicit Config(const std::filesystem::path &path = get_application_storage_location(generated::PROJECT_NAME))
-        : path_(path)
+    explicit Config(const std::string &filename = "config.toml")
+        : path_(get_application_storage_location(generated::PROJECT_NAME) / filename)
     {
-        // SDPLOG not imported yet
-        // SPDLOG_DEBUG("Config path set to '{}'", path_.string());
+        // Logic: if file doesn't exist, write default values to it
+        // Otherwise, read values from it
+        SPDLOG_DEBUG("Config path: '{}'", this->path_.string());
 
-        // TODO: Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.)
-        // const std::filesystem::path appdata_path = core::io::get_application_storage_location(generated::PROJECT_NAME);
+        try {
+            // Ensure directory exists before doing anything
+            if (!std::filesystem::exists(this->path_.parent_path())) {
+                SPDLOG_DEBUG("Config directory does not exist yet, creating: '{}'", this->path_.parent_path().string());
+                std::filesystem::create_directories(this->path_.parent_path());
+            }
+            else {
+                SPDLOG_DEBUG("Config directory already exists: '{}'", this->path_.parent_path().string());
+            }
+
+            // If the file exists, read it
+            if (std::filesystem::exists(this->path_)) {
+                SPDLOG_DEBUG("Config file exists, reading from: '{}'", this->path_.string());
+                const toml::table tbl = toml::parse_file(this->path_.string());
+                this->show_fps_counter_ = tbl["show_fps_counter"].value_or(this->show_fps_counter_);
+                this->show_minimap_ = tbl["show_minimap"].value_or(this->show_minimap_);
+                this->show_speedometer_ = tbl["show_speedometer"].value_or(this->show_speedometer_);
+                this->show_leaderboard_ = tbl["show_leaderboard"].value_or(this->show_leaderboard_);
+                this->vsync_enabled_ = tbl["vsync_enabled"].value_or(this->vsync_enabled_);
+                this->fullscreen_enabled_ = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled_);
+
+                // Print values
+                // SPDLOG_DEBUG("Loaded config values: {}'");
+            }
+            // Otherwise, write defaults
+            else {
+                SPDLOG_DEBUG("Config file does not exist, writing defaults to: '{}'", this->path_.string());
+                this->save();
+            }
+        }
+        catch (const toml::parse_error &err) {
+            SPDLOG_ERROR("Failed to parse config file '{}': {}", this->path_.string(), err.description());
+            this->save();
+        }
+        catch (const std::exception &e) {
+            SPDLOG_ERROR("Failed to load config file '{}': {}", this->path_.string(), e.what());
+            this->save();
+        }
     }
 
+    // Save to disk on scope exit
+    ~Config() noexcept
+    {
+        try {
+            this->save();
+        }
+        catch (...) {
+        }
+    }
+
+    /**
+     * @brief Show the FPS counter widget in the UI.
+     */
+    bool show_fps_counter_ = true;
+    /**
+     * @brief Show the minimap widget in the UI.
+     */
+    bool show_minimap_ = true;
+    /**
+     * @brief Show the speedometer widget in the UI.
+     */
+    bool show_speedometer_ = true;
+    /**
+     * @brief Show the leaderboard widget in the UI.
+     */
+    bool show_leaderboard_ = true;
+    /**
+     * @brief Enable vertical sync for the window.
+     */
+    bool vsync_enabled_ = true;
+    /**
+     * @brief Start the game in fullscreen mode.
+     */
+    bool fullscreen_enabled_ = false;
+
   private:
+    // Save to disk
+    void save() const
+    {
+        SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
+
+        toml::table tbl;
+        tbl.insert_or_assign("show_fps_counter", this->show_fps_counter_);
+        tbl.insert_or_assign("show_minimap", this->show_minimap_);
+        tbl.insert_or_assign("show_speedometer", this->show_speedometer_);
+        tbl.insert_or_assign("show_leaderboard", this->show_leaderboard_);
+        tbl.insert_or_assign("vsync_enabled", this->vsync_enabled_);
+        tbl.insert_or_assign("fullscreen_enabled", this->fullscreen_enabled_);
+
+        std::ofstream ofs(this->path_, std::ios::trunc);
+        if (!ofs) {
+            SPDLOG_ERROR("Cannot open '{}' for writing", this->path_.string());
+            return;
+        }
+        ofs << tbl;
+
+        SPDLOG_DEBUG("Config saved successfully to '{}'", this->path_.string());
+    }
+
+    // Path to the configuration TOML file.
     const std::filesystem::path path_;
 };
 
