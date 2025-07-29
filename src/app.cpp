@@ -534,9 +534,12 @@ void run()
                         ImGui::EndDisabled();
 
                         ImGui::SeparatorText("Widgets");
-                        ImGui::Checkbox("FPS Counter", &fps_counter.enabled);
-                        ImGui::Checkbox("Minimap", &minimap.enabled);
-
+                        if (ImGui::Checkbox("FPS Counter", &fps_counter.enabled)) {
+                            config.show_fps_counter_ = fps_counter.enabled;
+                        }
+                        if (ImGui::Checkbox("Minimap", &minimap.enabled)) {
+                            config.show_minimap_ = minimap.enabled;
+                        }
                         ImGui::BeginDisabled(!minimap.enabled);
                         ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s");
 
@@ -559,9 +562,12 @@ void run()
                             minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
                         }
                         ImGui::EndDisabled();
-
-                        ImGui::Checkbox("Speedometer", &speedometer.enabled);
-                        ImGui::Checkbox("Leaderboard", &leaderboard.enabled);
+                        if (ImGui::Checkbox("Speedometer", &speedometer.enabled)) {
+                            config.show_speedometer_ = speedometer.enabled;
+                        }
+                        if (ImGui::Checkbox("Leaderboard", &leaderboard.enabled)) {
+                            config.show_leaderboard_ = leaderboard.enabled;
+                        }
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
