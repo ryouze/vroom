@@ -258,10 +258,16 @@ void run()
     static constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
 
     // Widgets
+    core::ui::FpsCounter fps_counter{window.raw()};  // FPS counter in the top-left corner
+    fps_counter.enabled = config.show_fps_counter_;
     core::ui::Minimap minimap{window.raw(), window_colors.game, draw_game_entities};  // Minimap in the top-right corner
-    core::ui::FpsCounter fps_counter{window.raw()};                                   // FPS counter in the top-left corner
-    core::ui::Speedometer speedometer{window.raw()};                                  // Speedometer in the bottom-right corner
-    core::ui::Leaderboard leaderboard{window.raw()};                                  // Leaderboard in the top-right corner
+    minimap.enabled = config.show_minimap_;
+    core::ui::Speedometer speedometer{window.raw()};  // Speedometer in the bottom-right corner
+    speedometer.enabled = config.show_speedometer_;
+    core::ui::Leaderboard leaderboard{window.raw()};  // Leaderboard in the top-right corner
+    leaderboard.enabled = config.show_leaderboard_;
+
+    // TODO: Add vsync and fullscreen saving
 
     const auto on_event = [&](const sf::Event &event) {
         // Let ImGui handle the event
