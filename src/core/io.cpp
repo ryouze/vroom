@@ -10,6 +10,7 @@
 #include <string>      // for std::string
 
 #include <spdlog/spdlog.h>
+#include <toml++/toml.hpp>
 
 #if defined(_WIN32)
 #include "platform/windows.hpp"
@@ -59,6 +60,79 @@ std::filesystem::path get_application_storage_location(const std::string &applic
         // Re-throw any other exceptions as std::runtime_error
         throw std::runtime_error(std::format("Failed to get path to the app storage directory: {}", e.what()));
     }
+}
+
+Config::Config(const std::string &filename)
+    : path_(get_application_storage_location(generated::PROJECT_NAME) / filename)
+{
+    SPDLOG_DEBUG("Created config path: '{}'", this->path_.string());
+
+    try {
+        // Ensure directory exists before doing anything
+        if (!std::filesystem::exists(this->path_.parent_path())) {
+            SPDLOG_DEBUG("Config directory doesn't exist, creating: '{}'", this->path_.parent_path().string());
+            std::filesystem::create_directories(this->path_.parent_path());
+        }
+        else {
+            SPDLOG_DEBUG("Config directory already exists, no need to create it");
+        }
+
+        // If the file exists, load it, otherwise create it with defaults
+        if (std::filesystem::exists(this->path_)) {
+            SPDLOG_DEBUG("Config file exists, reading it...");
+            const toml::table tbl = toml::parse_file(this->path_.string());
+            this->show_fps_counter_ = tbl["show_fps_counter"].value_or(this->show_fps_counter_);
+            this->show_minimap_ = tbl["show_minimap"].value_or(this->show_minimap_);
+            this->show_speedometer_ = tbl["show_speedometer"].value_or(this->show_speedometer_);
+            this->show_leaderboard_ = tbl["show_leaderboard"].value_or(this->show_leaderboard_);
+            this->vsync_enabled_ = tbl["vsync_enabled"].value_or(this->vsync_enabled_);
+            this->fullscreen_enabled_ = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled_);
+            SPDLOG_DEBUG("Config was loaded successfully!");
+        }
+        else {
+            SPDLOG_DEBUG("Config file doesn't exist, writing defaults...");
+            this->save();
+            SPDLOG_DEBUG("Default values were written!");
+        }
+    }
+    catch (const toml::parse_error &err) {
+        SPDLOG_ERROR("Failed to parse TOML file '{}': {}", this->path_.string(), err.description());
+        this->save();  // recover with defaults
+    }
+    catch (const std::exception &e) {
+        SPDLOG_ERROR("Failed to loa TOML file '{}': {}", this->path_.string(), e.what());
+        this->save();
+    }
+}
+
+Config::~Config() noexcept
+{
+    try {
+        this->save();
+    }
+    catch (...) {
+    }
+}
+
+void Config::save() const noexcept
+{
+    SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
+
+    toml::table tbl;
+    tbl.insert_or_assign("show_fps_counter", this->show_fps_counter_);
+    tbl.insert_or_assign("show_minimap", this->show_minimap_);
+    tbl.insert_or_assign("show_speedometer", this->show_speedometer_);
+    tbl.insert_or_assign("show_leaderboard", this->show_leaderboard_);
+    tbl.insert_or_assign("vsync_enabled", this->vsync_enabled_);
+    tbl.insert_or_assign("fullscreen_enabled", this->fullscreen_enabled_);
+
+    std::ofstream ofs(this->path_, std::ios::trunc);
+    if (!ofs) {
+        SPDLOG_ERROR("Cannot open config file for writing!");
+        return;
+    }
+    ofs << tbl;
+    SPDLOG_DEBUG("Config was saved successfully!");
 }
 
 }  // namespace core::io
