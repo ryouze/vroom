@@ -35,28 +35,38 @@ namespace core::io {
  */
 [[nodiscard]] std::filesystem::path get_application_storage_location(const std::string &application_name);
 
+/**
+ * @brief Class that abstracts TOML configuration management on disk.
+ *
+ * On construction, the class attempts to load a TOML configuration file from a platform-specific application data directory, creating default values if the file is missing.
+ *
+ * The file is saved automatically on destruction.
+ */
 class Config {
   public:
+    /**
+     * @brief Attempt to load a TOML configuration file from the platform-specific application data directory, creating default values if the file is missing.
+     *
+     * @param filename Name of the configuration file (default: "config.toml"). This filename will be appended to the platform-specific application data directory path (e.g., "~/Library/Application Support/MyApp/config.toml").
+     */
     explicit Config(const std::string &filename = "config.toml")
         : path_(get_application_storage_location(generated::PROJECT_NAME) / filename)
     {
-        // Logic: if file doesn't exist, write default values to it
-        // Otherwise, read values from it
-        SPDLOG_DEBUG("Config path: '{}'", this->path_.string());
+        SPDLOG_DEBUG("Created config path: '{}'", this->path_.string());
 
         try {
             // Ensure directory exists before doing anything
             if (!std::filesystem::exists(this->path_.parent_path())) {
-                SPDLOG_DEBUG("Config directory does not exist yet, creating: '{}'", this->path_.parent_path().string());
+                SPDLOG_DEBUG("Config directory doesn't exist, creating: '{}'", this->path_.parent_path().string());
                 std::filesystem::create_directories(this->path_.parent_path());
             }
             else {
-                SPDLOG_DEBUG("Config directory already exists: '{}'", this->path_.parent_path().string());
+                SPDLOG_DEBUG("Config directory already exists, no need to create it");
             }
 
-            // If the file exists, read it
+            // If the file exists, load it, otherwise create it with defaults
             if (std::filesystem::exists(this->path_)) {
-                SPDLOG_DEBUG("Config file exists, reading from: '{}'", this->path_.string());
+                SPDLOG_DEBUG("Config file exists, reading it...");
                 const toml::table tbl = toml::parse_file(this->path_.string());
                 this->show_fps_counter_ = tbl["show_fps_counter"].value_or(this->show_fps_counter_);
                 this->show_minimap_ = tbl["show_minimap"].value_or(this->show_minimap_);
@@ -64,27 +74,29 @@ class Config {
                 this->show_leaderboard_ = tbl["show_leaderboard"].value_or(this->show_leaderboard_);
                 this->vsync_enabled_ = tbl["vsync_enabled"].value_or(this->vsync_enabled_);
                 this->fullscreen_enabled_ = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled_);
-
-                // Print values
-                // SPDLOG_DEBUG("Loaded config values: {}'");
+                SPDLOG_DEBUG("Config was loaded successfully!");
             }
-            // Otherwise, write defaults
             else {
-                SPDLOG_DEBUG("Config file does not exist, writing defaults to: '{}'", this->path_.string());
+                SPDLOG_DEBUG("Config file doesn't exist, writing defaults...");
                 this->save();
+                SPDLOG_DEBUG("Default values were written!");
             }
         }
         catch (const toml::parse_error &err) {
-            SPDLOG_ERROR("Failed to parse config file '{}': {}", this->path_.string(), err.description());
-            this->save();
+            SPDLOG_ERROR("Failed to parse TOML file '{}': {}", this->path_.string(), err.description());
+            this->save();  // recover with defaults
         }
         catch (const std::exception &e) {
-            SPDLOG_ERROR("Failed to load config file '{}': {}", this->path_.string(), e.what());
+            SPDLOG_ERROR("Failed to loa TOML file '{}': {}", this->path_.string(), e.what());
             this->save();
         }
     }
 
-    // Save to disk on scope exit
+    /**
+     * @brief Destroy the Config object.
+     *
+     * On destruction, save the current configuration state to the TOML file.
+     */
     ~Config() noexcept
     {
         try {
@@ -120,8 +132,12 @@ class Config {
     bool fullscreen_enabled_ = false;
 
   private:
-    // Save to disk
-    void save() const
+    /**
+     * @brief Save the current configuration state to the TOML file.
+     *
+     * Failures are logged only, so callers can stay noexcept.
+     */
+    void save() const noexcept
     {
         SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
 
@@ -135,15 +151,16 @@ class Config {
 
         std::ofstream ofs(this->path_, std::ios::trunc);
         if (!ofs) {
-            SPDLOG_ERROR("Cannot open '{}' for writing", this->path_.string());
+            SPDLOG_ERROR("Cannot open config file for writing!");
             return;
         }
         ofs << tbl;
-
-        SPDLOG_DEBUG("Config saved successfully to '{}'", this->path_.string());
+        SPDLOG_DEBUG("Config was saved successfully!");
     }
 
-    // Path to the configuration TOML file.
+    /**
+     * @brief Path to the configuration TOML file.
+     */
     const std::filesystem::path path_;
 };
 
