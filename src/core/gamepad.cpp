@@ -3,6 +3,8 @@
  */
 
 #include <algorithm>  // for std::clamp
+#include <cstdlib>    // for std::abs
+#include <string>     // for std::string
 
 #include <SFML/Window/Joystick.hpp>
 #include <spdlog/spdlog.h>

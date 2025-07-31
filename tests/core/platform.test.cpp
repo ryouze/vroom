@@ -2,6 +2,9 @@
  * @file platform.test.cpp
  */
 
+#include <filesystem>  // for std::filesystem
+#include <string>      // for std::string
+
 #include <snitch/snitch.hpp>
 
 #if defined(_WIN32)
