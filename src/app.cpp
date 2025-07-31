@@ -19,6 +19,7 @@
 #include "app.hpp"
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
+#include "core/colors.hpp"
 #include "core/gamepad.hpp"
 #include "core/io.hpp"
 #include "core/ui.hpp"
@@ -52,17 +53,6 @@ enum class GameState {
 
 void run()
 {
-    // Background colors for each GameState
-    constexpr struct {
-        sf::Color menu;
-        sf::Color game;
-        sf::Color settings;
-    } window_colors{
-        .menu = {210, 180, 140},
-        .game = {200, 170, 130},
-        .settings = {28, 28, 30},
-    };
-
     // Define initial game state
     GameState current_state = GameState::Menu;
 
@@ -260,7 +250,7 @@ void run()
     // Widgets
     core::ui::FpsCounter fps_counter{window.raw()};  // FPS counter in the top-left corner
     fps_counter.enabled = config.show_fps_counter;
-    core::ui::Minimap minimap{window.raw(), window_colors.game, draw_game_entities};  // Minimap in the top-right corner
+    core::ui::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
     minimap.enabled = config.show_minimap;
     core::ui::Speedometer speedometer{window.raw()};  // Speedometer in the bottom-right corner
     speedometer.enabled = config.show_speedometer;
@@ -324,7 +314,7 @@ void run()
                 player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
                 player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
             }
-#ifndef NDEBUG // TODO: Use this debug window to test controller input
+#ifndef NDEBUG  // TODO: Use this debug window to test controller input
             ImGui::Begin("Input");
             ImGui::Text("Controller: %s", gamepad_available ? "Yes" : "No");
             ImGui::Text("Throttle: %.2f", static_cast<double>(player_input.throttle));
@@ -665,14 +655,14 @@ void run()
 
     const auto on_render = [&](sf::RenderWindow &rt) {
         if (current_state == GameState::Playing) [[likely]] {
-            rt.clear(window_colors.game);
+            rt.clear(core::colors::window.game);
             draw_game_entities(rt);
         }
         else if (current_state == GameState::Paused) {
-            rt.clear(window_colors.settings);
+            rt.clear(core::colors::window.settings);
         }
         else [[unlikely]] {
-            rt.clear(window_colors.menu);
+            rt.clear(core::colors::window.menu);
         }
         imgui_context.render();
         rt.display();
