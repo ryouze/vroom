@@ -324,6 +324,15 @@ void run()
                 player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
                 player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
             }
+#ifndef NDEBUG // TODO: Use this debug window to test controller input
+            ImGui::Begin("Input");
+            ImGui::Text("Controller: %s", gamepad_available ? "Yes" : "No");
+            ImGui::Text("Throttle: %.2f", static_cast<double>(player_input.throttle));
+            ImGui::Text("Brake: %.2f", static_cast<double>(player_input.brake));
+            ImGui::Text("Steering: %.2f", static_cast<double>(player_input.steering));
+            ImGui::Text("Handbrake: %.2f", static_cast<double>(player_input.handbrake));
+            ImGui::End();
+#endif
             player_car.apply_input(player_input);
             player_car.update(dt);
             for (auto &ai : ai_cars) {
