@@ -55,9 +55,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
 - Add ImGui window to backend and test again if everything is working correctly.
 - Tweak variable names in the `game` module (`.hpp` & `.cpp`).
-- Implement configuration loading and saving for screen resolution, VSync, and other graphical settings using the `Config` class in `src/core/io.hpp`. The platform-agnostic file path getter is already available; only the logic for loading and saving needs to be implemented.
-  - Decide whether to use a custom file format or a ready-made one like TOML or JSON. Rolling our own TOML-like format would likely be the easiest, since we need very few features.
-  - Create the directory if it doesn't exist, then store and load settings (e.g., FPS limit, minimap on/off, etc.).
 - Check all headers with `header-warden`.
 
 **Later**:
@@ -79,7 +76,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 **Finishing Touches**
 - Add basic audio support, with sound effects for the car engine. Avoid adding music, as it would bloat the file size.
-  - Use a proper testing framework, such as Catch2.
 - Improve the packaging workflow:
   - Research the use of CPack for cross-platform distribution.
 - Add new screenshots of the main menu, settings, game, and a GIF (or video) of the game in action.
