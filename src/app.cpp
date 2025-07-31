@@ -22,6 +22,7 @@
 #include "core/colors.hpp"
 #include "core/gamepad.hpp"
 #include "core/io.hpp"
+#include "core/states.hpp"
 #include "core/ui.hpp"
 #include "core/world.hpp"
 #include "game/entities.hpp"
@@ -45,16 +46,10 @@
 
 namespace app {
 
-enum class GameState {
-    Playing,
-    Paused,
-    Menu
-};
-
 void run()
 {
     // Define initial game state
-    GameState current_state = GameState::Menu;
+    core::states::GameState current_state = core::states::GameState::Menu;
 
     // Create SFML window with sane defaults and ImGui GUI
     core::backend::Window window;                             // Fullscreen, 144 FPS limit
@@ -176,13 +171,13 @@ void run()
             key_states.handbrake = true;
             break;
         [[unlikely]] case sf::Keyboard::Key::Escape:
-            current_state = current_state == GameState::Playing
-                                ? GameState::Paused
-                                : GameState::Playing;
+            current_state = current_state == core::states::GameState::Playing
+                                ? core::states::GameState::Paused
+                                : core::states::GameState::Playing;
             break;
         [[unlikely]] case sf::Keyboard::Key::Enter:
-            if (current_state == GameState::Menu)
-                current_state = GameState::Playing;
+            if (current_state == core::states::GameState::Menu)
+                current_state = core::states::GameState::Playing;
             break;
         default:
             break;
@@ -296,7 +291,7 @@ void run()
         // Gamepad is connected and has all required axes/buttons
         const bool gamepad_available = core::gamepad::is_valid();
 
-        if (current_state == GameState::Playing) [[likely]] {
+        if (current_state == core::states::GameState::Playing) [[likely]] {
             game::entities::CarInput player_input = {};
             if (gamepad_available) {
                 // SPDLOG_DEBUG("Controller connected, using gamepad input!");
@@ -339,7 +334,7 @@ void run()
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
-        else if (current_state == GameState::Paused) {
+        else if (current_state == core::states::GameState::Paused) {
             // Since no drawing for the cars and track is done here, only the background color remains
             ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
             ImGui::SetNextWindowSize({500.f, 550.f}, ImGuiCond_FirstUseEver);
@@ -355,12 +350,12 @@ void run()
                 }
 
                 if (ImGui::Button("Resume", {button_width, 0.f})) {
-                    current_state = GameState::Playing;
+                    current_state = core::states::GameState::Playing;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Main Menu", {button_width, 0.f})) {
                     reset_game();
-                    current_state = GameState::Menu;
+                    current_state = core::states::GameState::Menu;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Quit", {button_width, 0.f})) {
@@ -383,7 +378,7 @@ void run()
                         if (ImGui::Button("Reset Game")) {
                             reset_game();
                             // Change to playing for instant visual feedback
-                            current_state = GameState::Playing;
+                            current_state = core::states::GameState::Playing;
                         }
 
                         bool player_ai_controlled = (player_car.get_state().control_mode == game::entities::CarControlMode::AI);
@@ -598,7 +593,7 @@ void run()
             }
         }
 
-        // Handle each GameState
+        // Handle each core::states::GameState
         // Menu state
         else [[unlikely]] {
             // Main menu
@@ -626,11 +621,11 @@ void run()
 
                 if (ImGui::Button("Play", {button_width, 0.0f})) {
                     reset_game();
-                    current_state = GameState::Playing;
+                    current_state = core::states::GameState::Playing;
                 }
 
                 if (ImGui::Button("Settings", {button_width, 0.0f})) {
-                    current_state = GameState::Paused;
+                    current_state = core::states::GameState::Paused;
                 }
 
                 if (ImGui::Button("Quit", {button_width, 0.0f})) {
@@ -654,11 +649,11 @@ void run()
     };
 
     const auto on_render = [&](sf::RenderWindow &rt) {
-        if (current_state == GameState::Playing) [[likely]] {
+        if (current_state == core::states::GameState::Playing) [[likely]] {
             rt.clear(core::colors::window.game);
             draw_game_entities(rt);
         }
-        else if (current_state == GameState::Paused) {
+        else if (current_state == core::states::GameState::Paused) {
             rt.clear(core::colors::window.settings);
         }
         else [[unlikely]] {
