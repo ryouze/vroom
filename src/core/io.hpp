@@ -54,58 +54,6 @@ class Config {
      */
     ~Config() noexcept;
 
-    /**
-     * @brief Show the FPS counter widget in the UI.
-     */
-    bool show_fps_counter = true;
-    /**
-     * @brief Show the minimap widget in the UI.
-     */
-    bool show_minimap = true;
-    /**
-     * @brief Show the speedometer widget in the UI.
-     */
-    bool show_speedometer = true;
-    /**
-     * @brief Show the leaderboard widget in the UI.
-     */
-    bool show_leaderboard = true;
-    /**
-     * @brief Enable vertical sync for the window.
-     */
-    bool vsync_enabled = true;
-    /**
-     * @brief Start the game in fullscreen mode.
-     *
-     * @note This defaults to fullscreen.
-     */
-    bool fullscreen_enabled = true;
-    /**
-     * @brief Index of the selected fullscreen resolution.
-     *
-     * @note This defaults to the best available resolution.
-     */
-    int resolution_index = 0;
-    /**
-     * @brief Index of the selected FPS limit.
-     *
-     * @note This defaults to 144 FPS.
-     */
-    int fps_limit_index = 4;
-    /**
-     * @brief Minimap refresh interval in seconds.
-     */
-    float minimap_refresh_interval = 0.2f;
-    /**
-     * @brief Index of the selected minimap resolution.
-     */
-    int minimap_resolution_index = 2;
-
-    /**
-     * @brief Reset all configuration variables to their default values.
-     */
-    void reset_to_defaults();
-
   private:
     /**
      * @brief Save the current configuration state to the TOML file.

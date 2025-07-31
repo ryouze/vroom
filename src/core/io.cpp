@@ -20,6 +20,7 @@
 #include "platform/posix.hpp"
 #endif
 #include "io.hpp"
+#include "settings.hpp"
 
 namespace core::io {
 
@@ -82,16 +83,10 @@ Config::Config(const std::string &filename)
         // If the file exists, load it, otherwise create it with defaults
         if (std::filesystem::exists(this->path_)) {
             const toml::table tbl = toml::parse_file(this->path_.string());
-            this->show_fps_counter = tbl["show_fps_counter"].value_or(this->show_fps_counter);
-            this->show_minimap = tbl["show_minimap"].value_or(this->show_minimap);
-            this->show_speedometer = tbl["show_speedometer"].value_or(this->show_speedometer);
-            this->show_leaderboard = tbl["show_leaderboard"].value_or(this->show_leaderboard);
-            this->vsync_enabled = tbl["vsync_enabled"].value_or(this->vsync_enabled);
-            this->fullscreen_enabled = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled);
-            this->resolution_index = tbl["resolution_index"].value_or(this->resolution_index);
-            this->fps_limit_index = tbl["fps_limit_index"].value_or(this->fps_limit_index);
-            this->minimap_refresh_interval = tbl["minimap_refresh_interval"].value_or(this->minimap_refresh_interval);
-            this->minimap_resolution_index = tbl["minimap_resolution_index"].value_or(this->minimap_resolution_index);
+            settings::current::fullscreen = tbl["fullscreen"].value_or(settings::defaults::fullscreen);
+            settings::current::vsync = tbl["vsync"].value_or(settings::defaults::vsync);
+            settings::current::fps_limit = tbl["fps_limit"].value_or(settings::defaults::fps_limit);
+            settings::current::resolution_idx = tbl["resolution_idx"].value_or(settings::defaults::resolution_idx);
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -118,36 +113,15 @@ Config::~Config() noexcept
     }
 }
 
-void Config::reset_to_defaults()
-{
-    this->show_fps_counter = true;
-    this->show_minimap = true;
-    this->show_speedometer = true;
-    this->show_leaderboard = true;
-    this->vsync_enabled = true;
-    this->fullscreen_enabled = true;
-    this->resolution_index = 0;
-    this->fps_limit_index = 4;
-    this->minimap_refresh_interval = 0.2f;
-    this->minimap_resolution_index = 2;
-    this->save();
-}
-
 void Config::save() const noexcept
 {
     //     SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
 
     toml::table tbl;
-    tbl.insert_or_assign("show_fps_counter", this->show_fps_counter);
-    tbl.insert_or_assign("show_minimap", this->show_minimap);
-    tbl.insert_or_assign("show_speedometer", this->show_speedometer);
-    tbl.insert_or_assign("show_leaderboard", this->show_leaderboard);
-    tbl.insert_or_assign("vsync_enabled", this->vsync_enabled);
-    tbl.insert_or_assign("fullscreen_enabled", this->fullscreen_enabled);
-    tbl.insert_or_assign("resolution_index", this->resolution_index);
-    tbl.insert_or_assign("fps_limit_index", this->fps_limit_index);
-    tbl.insert_or_assign("minimap_refresh_interval", this->minimap_refresh_interval);
-    tbl.insert_or_assign("minimap_resolution_index", this->minimap_resolution_index);
+    tbl.insert_or_assign("fullscreen", settings::defaults::fullscreen);
+    tbl.insert_or_assign("vsync", settings::defaults::vsync);
+    tbl.insert_or_assign("fps_limit", settings::defaults::fps_limit);
+    tbl.insert_or_assign("resolution_idx", settings::defaults::resolution_idx);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

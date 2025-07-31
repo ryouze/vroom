@@ -237,27 +237,16 @@ void run()
         mode_cstr.emplace_back(name.c_str());
     }
 
-    int mode_index = config.resolution_index;  // Which resolution is selected; default to best resolution
-    int fps_index = config.fps_limit_index;    // Default "144"
+    int mode_index = 0;  // Which resolution is selected; default to best resolution
+    int fps_index = 4;   // Default "144"
     static constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
     static constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
 
-    // Apply saved resolution and FPS limit at startup
-    if (window.is_fullscreen() && mode_index >= 0 && mode_index < static_cast<int>(modes.size())) {
-        window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
-    }
-    window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
-
     // Widgets
     core::ui::FpsCounter fps_counter{window.raw()};  // FPS counter in the top-left corner
-    fps_counter.enabled = config.show_fps_counter;
     core::ui::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
-    minimap.enabled = config.show_minimap;
-    minimap.refresh_interval = config.minimap_refresh_interval;
     core::ui::Speedometer speedometer{window.raw()};  // Speedometer in the bottom-right corner
-    speedometer.enabled = config.show_speedometer;
     core::ui::Leaderboard leaderboard{window.raw()};  // Leaderboard in the top-right corner
-    leaderboard.enabled = config.show_leaderboard;
 
     // TODO: Add vsync and fullscreen saving
 
@@ -491,41 +480,15 @@ void run()
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
-
-                        // Graphics tab local state
                         bool fullscreen = window.is_fullscreen();
                         bool vsync = window.is_vsync_enabled();
-                        static int minimap_resolution_index = config.minimap_resolution_index;
-                        static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
-                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
 
-                        ImGui::SeparatorText("Defaults");
-                        if (ImGui::Button("Reset to Defaults")) {
-                            config.reset_to_defaults();
-                            // Update all widgets and window state to match defaults
-                            fps_counter.enabled = config.show_fps_counter;
-                            minimap.enabled = config.show_minimap;
-                            minimap.refresh_interval = config.minimap_refresh_interval;
-                            speedometer.enabled = config.show_speedometer;
-                            leaderboard.enabled = config.show_leaderboard;
-                            fullscreen = config.fullscreen_enabled;
-                            vsync = config.vsync_enabled;
-                            mode_index = config.resolution_index;
-                            fps_index = config.fps_limit_index;
-                            minimap_resolution_index = config.minimap_resolution_index;
-                            minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
-                            window.set_window_state(fullscreen ? core::backend::WindowState::Fullscreen : core::backend::WindowState::Windowed);
-                            if (fullscreen && mode_index >= 0 && mode_index < static_cast<int>(modes.size())) {
-                                window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
-                            }
-                            window.set_vsync(vsync);
-                            window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
-                        }
+                        // ImGui::SeparatorText("Debug Info");
+                        // ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
 
                         ImGui::SeparatorText("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
                             window.set_window_state(fullscreen ? core::backend::WindowState::Fullscreen : core::backend::WindowState::Windowed);
-                            config.fullscreen_enabled = fullscreen;
                         }
 
                         ImGui::BeginDisabled(!fullscreen);
@@ -535,7 +498,6 @@ void run()
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
                                     mode_index = i;
                                     window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
-                                    config.resolution_index = mode_index;
                                 }
                                 if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
@@ -553,38 +515,44 @@ void run()
                             window.set_vsync(vsync);
                             // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
                             fps_index = 8;
-                            config.vsync_enabled = vsync;
                         }
 
                         ImGui::BeginDisabled(vsync);
                         if (ImGui::Combo("FPS Limit", &fps_index, fps_labels, IM_ARRAYSIZE(fps_labels))) {
                             window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
-                            config.fps_limit_index = fps_index;
                         }
                         ImGui::EndDisabled();
 
                         ImGui::SeparatorText("Widgets");
                         if (ImGui::Checkbox("FPS Counter", &fps_counter.enabled)) {
-                            config.show_fps_counter = fps_counter.enabled;
                         }
                         if (ImGui::Checkbox("Minimap", &minimap.enabled)) {
-                            config.show_minimap = minimap.enabled;
                         }
                         ImGui::BeginDisabled(!minimap.enabled);
                         ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s");
-                        config.minimap_refresh_interval = minimap.refresh_interval;
 
                         // Minimap resolution setting
+                        static int minimap_resolution_index = []() {
+                            // Initialize to match the default resolution
+                            static constexpr sf::Vector2u default_res = {256u, 256u};
+                            static constexpr sf::Vector2u resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
+                            for (int i = 0; i < static_cast<int>(IM_ARRAYSIZE(resolution_values)); ++i) {
+                                if (resolution_values[i] == default_res) {
+                                    return i;
+                                }
+                            }
+                            return 2;  // Fallback to 256x256
+                        }();
+                        static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
+                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
+
                         if (ImGui::Combo("Minimap Resolution", &minimap_resolution_index, minimap_resolution_labels, IM_ARRAYSIZE(minimap_resolution_labels))) {
                             minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
-                            config.minimap_resolution_index = minimap_resolution_index;
                         }
                         ImGui::EndDisabled();
                         if (ImGui::Checkbox("Speedometer", &speedometer.enabled)) {
-                            config.show_speedometer = speedometer.enabled;
                         }
                         if (ImGui::Checkbox("Leaderboard", &leaderboard.enabled)) {
-                            config.show_leaderboard = leaderboard.enabled;
                         }
 
                         ImGui::PopItemWidth();
