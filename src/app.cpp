@@ -259,13 +259,13 @@ void run()
 
     // Widgets
     core::ui::FpsCounter fps_counter{window.raw()};  // FPS counter in the top-left corner
-    fps_counter.enabled = config.show_fps_counter_;
+    fps_counter.enabled = config.show_fps_counter;
     core::ui::Minimap minimap{window.raw(), window_colors.game, draw_game_entities};  // Minimap in the top-right corner
-    minimap.enabled = config.show_minimap_;
+    minimap.enabled = config.show_minimap;
     core::ui::Speedometer speedometer{window.raw()};  // Speedometer in the bottom-right corner
-    speedometer.enabled = config.show_speedometer_;
+    speedometer.enabled = config.show_speedometer;
     core::ui::Leaderboard leaderboard{window.raw()};  // Leaderboard in the top-right corner
-    leaderboard.enabled = config.show_leaderboard_;
+    leaderboard.enabled = config.show_leaderboard;
 
     // TODO: Add vsync and fullscreen saving
 
@@ -535,10 +535,10 @@ void run()
 
                         ImGui::SeparatorText("Widgets");
                         if (ImGui::Checkbox("FPS Counter", &fps_counter.enabled)) {
-                            config.show_fps_counter_ = fps_counter.enabled;
+                            config.show_fps_counter = fps_counter.enabled;
                         }
                         if (ImGui::Checkbox("Minimap", &minimap.enabled)) {
-                            config.show_minimap_ = minimap.enabled;
+                            config.show_minimap = minimap.enabled;
                         }
                         ImGui::BeginDisabled(!minimap.enabled);
                         ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s");
@@ -563,10 +563,10 @@ void run()
                         }
                         ImGui::EndDisabled();
                         if (ImGui::Checkbox("Speedometer", &speedometer.enabled)) {
-                            config.show_speedometer_ = speedometer.enabled;
+                            config.show_speedometer = speedometer.enabled;
                         }
                         if (ImGui::Checkbox("Leaderboard", &leaderboard.enabled)) {
-                            config.show_leaderboard_ = leaderboard.enabled;
+                            config.show_leaderboard = leaderboard.enabled;
                         }
 
                         ImGui::PopItemWidth();

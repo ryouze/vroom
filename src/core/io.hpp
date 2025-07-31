@@ -7,7 +7,7 @@
 #pragma once
 
 #include <filesystem>  // for std::filesystem
-#include <string>  // for std::string
+#include <string>      // for std::string
 
 #include "generated.hpp"
 
@@ -57,27 +57,27 @@ class Config {
     /**
      * @brief Show the FPS counter widget in the UI.
      */
-    bool show_fps_counter_ = true;
+    bool show_fps_counter = true;
     /**
      * @brief Show the minimap widget in the UI.
      */
-    bool show_minimap_ = true;
+    bool show_minimap = true;
     /**
      * @brief Show the speedometer widget in the UI.
      */
-    bool show_speedometer_ = true;
+    bool show_speedometer = true;
     /**
      * @brief Show the leaderboard widget in the UI.
      */
-    bool show_leaderboard_ = true;
+    bool show_leaderboard = true;
     /**
      * @brief Enable vertical sync for the window.
      */
-    bool vsync_enabled_ = true;
+    bool vsync_enabled = true;
     /**
      * @brief Start the game in fullscreen mode.
      */
-    bool fullscreen_enabled_ = false;
+    bool fullscreen_enabled = false;
 
   private:
     /**

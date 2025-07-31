@@ -82,12 +82,12 @@ Config::Config(const std::string &filename)
         // If the file exists, load it, otherwise create it with defaults
         if (std::filesystem::exists(this->path_)) {
             const toml::table tbl = toml::parse_file(this->path_.string());
-            this->show_fps_counter_ = tbl["show_fps_counter"].value_or(this->show_fps_counter_);
-            this->show_minimap_ = tbl["show_minimap"].value_or(this->show_minimap_);
-            this->show_speedometer_ = tbl["show_speedometer"].value_or(this->show_speedometer_);
-            this->show_leaderboard_ = tbl["show_leaderboard"].value_or(this->show_leaderboard_);
-            this->vsync_enabled_ = tbl["vsync_enabled"].value_or(this->vsync_enabled_);
-            this->fullscreen_enabled_ = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled_);
+            this->show_fps_counter = tbl["show_fps_counter"].value_or(this->show_fps_counter);
+            this->show_minimap = tbl["show_minimap"].value_or(this->show_minimap);
+            this->show_speedometer = tbl["show_speedometer"].value_or(this->show_speedometer);
+            this->show_leaderboard = tbl["show_leaderboard"].value_or(this->show_leaderboard);
+            this->vsync_enabled = tbl["vsync_enabled"].value_or(this->vsync_enabled);
+            this->fullscreen_enabled = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled);
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -119,12 +119,12 @@ void Config::save() const noexcept
     //     SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
 
     toml::table tbl;
-    tbl.insert_or_assign("show_fps_counter", this->show_fps_counter_);
-    tbl.insert_or_assign("show_minimap", this->show_minimap_);
-    tbl.insert_or_assign("show_speedometer", this->show_speedometer_);
-    tbl.insert_or_assign("show_leaderboard", this->show_leaderboard_);
-    tbl.insert_or_assign("vsync_enabled", this->vsync_enabled_);
-    tbl.insert_or_assign("fullscreen_enabled", this->fullscreen_enabled_);
+    tbl.insert_or_assign("show_fps_counter", this->show_fps_counter);
+    tbl.insert_or_assign("show_minimap", this->show_minimap);
+    tbl.insert_or_assign("show_speedometer", this->show_speedometer);
+    tbl.insert_or_assign("show_leaderboard", this->show_leaderboard);
+    tbl.insert_or_assign("vsync_enabled", this->vsync_enabled);
+    tbl.insert_or_assign("fullscreen_enabled", this->fullscreen_enabled);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {
