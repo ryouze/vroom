@@ -221,7 +221,7 @@ if(BUILD_TESTS)
   # Register tests separately with CTest
   #add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
   add_test(NAME "[src][core]" COMMAND tests "[src][core]")
-  #add_test(NAME "[src][game]" COMMAND tests "[src][game]")
+  add_test(NAME "[src][game]" COMMAND tests "[src][game]")
 endif()
 
 # Print comprehensive build summary
