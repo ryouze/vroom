@@ -88,6 +88,10 @@ Config::Config(const std::string &filename)
             this->show_leaderboard = tbl["show_leaderboard"].value_or(this->show_leaderboard);
             this->vsync_enabled = tbl["vsync_enabled"].value_or(this->vsync_enabled);
             this->fullscreen_enabled = tbl["fullscreen_enabled"].value_or(this->fullscreen_enabled);
+            this->resolution_index = tbl["resolution_index"].value_or(this->resolution_index);
+            this->fps_limit_index = tbl["fps_limit_index"].value_or(this->fps_limit_index);
+            this->minimap_refresh_interval = tbl["minimap_refresh_interval"].value_or(this->minimap_refresh_interval);
+            this->minimap_resolution_index = tbl["minimap_resolution_index"].value_or(this->minimap_resolution_index);
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -125,6 +129,10 @@ void Config::save() const noexcept
     tbl.insert_or_assign("show_leaderboard", this->show_leaderboard);
     tbl.insert_or_assign("vsync_enabled", this->vsync_enabled);
     tbl.insert_or_assign("fullscreen_enabled", this->fullscreen_enabled);
+    tbl.insert_or_assign("resolution_index", this->resolution_index);
+    tbl.insert_or_assign("fps_limit_index", this->fps_limit_index);
+    tbl.insert_or_assign("minimap_refresh_interval", this->minimap_refresh_interval);
+    tbl.insert_or_assign("minimap_resolution_index", this->minimap_resolution_index);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

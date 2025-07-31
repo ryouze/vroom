@@ -78,6 +78,26 @@ class Config {
      * @brief Start the game in fullscreen mode.
      */
     bool fullscreen_enabled = false;
+    /**
+     * @brief Index of the selected fullscreen resolution.
+     *
+     * @note This defaults to the best available resolution.
+     */
+    int resolution_index = 0;
+    /**
+     * @brief Index of the selected FPS limit.
+     *
+     * @note This defaults to 144 FPS.
+     */
+    int fps_limit_index = 4;
+    /**
+     * @brief Minimap refresh interval in seconds.
+     */
+    float minimap_refresh_interval = 0.2f;
+    /**
+     * @brief Index of the selected minimap resolution.
+     */
+    int minimap_resolution_index = 2;
 
   private:
     /**
