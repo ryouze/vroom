@@ -42,13 +42,15 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
+- Add ALL settings to `settings.hpp`, then use them throught the codebase.
+  - The current settings are all over the place, from `backend.hpp` to `io.hpp`, and even in the `world.hpp` file.
+
+**Current**:
 - Allow user to change between keyboard and gamepad in the settings menu if a gamepad is connected.
   - Currently, the gamepad always takes over keyboard input, which is fine for me, but not for everyone.
 - Research if we are using the correct axis for throttle (I think the current one also combines triggers? Not sure, doesn't work on macOS, need to test on Linux).
   - The current implementation uses the right stick for throttle and brake, which is not ideal.
 - Throttle drift score updates.
-
-**Current**:
 - Refactor the way config values are read and written (the widgets should read from the Config class, instead of having to set both the widget and the config class values themselves).
 - Add more values to the stored config.
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
