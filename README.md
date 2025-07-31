@@ -207,19 +207,19 @@ To start the program, simply run the `vroom` executable (`vroom.app` on macOS, `
 
 The AI controls cars by following a sequence of waypoints placed along the track.
 
-On every frame, each car (including the player) runs an `update()` function. This determines whether the car is in player or AI mode. For AI-controlled cars, the function sets the AI input based on the car's position, velocity, and the direction of the next waypoint.
+On every frame, each car (including the player) runs an `update()` function. For AI cars, it sets the AI inputs based on the car's position, velocity, and the direction of the next waypoint.
 
-The AI checks the distance to the next waypoint to determine if it has been "reached." Once a waypoint is reached, the AI advances to the next one, looping through the entire track. Waypoints are classified as either `Straight` or `Corner`, based on the procedurally generated track layout. This classification is trivial: corner tiles are corners, and straight tiles are straights.
+The AI checks the distance to the next waypoint to determine if it has been reached. Once a waypoint is reached, the AI advances to the next one, looping through the track. Waypoints are classified as `Straight` or `Corner` based on the procedurally generated track layout.
 
-To steer, the AI compares the car's current heading to the direction of the next waypoint. If they are misaligned beyond a minimum threshold, the AI turns left or right. This threshold prevents jittery, unnatural micro-adjustments. On approaching corners, the AI initiates earlier and more aggressive turns; on straight sections, it turns more smoothly.
+To steer, the AI compares the car's current heading to the direction of the next waypoint. If the misalignment exceeds a threshold, the AI turns left or right. When approaching corners, the AI turns earlier and more aggressively; on straight sections, it steers more smoothly.
 
-The AI selects a target speed depending on whether it's approaching a corner or on a straight. If the current speed exceeds the target, it decelerates; if it's below the target, it accelerates. If it's close to the target speed, the AI coasts, relying on drag.
+The AI sets a target speed depending on whether the car is approaching a corner or traveling on a straight. If the current speed exceeds the target, the AI decelerates; if it is below the target, it accelerates. If the speed is close to the target, the AI coasts, relying on drag.
 
-To avoid collisions, the AI scans ahead for potential wall impacts. If a crash seems imminent, it applies the handbrake and increases steering intensity. The current, somewhat conservative values seem to prevent the AI from crashing into walls completely, but feedback is welcome.
+To avoid collisions, the AI scans ahead for potential wall impacts. If a crash is likely, it applies the handbrake and increases steering. The current, somewhat conservative values seem to prevent the AI from crashing into walls completely, but feedback is welcome.
 
-To ensure AI cars don't behave identically, each instance uses a separate random number generator. This introduces small variations in reaction distance, turn sensitivity, and speed targets.
+To prevent AI cars from behaving identically, each instance uses its own random number generator. This introduces small variations in reaction distances, turn sensitivity, and target speeds.
 
-AI logic updates at 30 Hz. Testing shows that 20 Hz is acceptable, while 10 Hz leads to frequent wall collisions. Physics simulation runs at the current frame rate, using delta time for consistent behavior across different refresh rates.
+AI logic updates at 30 Hz. Testing shows that 20 Hz is acceptable, while 10 Hz causes frequent wall collisions. Physics simulation runs at the current frame rate and uses delta time to maintain consistent behavior across different refresh rates.
 
 
 ## Development
