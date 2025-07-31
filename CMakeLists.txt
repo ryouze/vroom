@@ -209,6 +209,7 @@ if(BUILD_TESTS)
   # Add test executable
   add_executable(tests
     # find tests -name "*.cpp" | sort
+    tests/core/platform.test.cpp
     tests/core/world.test.cpp
   )
   target_link_libraries(tests PRIVATE ${PROJECT_NAME}-lib)
