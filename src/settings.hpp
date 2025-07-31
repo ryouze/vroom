@@ -50,4 +50,15 @@ inline constexpr int resolution_idx = 0;
 
 }  // namespace defaults
 
+namespace current {
+
+// Set to default values, but they will be overwritten by the config file or by user
+
+inline bool fullscreen = defaults::fullscreen;
+inline bool vsync = defaults::vsync;
+inline int fps_limit = defaults::fps_limit;
+inline int resolution_idx = defaults::resolution_idx;
+
+}  // namespace current
+
 }  // namespace settings
