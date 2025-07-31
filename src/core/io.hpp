@@ -76,8 +76,10 @@ class Config {
     bool vsync_enabled = true;
     /**
      * @brief Start the game in fullscreen mode.
+     *
+     * @note This defaults to fullscreen.
      */
-    bool fullscreen_enabled = false;
+    bool fullscreen_enabled = true;
     /**
      * @brief Index of the selected fullscreen resolution.
      *
@@ -98,6 +100,11 @@ class Config {
      * @brief Index of the selected minimap resolution.
      */
     int minimap_resolution_index = 2;
+
+    /**
+     * @brief Reset all configuration variables to their default values.
+     */
+    void reset_to_defaults();
 
   private:
     /**

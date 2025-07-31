@@ -118,6 +118,21 @@ Config::~Config() noexcept
     }
 }
 
+void Config::reset_to_defaults()
+{
+    this->show_fps_counter = true;
+    this->show_minimap = true;
+    this->show_speedometer = true;
+    this->show_leaderboard = true;
+    this->vsync_enabled = true;
+    this->fullscreen_enabled = true;
+    this->resolution_index = 0;
+    this->fps_limit_index = 4;
+    this->minimap_refresh_interval = 0.2f;
+    this->minimap_resolution_index = 2;
+    this->save();
+}
+
 void Config::save() const noexcept
 {
     //     SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());

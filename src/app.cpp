@@ -491,11 +491,36 @@ void run()
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
+
+                        // Graphics tab local state
                         bool fullscreen = window.is_fullscreen();
                         bool vsync = window.is_vsync_enabled();
+                        static int minimap_resolution_index = config.minimap_resolution_index;
+                        static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
+                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
 
-                        // ImGui::SeparatorText("Debug Info");
-                        // ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
+                        ImGui::SeparatorText("Defaults");
+                        if (ImGui::Button("Reset to Defaults")) {
+                            config.reset_to_defaults();
+                            // Update all widgets and window state to match defaults
+                            fps_counter.enabled = config.show_fps_counter;
+                            minimap.enabled = config.show_minimap;
+                            minimap.refresh_interval = config.minimap_refresh_interval;
+                            speedometer.enabled = config.show_speedometer;
+                            leaderboard.enabled = config.show_leaderboard;
+                            fullscreen = config.fullscreen_enabled;
+                            vsync = config.vsync_enabled;
+                            mode_index = config.resolution_index;
+                            fps_index = config.fps_limit_index;
+                            minimap_resolution_index = config.minimap_resolution_index;
+                            minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
+                            window.set_window_state(fullscreen ? core::backend::WindowState::Fullscreen : core::backend::WindowState::Windowed);
+                            if (fullscreen && mode_index >= 0 && mode_index < static_cast<int>(modes.size())) {
+                                window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
+                            }
+                            window.set_vsync(vsync);
+                            window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                        }
 
                         ImGui::SeparatorText("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
@@ -550,10 +575,6 @@ void run()
                         config.minimap_refresh_interval = minimap.refresh_interval;
 
                         // Minimap resolution setting
-                        static int minimap_resolution_index = config.minimap_resolution_index;
-                        static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
-                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
-
                         if (ImGui::Combo("Minimap Resolution", &minimap_resolution_index, minimap_resolution_labels, IM_ARRAYSIZE(minimap_resolution_labels))) {
                             minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
                             config.minimap_resolution_index = minimap_resolution_index;
