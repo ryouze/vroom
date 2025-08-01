@@ -35,9 +35,9 @@ inline constexpr bool vsync = false;
  *
  * If vsync is enabled, this value is ignored.
  *
- * @note This defaults to 144 FPS.
+ * @note This defaults to 144 FPS (4).
  */
-inline constexpr int fps_limit = 144;
+inline constexpr int fps_idx = 4;
 
 /**
  * @brief Index of the fullscreen resolution.
@@ -56,7 +56,7 @@ namespace current {
 
 inline bool fullscreen = defaults::fullscreen;
 inline bool vsync = defaults::vsync;
-inline int fps_limit = defaults::fps_limit;
+inline int fps_idx = defaults::fps_idx;
 inline int resolution_idx = defaults::resolution_idx;
 
 }  // namespace current
