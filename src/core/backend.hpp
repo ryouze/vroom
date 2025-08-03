@@ -13,6 +13,7 @@
 #include <SFML/Graphics.hpp>
 // #include <imgui.h>
 #include "generated.hpp"
+#include "settings.hpp"
 
 namespace core::backend {
 
@@ -118,10 +119,10 @@ class Window {
     using render_callback_type = std::function<void(sf::RenderWindow &)>;
 
     /**
-     * @brief Construct window with default settings.
+     * @brief Construct window with settings from the centralized configuration.
      *
-     * @details This creates window in the state specified by the "this->default_start_fullscreen_" constant.
-     * The window will use default resolution for windowed mode or desktop mode for fullscreen.
+     * @details This creates window in the state specified by the current settings.
+     * The window will use configured resolution for windowed mode or desktop mode for fullscreen.
      */
     explicit Window();
 
@@ -172,6 +173,14 @@ class Window {
     void set_vsync(const bool enable);
 
     /**
+     * @brief Apply current settings from the centralized configuration.
+     *
+     * This method applies the fullscreen, vsync, and fps settings from settings::current to the window.
+     * Should be called after configuration is loaded to ensure the window matches the saved settings.
+     */
+    void apply_current_settings();
+
+    /**
      * @brief Run the main application loop with provided callbacks.
      *
      * @param on_event Callback function for handling SFML events.
@@ -196,15 +205,6 @@ class Window {
     void recreate_window(const sf::VideoMode &mode,
                          const sf::State state);
     void apply_sync_settings();
-
-    // Fixed defaults
-    static constexpr sf::Vector2u default_windowed_resolution_ = {1280, 720};
-    static constexpr sf::Vector2u default_minimum_size_ = {800, 600};
-    static inline const std::string default_title_ = std::format("{} ({})", generated::PROJECT_NAME, generated::PROJECT_VERSION);
-    static constexpr unsigned default_frame_limit_ = 144;
-    static constexpr bool default_vsync_enabled_ = false;
-    static constexpr bool default_start_fullscreen_ = true;
-    static constexpr unsigned default_anti_aliasing_level_ = 8;
 
     // Runtime state; always initialize in initializer list
     bool fullscreen_;

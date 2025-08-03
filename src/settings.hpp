@@ -10,8 +10,6 @@ namespace settings {
 
 namespace defaults {
 
-// NOTE: This is not implemented yet. The goal is to use these values throught the entire codebase.
-
 /**
  * @brief Whether the game runs in fullscreen or windowed mode.
  *
@@ -31,11 +29,11 @@ inline constexpr bool fullscreen = true;
 inline constexpr bool vsync = false;
 
 /**
- * @brief Frame per second (FPS) limit for the game.
+ * @brief Frame per second (FPS) limit index for the game.
  *
- * If vsync is enabled, this value is ignored.
+ * If vsync is enabled, this value is ignored. This is an index into the fps_values array.
  *
- * @note This defaults to 144 FPS (4).
+ * @note This defaults to 144 FPS (index 4).
  */
 inline constexpr int fps_idx = 4;
 
@@ -48,7 +46,48 @@ inline constexpr int fps_idx = 4;
  */
 inline constexpr int resolution_idx = 0;
 
+/**
+ * @brief Default windowed resolution width in pixels.
+ */
+inline constexpr unsigned windowed_width = 1280;
+
+/**
+ * @brief Default windowed resolution height in pixels.
+ */
+inline constexpr unsigned windowed_height = 720;
+
+/**
+ * @brief Minimum window width in pixels.
+ */
+inline constexpr unsigned minimum_width = 800;
+
+/**
+ * @brief Minimum window height in pixels.
+ */
+inline constexpr unsigned minimum_height = 600;
+
+/**
+ * @brief Anti-aliasing level.
+ *
+ * @note This defaults to 8x anti-aliasing.
+ */
+inline constexpr unsigned anti_aliasing_level = 8;
+
 }  // namespace defaults
+
+namespace fps {
+
+/**
+ * @brief Available FPS limit labels for display in UI.
+ */
+inline constexpr const char *labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
+
+/**
+ * @brief Available FPS limit values (0 means unlimited).
+ */
+inline constexpr unsigned values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
+
+}  // namespace fps
 
 namespace current {
 

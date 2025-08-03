@@ -85,7 +85,7 @@ Config::Config(const std::string &filename)
             const toml::table tbl = toml::parse_file(this->path_.string());
             settings::current::fullscreen = tbl["fullscreen"].value_or(settings::defaults::fullscreen);
             settings::current::vsync = tbl["vsync"].value_or(settings::defaults::vsync);
-            settings::current::fps_limit = tbl["fps_limit"].value_or(settings::defaults::fps_limit);
+            settings::current::fps_idx = tbl["fps_idx"].value_or(settings::defaults::fps_idx);
             settings::current::resolution_idx = tbl["resolution_idx"].value_or(settings::defaults::resolution_idx);
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
@@ -118,10 +118,10 @@ void Config::save() const noexcept
     //     SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
 
     toml::table tbl;
-    tbl.insert_or_assign("fullscreen", settings::defaults::fullscreen);
-    tbl.insert_or_assign("vsync", settings::defaults::vsync);
-    tbl.insert_or_assign("fps_limit", settings::defaults::fps_limit);
-    tbl.insert_or_assign("resolution_idx", settings::defaults::resolution_idx);
+    tbl.insert_or_assign("fullscreen", settings::current::fullscreen);
+    tbl.insert_or_assign("vsync", settings::current::vsync);
+    tbl.insert_or_assign("fps_idx", settings::current::fps_idx);
+    tbl.insert_or_assign("resolution_idx", settings::current::resolution_idx);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

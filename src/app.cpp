@@ -27,6 +27,7 @@
 #include "core/world.hpp"
 #include "game/entities.hpp"
 #include "generated.hpp"
+#include "settings.hpp"
 
 // Embedded road textures
 #include "assets/data/textures/road/road_sand01.hpp"
@@ -62,6 +63,13 @@ void run()
     // Create a configuration object to load and save settings
     // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
     core::io::Config config;
+
+    // Apply the loaded settings to the window
+    window.apply_current_settings();
+
+    // Update window size after potentially changing window state
+    window_size_u = window.get_resolution();
+    window_size_f = core::backend::to_vector2f(window_size_u);
 
     // Setup main camera view and zoom factor
     sf::View camera_view;
@@ -237,16 +245,14 @@ void run()
         mode_cstr.emplace_back(name.c_str());
     }
 
-    int mode_index = 0;  // Which resolution is selected; default to best resolution
-    int fps_index = 4;   // Default "144"
-    static constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
-    static constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
+    int mode_index = settings::current::resolution_idx;  // Which resolution is selected
+    int fps_index = settings::current::fps_idx;          // FPS setting from centralized config
 
     // Widgets
-    core::ui::FpsCounter fps_counter{window.raw()};  // FPS counter in the top-left corner
+    core::ui::FpsCounter fps_counter{window.raw()};                                          // FPS counter in the top-left corner
     core::ui::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
-    core::ui::Speedometer speedometer{window.raw()};  // Speedometer in the bottom-right corner
-    core::ui::Leaderboard leaderboard{window.raw()};  // Leaderboard in the top-right corner
+    core::ui::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
+    core::ui::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
 
     // TODO: Add vsync and fullscreen saving
 
@@ -489,6 +495,7 @@ void run()
                         ImGui::SeparatorText("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
                             window.set_window_state(fullscreen ? core::backend::WindowState::Fullscreen : core::backend::WindowState::Windowed);
+                            settings::current::fullscreen = fullscreen;
                         }
 
                         ImGui::BeginDisabled(!fullscreen);
@@ -497,6 +504,7 @@ void run()
                                 const bool is_selected = (i == mode_index);
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
                                     mode_index = i;
+                                    settings::current::resolution_idx = mode_index;
                                     window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
                                 }
                                 if (is_selected) {
@@ -513,13 +521,15 @@ void run()
                         ImGui::SeparatorText("Frame Rate");
                         if (ImGui::Checkbox("V-Sync", &vsync)) {
                             window.set_vsync(vsync);
+                            settings::current::vsync = vsync;
                             // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
                             fps_index = 8;
                         }
 
                         ImGui::BeginDisabled(vsync);
-                        if (ImGui::Combo("FPS Limit", &fps_index, fps_labels, IM_ARRAYSIZE(fps_labels))) {
-                            window.set_fps_limit(fps_values[static_cast<std::size_t>(fps_index)]);
+                        if (ImGui::Combo("FPS Limit", &fps_index, settings::fps::labels, IM_ARRAYSIZE(settings::fps::labels))) {
+                            window.set_fps_limit(settings::fps::values[static_cast<std::size_t>(fps_index)]);
+                            settings::current::fps_idx = fps_index;
                         }
                         ImGui::EndDisabled();
 

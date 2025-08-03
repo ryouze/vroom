@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 
 #include "backend.hpp"
+#include "settings.hpp"
 
 namespace core::backend {
 
@@ -185,10 +186,10 @@ void ImGuiContext::render() const
 }
 
 Window::Window()
-    : fullscreen_(default_start_fullscreen_),
-      vsync_enabled_(default_vsync_enabled_),
-      frame_limit_(default_frame_limit_),
-      windowed_resolution_(default_windowed_resolution_)
+    : fullscreen_(settings::current::fullscreen),
+      vsync_enabled_(settings::current::vsync),
+      frame_limit_(settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)]),
+      windowed_resolution_(settings::defaults::windowed_width, settings::defaults::windowed_height)
 {
     SPDLOG_DEBUG("Initializing window with fullscreen='{}', vsync='{}', frame_limit='{}', windowed_resolution='{}x{}'", this->fullscreen_, this->vsync_enabled_, this->frame_limit_, this->windowed_resolution_.x, this->windowed_resolution_.y);
 
@@ -272,11 +273,12 @@ void Window::create_window(const sf::VideoMode &mode,
                            const sf::State state)
 {
     SPDLOG_DEBUG("Creating window with video mode '{}x{}' in '{}' state", mode.size.x, mode.size.y, (state == sf::State::Fullscreen) ? "fullscreen" : "windowed");
-    const sf::ContextSettings settings{.antiAliasingLevel = this->default_anti_aliasing_level_};
-    this->window_.create(mode, this->default_title_, state, settings);
-    this->window_.setMinimumSize(this->default_minimum_size_);
+    const sf::ContextSettings settings{.antiAliasingLevel = settings::defaults::anti_aliasing_level};
+    const std::string window_title = std::format("{} ({})", generated::PROJECT_NAME, generated::PROJECT_VERSION);
+    this->window_.create(mode, window_title, state, settings);
+    this->window_.setMinimumSize(sf::Vector2u{settings::defaults::minimum_width, settings::defaults::minimum_height});
     this->apply_sync_settings();
-    SPDLOG_DEBUG("Window created successfully with anti-aliasing level '{}'", this->default_anti_aliasing_level_);
+    SPDLOG_DEBUG("Window created successfully with anti-aliasing level '{}'", settings::defaults::anti_aliasing_level);
 }
 
 void Window::recreate_window(const sf::VideoMode &mode,
@@ -292,6 +294,30 @@ void Window::apply_sync_settings()
     SPDLOG_DEBUG("Applying sync settings with V-sync='{}' and frame_limit='{}'", this->vsync_enabled_, this->frame_limit_);
     this->window_.setVerticalSyncEnabled(this->vsync_enabled_);
     this->window_.setFramerateLimit(this->vsync_enabled_ ? 0u : this->frame_limit_);
+}
+
+void Window::apply_current_settings()
+{
+    SPDLOG_DEBUG("Applying current settings from centralized configuration");
+
+    // Apply window state (fullscreen/windowed)
+    if (this->fullscreen_ != settings::current::fullscreen) {
+        this->set_window_state(settings::current::fullscreen ? WindowState::Fullscreen : WindowState::Windowed);
+    }
+
+    // Apply vsync setting
+    if (this->vsync_enabled_ != settings::current::vsync) {
+        this->set_vsync(settings::current::vsync);
+    }
+
+    // Apply FPS setting if not using vsync
+    const unsigned target_fps = settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)];
+    if (!settings::current::vsync && this->frame_limit_ != target_fps) {
+        this->set_fps_limit(target_fps);
+    }
+
+    SPDLOG_DEBUG("Applied settings: fullscreen={}, vsync={}, fps_idx={} ({})",
+                 settings::current::fullscreen, settings::current::vsync, settings::current::fps_idx, target_fps);
 }
 
 sf::Vector2f to_vector2f(const sf::Vector2u &vector)
