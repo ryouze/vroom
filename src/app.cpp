@@ -431,136 +431,181 @@ void run()
                     if (ImGui::BeginTabItem("Controls")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
 
-                        // Display connected controller name if gamepad is available
-                        ImGui::SeparatorText("Current Input Device");
-
                         const core::gamepad::GamepadInfo gamepad_info = gamepad.get_info();
+
+                        // Status Overview Section
+                        ImGui::SeparatorText("Status");
                         if (gamepad_info.connected) {
-                            ImGui::Text("Gamepad: %s", gamepad_info.name.c_str());
+                            ImGui::Text("Active Device: %s", gamepad_info.name.c_str());
+                            ImGui::Text("Status: %s", gamepad_available ? "Ready" : "Configuration Required");
                         }
                         else {
-                            ImGui::Text("Keyboard");
+                            ImGui::Text("Active Device: Keyboard");
+                            ImGui::Text("Status: Ready");
                         }
 
-                        ImGui::SeparatorText("Input Preference");
-
-                        if (ImGui::Checkbox("Prefer Gamepad (when available)", &settings::current::prefer_gamepad)) {
-                            // Setting is automatically updated by the checkbox
+                        // Input Preference
+                        if (ImGui::Checkbox("Prefer Gamepad When Available", &settings::current::prefer_gamepad)) {
+                            // Setting automatically updated
                         }
 
-                        if (!gamepad_info.connected) {
-                            ImGui::TextWrapped("No gamepad currently connected. Configure axis mapping below - settings will be applied when a gamepad is connected.");
-                        }
-                        else if (!gamepad_available) {
-                            ImGui::TextWrapped("Gamepad connected but not properly configured. Please adjust axis mapping below.");
-                        }
+                        // Gamepad Configuration Section
+                        if (gamepad_info.connected || !settings::current::prefer_gamepad) {
+                            ImGui::SeparatorText("Gamepad Configuration");
 
-                        ImGui::SeparatorText("Gamepad Configuration");
+                            if (!gamepad_info.connected) {
+                                ImGui::Text("No gamepad connected - settings will apply when connected");
+                            }
 
-                        // Show available axes if connected
-                        if (gamepad_info.connected && !gamepad_info.available_axes.empty()) {
-                            ImGui::Text("Available axes on this controller:");
-                            ImGui::Indent();
-                            for (const int axis : gamepad_info.available_axes) {
-                                if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
-                                    ImGui::BulletText("Axis %d: %s", axis, settings::constants::gamepad_axis_labels[axis]);
+                            // Available axes info (compact)
+                            if (gamepad_info.connected && !gamepad_info.available_axes.empty()) {
+                                ImGui::Text("Available axes: ");
+                                ImGui::SameLine();
+                                for (std::size_t i = 0; i < gamepad_info.available_axes.size(); ++i) {
+                                    const int axis = gamepad_info.available_axes[i];
+                                    if (i > 0) {
+                                        ImGui::SameLine();
+                                        ImGui::Text(", ");
+                                        ImGui::SameLine();
+                                    }
+                                    if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
+                                        ImGui::Text("%s", settings::constants::gamepad_axis_labels[axis]);
+                                    }
+                                    else {
+                                        ImGui::Text("Axis %d", axis);
+                                    }
                                 }
                             }
-                            ImGui::Unindent();
-                            ImGui::Spacing();
-                        }
 
-                        // Axis mapping controls (always enabled)
-                        if (ImGui::Combo("Steering Axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                            // Setting is automatically updated by the combo
-                        }
-
-                        // Show warning if this axis is not available
-                        if (gamepad_info.connected && !gamepad_info.has_configured_steering_axis) {
+                            // Steering Configuration
+                            ImGui::Text("Steering:");
+                            ImGui::SameLine(120);
+                            ImGui::SetNextItemWidth(150);
+                            if (ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                // Setting automatically updated
+                            }
                             ImGui::SameLine();
-                            ImGui::Text("(Not available)");
-                        }
+                            if (ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering)) {
+                                // Setting automatically updated
+                            }
+                            if (gamepad_info.connected && !gamepad_info.has_configured_steering_axis) {
+                                ImGui::SameLine();
+                                ImGui::Text("Unavailable");
+                            }
 
-                        if (ImGui::Checkbox("Invert Steering", &settings::current::gamepad_invert_steering)) {
-                            // Setting is automatically updated by the checkbox
-                        }
-
-                        if (ImGui::Combo("Throttle/Brake Axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                            // Setting is automatically updated by the combo
-                        }
-
-                        // Show warning if this axis is not available
-                        if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
+                            // Throttle/Brake Configuration
+                            ImGui::Text("Throttle/Brake:");
+                            ImGui::SameLine(120);
+                            ImGui::SetNextItemWidth(150);
+                            if (ImGui::Combo("##throttle_axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                // Setting automatically updated
+                            }
                             ImGui::SameLine();
-                            ImGui::Text("(Not available)");
+                            if (ImGui::Checkbox("Invert##throttle", &settings::current::gamepad_invert_throttle)) {
+                                // Setting automatically updated
+                            }
+                            if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
+                                ImGui::SameLine();
+                                ImGui::Text("Unavailable");
+                            }
+
+                            // Handbrake Configuration
+                            ImGui::Text("Handbrake:");
+                            ImGui::SameLine(120);
+                            ImGui::SetNextItemWidth(150);
+                            if (ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d")) {
+                                // Setting automatically updated
+                            }
+                            if (gamepad_info.connected && !gamepad_info.has_configured_handbrake_button) {
+                                ImGui::SameLine();
+                                ImGui::Text("Unavailable");
+                            }
                         }
 
-                        if (ImGui::Checkbox("Invert Throttle/Brake", &settings::current::gamepad_invert_throttle)) {
-                            // Setting is automatically updated by the checkbox
-                        }
-
-                        ImGui::SliderInt("Handbrake Button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d");
-
-                        // Show warning if this button is not available
-                        if (gamepad_info.connected && !gamepad_info.has_configured_handbrake_button) {
-                            ImGui::SameLine();
-                            ImGui::Text("(Not available)");
-                        }
-
-                        // Live feedback when controller is connected
+                        // Live Input Display
                         if (gamepad_info.connected) {
-                            ImGui::SeparatorText("Live Input Values");
-                            ImGui::Text("Steering: %.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
-                            ImGui::Text("Throttle/Brake: %.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
-                            ImGui::Text("Handbrake: %s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "Pressed" : "Released");
+                            ImGui::SeparatorText("Live Input");
+                            ImGui::Columns(4, "live_input", false);
+                            ImGui::SetColumnWidth(0, 80);
+                            ImGui::SetColumnWidth(1, 80);
+                            ImGui::SetColumnWidth(2, 80);
+                            ImGui::SetColumnWidth(3, 100);
 
-                            // Configuration status
-                            ImGui::SeparatorText("Configuration Status");
-                            ImGui::Text("Controller usable: %s", gamepad_available ? "Yes" : "No");
+                            ImGui::Text("Steering");
+                            ImGui::NextColumn();
+                            ImGui::Text("Throttle");
+                            ImGui::NextColumn();
+                            ImGui::Text("Handbrake");
+                            ImGui::NextColumn();
+                            ImGui::Text("Status");
+                            ImGui::NextColumn();
+
+                            ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
+                            ImGui::NextColumn();
+                            ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
+                            ImGui::NextColumn();
+                            ImGui::Text("%s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
+                            ImGui::NextColumn();
+                            ImGui::TextColored(gamepad_available ? sf::Color{0, 255, 0} : sf::Color{255, 100, 100}, "%s", gamepad_available ? "Ready" : "Error");
+                            ImGui::NextColumn();
+                            ImGui::Columns(1);
                         }
 
-                        ImGui::SeparatorText("Control Reference");
-                        ImGui::Columns(2, "controls_ref", false);
-                        ImGui::TextWrapped("Gas/Brake:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Configurable Axis");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Steering:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Configurable Axis");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Handbrake:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Configurable Button");
-                        ImGui::NextColumn();
-                        ImGui::Columns(1);
+                        // Controls Reference
+                        ImGui::SeparatorText("Controls Reference");
 
-                        ImGui::SeparatorText("Keyboard Controls");
-                        ImGui::Columns(2, "keyboard_ref", false);
-                        ImGui::TextWrapped("Gas:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Up Arrow");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Brake:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Down Arrow");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Steering:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Left/Right Arrow");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Handbrake:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Space");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("Pause/Menu:");
-                        ImGui::NextColumn();
-                        ImGui::TextWrapped("ESC");
-                        ImGui::NextColumn();
-                        ImGui::Columns(1);
+                        ImGui::Columns(3, "controls_table", true);
+                        ImGui::SetColumnWidth(0, 100);
+                        ImGui::SetColumnWidth(1, 120);
+                        ImGui::SetColumnWidth(2, 120);
 
+                        ImGui::Text("Action");
+                        ImGui::NextColumn();
+                        ImGui::Text("Keyboard");
+                        ImGui::NextColumn();
+                        ImGui::Text("Gamepad");
+                        ImGui::NextColumn();
                         ImGui::Separator();
-                        ImGui::TextWrapped("Note: ESC key always works to pause the game regardless of input preference.");
+
+                        ImGui::Text("Accelerate");
+                        ImGui::NextColumn();
+                        ImGui::Text("Up Arrow");
+                        ImGui::NextColumn();
+                        ImGui::Text("Axis (Config)");
+                        ImGui::NextColumn();
+
+                        ImGui::Text("Brake");
+                        ImGui::NextColumn();
+                        ImGui::Text("Down Arrow");
+                        ImGui::NextColumn();
+                        ImGui::Text("Axis (Config)");
+                        ImGui::NextColumn();
+
+                        ImGui::Text("Steer");
+                        ImGui::NextColumn();
+                        ImGui::Text("Left/Right Arrow");
+                        ImGui::NextColumn();
+                        ImGui::Text("Axis (Config)");
+                        ImGui::NextColumn();
+
+                        ImGui::Text("Handbrake");
+                        ImGui::NextColumn();
+                        ImGui::Text("Space");
+                        ImGui::NextColumn();
+                        ImGui::Text("Button (Config)");
+                        ImGui::NextColumn();
+
+                        ImGui::Text("Pause");
+                        ImGui::NextColumn();
+                        ImGui::Text("ESC");
+                        ImGui::NextColumn();
+                        ImGui::Text("ESC");
+                        ImGui::NextColumn();
+
+                        ImGui::Columns(1);
+
+                        ImGui::Spacing();
+                        ImGui::Text("ESC always works regardless of input preference");
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
