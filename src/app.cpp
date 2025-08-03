@@ -143,17 +143,19 @@ void run()
         }
     };
 
-    // Function to collect leaderboard data from all cars
+    // Shared vehicle names for both leaderboard and combo box
+    static constexpr std::array<const char *, 5> vehicle_names = {"Player", "Blue", "Green", "Red", "Yellow"};
+
     const auto collect_leaderboard_data = [&player_car, &ai_cars]() -> std::vector<core::widgets::LeaderboardEntry> {
         std::vector<core::widgets::LeaderboardEntry> entries;
+        entries.reserve(5);  // Reserve space for player + 4 AI cars
 
         // Add player car
-        entries.emplace_back(core::widgets::LeaderboardEntry{"Player", player_car.get_state().drift_score, true});
+        entries.emplace_back(core::widgets::LeaderboardEntry{vehicle_names[0], player_car.get_state().drift_score, true});
 
-        // Add AI cars with names derived from texture identifiers
-        const std::array<std::string, 4> ai_names = {"Blue", "Green", "Red", "Yellow"};
+        // Add AI cars using shared names array
         for (std::size_t i = 0; i < ai_cars.size(); ++i) {
-            entries.emplace_back(core::widgets::LeaderboardEntry{ai_names[i], ai_cars[i].get_state().drift_score, false});
+            entries.emplace_back(core::widgets::LeaderboardEntry{vehicle_names[i + 1], ai_cars[i].get_state().drift_score, false});
         }
 
         return entries;
@@ -226,11 +228,8 @@ void run()
         }
     };
 
-    // List of vehicles
+    // List of vehicles and selected index
     const std::array<game::entities::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
-
-    // Vehicle names
-    static constexpr std::array<const char *, 5> vehicle_name_array = {"Player", "Blue", "Green", "Red", "Yellow"};
     int selected_vehicle_index = 0;
 
     // Function to draw the game entities (race track and cars) in the window and minimap
@@ -345,11 +344,16 @@ void run()
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
         else if (current_state == core::states::GameState::Paused) {
+            // Common UI constants
+            constexpr float settings_window_width = 500.f;
+            constexpr float settings_window_height = 550.f;
+            constexpr float button_width = 140.f;
+            constexpr float item_width = -200.f;  // Negative width leaves space for labels
+
             // Since no drawing for the cars and track is done here, only the background color remains
             ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-            ImGui::SetNextWindowSize({500.f, 550.f}, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize({settings_window_width, settings_window_height}, ImGuiCond_FirstUseEver);
             if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-                constexpr float button_width = 140.f;
                 constexpr float button_count = 3.f;
                 const float spacing = ImGui::GetStyle().ItemSpacing.x;
                 const float total_width = (button_width * button_count) + (spacing * (button_count - 1.f));
@@ -382,7 +386,7 @@ void run()
 
                 if (ImGui::BeginTabBar("settings_tabs")) {
                     if (ImGui::BeginTabItem("Game")) {
-                        ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
+                        ImGui::PushItemWidth(item_width);
 
                         ImGui::SeparatorText("Hacks");
                         if (ImGui::Button("Reset Game")) {
@@ -415,23 +419,30 @@ void run()
                         }
 
                         if (track_config_changed) {
-                            const core::world::TrackConfig new_config{static_cast<std::size_t>(track_width_tiles), static_cast<std::size_t>(track_height_tiles), static_cast<std::size_t>(tile_size_pixels), detour_probability};  // Rebuild
+                            race_track.set_config({static_cast<std::size_t>(track_width_tiles), static_cast<std::size_t>(track_height_tiles), static_cast<std::size_t>(tile_size_pixels), detour_probability});
                             // Reset all cars to the new track spawn point
-                            race_track.set_config(new_config);
                             reset_cars();
                         }
 
                         ImGui::SeparatorText("Camera");
                         ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.1fx");
-                        ImGui::Combo("Car", &selected_vehicle_index, vehicle_name_array.data(), static_cast<int>(vehicle_name_array.size()));
+                        ImGui::Combo("Car", &selected_vehicle_index, vehicle_names.data(), static_cast<int>(vehicle_names.size()));
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Controls")) {
-                        ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
+                        ImGui::PushItemWidth(item_width);
 
-                        const core::gamepad::GamepadInfo gamepad_info = gamepad.get_info();
+                        // Cache gamepad info to avoid repeated calls
+                        static core::gamepad::GamepadInfo cached_gamepad_info;
+                        static float gamepad_info_cache_timer = 0.0f;
+                        gamepad_info_cache_timer += dt;
+                        if (gamepad_info_cache_timer > 0.1f) {  // Update every 100ms instead of every frame
+                            cached_gamepad_info = gamepad.get_info();
+                            gamepad_info_cache_timer = 0.0f;
+                        }
+                        const core::gamepad::GamepadInfo &gamepad_info = cached_gamepad_info;
 
                         // Status Overview Section
                         ImGui::SeparatorText("Status");
@@ -440,8 +451,8 @@ void run()
                             ImGui::Text("Status: %s", gamepad_available ? "Ready" : "Configuration Required");
                         }
                         else {
-                            ImGui::Text("Active Device: Keyboard");
-                            ImGui::Text("Status: Ready");
+                            ImGui::TextUnformatted("Active Device: Keyboard");
+                            ImGui::TextUnformatted("Status: Ready");
                         }
 
                         // Input Preference
@@ -459,7 +470,7 @@ void run()
 
                             // Available axes info (compact)
                             if (gamepad_info.connected && !gamepad_info.available_axes.empty()) {
-                                ImGui::Text("Available axes:");
+                                ImGui::TextUnformatted("Available axes:");
                                 ImGui::Indent();
                                 for (const int axis : gamepad_info.available_axes) {
                                     if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
@@ -472,59 +483,39 @@ void run()
                                 ImGui::Unindent();
                             }
 
-                            if (ImGui::BeginTable("gamepad_config", 3, ImGuiTableFlags_SizingStretchProp)) {
+                            if (ImGui::BeginTable("gamepad_config", 2, ImGuiTableFlags_SizingStretchProp)) {
                                 ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
                                 ImGui::TableSetupColumn("Binding", ImGuiTableColumnFlags_WidthStretch);
-                                ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthStretch);
 
                                 // Steering
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("Steering");
+                                ImGui::TextUnformatted("Steering");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 80.f);
                                 ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
-                                ImGui::PopItemWidth();
                                 ImGui::SameLine();
                                 ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering);
-                                ImGui::TableSetColumnIndex(2);
-                                if (gamepad_info.connected && !gamepad_info.has_configured_steering_axis) {
-                                    ImGui::Text("Unavailable");
-                                }
 
                                 // Throttle/Brake
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("Throttle/Brake");
+                                ImGui::TextUnformatted("Throttle/Brake");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 80.f);
                                 ImGui::Combo("##throttle_axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
-                                ImGui::PopItemWidth();
                                 ImGui::SameLine();
                                 ImGui::Checkbox("Invert##throttle", &settings::current::gamepad_invert_throttle);
-                                ImGui::TableSetColumnIndex(2);
-                                if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
-                                    ImGui::Text("Unavailable");
-                                }
 
                                 // Handbrake
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("Handbrake");
+                                ImGui::TextUnformatted("Handbrake");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::PushItemWidth(-1);
                                 ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d");
-                                ImGui::PopItemWidth();
-                                ImGui::TableSetColumnIndex(2);
-                                if (gamepad_info.connected && !gamepad_info.has_configured_handbrake_button) {
-                                    ImGui::Text("Unavailable");
-                                }
 
                                 ImGui::EndTable();
                             }
                         }
 
-                        // Live Input Display
                         if (gamepad_info.connected) {
                             if (ImGui::BeginTable("live_input", 3, ImGuiTableFlags_SizingStretchSame)) {
                                 ImGui::TableSetupColumn("Steering");
@@ -538,7 +529,7 @@ void run()
                                 ImGui::TableSetColumnIndex(1);
                                 ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
                                 ImGui::TableSetColumnIndex(2);
-                                ImGui::Text("%s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
+                                ImGui::TextUnformatted(gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
 
                                 ImGui::EndTable();
                             }
@@ -556,7 +547,7 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
-                        ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
+                        ImGui::PushItemWidth(item_width);
 
 #ifndef NDEBUG
                         ImGui::SeparatorText("Debug");
@@ -605,6 +596,7 @@ void run()
                         ImGui::EndDisabled();
 
                         ImGui::SeparatorText("Widgets");
+
                         if (ImGui::Checkbox("FPS Counter", &fps_counter.enabled)) {
                         }
                         if (ImGui::Checkbox("Minimap", &minimap.enabled)) {
