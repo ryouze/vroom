@@ -514,28 +514,24 @@ void run()
                             }
                         }
 
-                        // Live Input Display
+                        // Live input display
                         if (gamepad_info.connected) {
-                            ImGui::Columns(3, "live_input", false);
-                            ImGui::SetColumnWidth(0, 80);
-                            ImGui::SetColumnWidth(1, 80);
-                            ImGui::SetColumnWidth(2, 80);
+                            if (ImGui::BeginTable("live_input", 3, ImGuiTableFlags_SizingStretchSame)) {
+                                ImGui::TableSetupColumn("Steering");
+                                ImGui::TableSetupColumn("Throttle");
+                                ImGui::TableSetupColumn("Handbrake");
+                                ImGui::TableHeadersRow();
 
-                            ImGui::Text("Steering");
-                            ImGui::NextColumn();
-                            ImGui::Text("Throttle");
-                            ImGui::NextColumn();
-                            ImGui::Text("Handbrake");
-                            ImGui::NextColumn();
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Text("%s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
 
-                            ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
-                            ImGui::NextColumn();
-                            ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
-                            ImGui::NextColumn();
-                            ImGui::Text("%s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
-                            ImGui::NextColumn();
-
-                            ImGui::Columns(1);
+                                ImGui::EndTable();
+                            }
                         }
 
                         ImGui::SeparatorText("Keyboard Reference");
