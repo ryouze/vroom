@@ -290,6 +290,9 @@ void run()
         imgui_context.update(dt);
         fps_counter.update_and_draw(dt);
 
+        // Update gamepad info cache
+        gamepad.update(dt);
+
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
         window_size_u = window.raw().getSize();
         window_size_f = core::backend::to_vector2f(window_size_u);
@@ -434,15 +437,8 @@ void run()
                     if (ImGui::BeginTabItem("Controls")) {
                         ImGui::PushItemWidth(item_width);
 
-                        // Cache gamepad info to avoid repeated calls
-                        static core::gamepad::GamepadInfo cached_gamepad_info;
-                        static float gamepad_info_cache_timer = 0.0f;
-                        gamepad_info_cache_timer += dt;
-                        if (gamepad_info_cache_timer > 0.1f) {  // Update every 100ms instead of every frame
-                            cached_gamepad_info = gamepad.get_info();
-                            gamepad_info_cache_timer = 0.0f;
-                        }
-                        const core::gamepad::GamepadInfo &gamepad_info = cached_gamepad_info;
+                        // Get cached gamepad info
+                        const core::gamepad::GamepadInfo &gamepad_info = gamepad.get_info();
 
                         // Status Overview Section
                         ImGui::SeparatorText("Status");

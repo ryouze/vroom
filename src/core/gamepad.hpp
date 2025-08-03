@@ -89,11 +89,18 @@ class Gamepad {
     explicit Gamepad(unsigned controller_id = 0);
 
     /**
+     * @brief Update gamepad information cache.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     */
+    void update(float dt);
+
+    /**
      * @brief Get information about the current gamepad.
      *
-     * @return GamepadInfo struct containing connection status, name, and capabilities.
+     * @return Cached GamepadInfo struct containing connection status, name, and capabilities.
      */
-    [[nodiscard]] GamepadInfo get_info() const;
+    [[nodiscard]] const GamepadInfo &get_info() const;
 
     /**
      * @brief Get current input from the gamepad.
@@ -134,6 +141,25 @@ class Gamepad {
      * @brief Controller ID to manage.
      */
     unsigned controller_id_;
+
+    /**
+     * @brief Cached gamepad information to avoid expensive SFML queries every frame.
+     */
+    GamepadInfo cached_info_;
+
+    /**
+     * @brief Time accumulator for gamepad info update throttling.
+     *
+     * This tracks elapsed time since last gamepad info update to limit expensive SFML queries to 10Hz for performance.
+     */
+    float info_update_timer_ = 0.0f;
+
+    /**
+     * @brief Target interval for gamepad info updates in seconds (1/10 = 0.1 seconds for 10Hz).
+     *
+     * Gamepad info will only be refreshed when info_update_timer_ exceeds this interval.
+     */
+    static constexpr float info_update_rate = 0.1f;
 
     /**
      * @brief Apply deadzone to an input value.

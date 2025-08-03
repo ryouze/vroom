@@ -17,37 +17,52 @@ Gamepad::Gamepad(const unsigned controller_id)
 {
 }
 
-GamepadInfo Gamepad::get_info() const
+void Gamepad::update(const float dt)
 {
-    GamepadInfo info;
+    // Accumulate the delta time
+    this->info_update_timer_ += dt;
 
-    info.connected = sf::Joystick::isConnected(this->controller_id_);
+    // If the accumulated time does not exceed the update rate, return early
+    if (this->info_update_timer_ < this->info_update_rate) {
+        return;
+    }
 
-    if (!info.connected) {
-        info.name = "No controller connected";
-        return info;
+    // Reset timer for next update cycle
+    this->info_update_timer_ -= this->info_update_rate;  // Keep any overshoot
+
+    // Refresh the cached info
+    this->cached_info_ = GamepadInfo{};
+
+    this->cached_info_.connected = sf::Joystick::isConnected(this->controller_id_);
+
+    if (!this->cached_info_.connected) {
+        this->cached_info_.name = "No controller connected";
+        return;
     }
 
     // Get controller name
     const std::string name = sf::Joystick::getIdentification(this->controller_id_).name.toAnsiString();
-    info.name = name.empty() ? "Generic Controller" : name;
+    this->cached_info_.name = name.empty() ? "Generic Controller" : name;
 
     // Get button count
-    info.button_count = sf::Joystick::getButtonCount(this->controller_id_);
+    this->cached_info_.button_count = sf::Joystick::getButtonCount(this->controller_id_);
 
     // Check which axes are available
     for (int axis = 0; axis < 8; ++axis) {
         if (sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(axis))) {
-            info.available_axes.push_back(axis);
+            this->cached_info_.available_axes.push_back(axis);
         }
     }
 
     // Check if configured controls are available
-    info.has_configured_steering_axis = sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_steering_axis));
-    info.has_configured_throttle_axis = sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_throttle_axis));
-    info.has_configured_handbrake_button = (settings::current::gamepad_handbrake_button < static_cast<int>(info.button_count));
+    this->cached_info_.has_configured_steering_axis = sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_steering_axis));
+    this->cached_info_.has_configured_throttle_axis = sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_throttle_axis));
+    this->cached_info_.has_configured_handbrake_button = (settings::current::gamepad_handbrake_button < static_cast<int>(this->cached_info_.button_count));
+}
 
-    return info;
+const GamepadInfo &Gamepad::get_info() const
+{
+    return this->cached_info_;
 }
 
 GamepadInput Gamepad::get_input() const
@@ -123,8 +138,7 @@ bool Gamepad::is_button_pressed(const int button_index) const
 
 bool Gamepad::is_usable() const
 {
-    const GamepadInfo info = get_info();
-    return info.connected && info.has_configured_steering_axis && info.has_configured_throttle_axis && info.has_configured_handbrake_button;
+    return this->cached_info_.connected && this->cached_info_.has_configured_steering_axis && this->cached_info_.has_configured_throttle_axis && this->cached_info_.has_configured_handbrake_button;
 }
 
 float Gamepad::apply_deadzone(const float value, const float deadzone)
