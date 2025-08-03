@@ -1,7 +1,7 @@
 /**
- * @file ui.hpp
+ * @file widgets.hpp
  *
- * @brief Dear ImGui abstractions.
+ * @brief ImGui widgets (speedometer, minimap, FPS counter, etc.) for the game.
  */
 
 #pragma once
@@ -14,7 +14,7 @@
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
 
-namespace core::ui {
+namespace core::widgets {
 
 /**
  * @brief Generic enum that represents the corner of the screen, used for positioning.

@@ -1,5 +1,5 @@
 /**
- * @file ui.cpp
+ * @file widgets.cpp
  */
 
 #include <algorithm>    // for std::clamp, std::sort
@@ -17,9 +17,9 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
-#include "ui.hpp"
+#include "widgets.hpp"
 
-namespace core::ui {
+namespace core::widgets {
 
 namespace {
 
@@ -358,4 +358,4 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
     ImGui::End();
 }
 
-}  // namespace core::ui
+}  // namespace core::widgets

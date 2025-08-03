@@ -18,12 +18,13 @@
 
 #include "app.hpp"
 #include "assets/textures.hpp"
-#include "core/backend.hpp"
 #include "core/colors.hpp"
 #include "core/gamepad.hpp"
+#include "core/imgui_sfml_ctx.hpp"
 #include "core/io.hpp"
 #include "core/states.hpp"
-#include "core/ui.hpp"
+#include "core/widgets.hpp"
+#include "core/window.hpp"
 #include "core/world.hpp"
 #include "game/entities.hpp"
 #include "generated.hpp"
@@ -53,12 +54,12 @@ void run()
     core::states::GameState current_state = core::states::GameState::Menu;
 
     // Create SFML window with sane defaults and ImGui GUI
-    core::backend::Window window;                             // Fullscreen, 144 FPS limit
-    core::backend::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
+    core::window::Window window;                                     // Fullscreen, 144 FPS limit
+    core::imgui_sfml_ctx::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
 
     // Get window size, update during game loop
     sf::Vector2u window_size_u = window.get_resolution();
-    sf::Vector2f window_size_f = core::backend::to_vector2f(window_size_u);
+    sf::Vector2f window_size_f = core::window::to_vector2f(window_size_u);
 
     // Create a configuration object to load and save settings
     // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
@@ -69,7 +70,7 @@ void run()
 
     // Update window size after potentially changing window state
     window_size_u = window.get_resolution();
-    window_size_f = core::backend::to_vector2f(window_size_u);
+    window_size_f = core::window::to_vector2f(window_size_u);
 
     // Setup main camera view and zoom factor
     sf::View camera_view;
@@ -132,16 +133,16 @@ void run()
     };
 
     // Function to collect leaderboard data from all cars
-    const auto collect_leaderboard_data = [&player_car, &ai_cars]() -> std::vector<core::ui::LeaderboardEntry> {
-        std::vector<core::ui::LeaderboardEntry> entries;
+    const auto collect_leaderboard_data = [&player_car, &ai_cars]() -> std::vector<core::widgets::LeaderboardEntry> {
+        std::vector<core::widgets::LeaderboardEntry> entries;
 
         // Add player car
-        entries.emplace_back(core::ui::LeaderboardEntry{"Player", player_car.get_state().drift_score, true});
+        entries.emplace_back(core::widgets::LeaderboardEntry{"Player", player_car.get_state().drift_score, true});
 
         // Add AI cars with names derived from texture identifiers
         const std::array<std::string, 4> ai_names = {"Blue", "Green", "Red", "Yellow"};
         for (std::size_t i = 0; i < ai_cars.size(); ++i) {
-            entries.emplace_back(core::ui::LeaderboardEntry{ai_names[i], ai_cars[i].get_state().drift_score, false});
+            entries.emplace_back(core::widgets::LeaderboardEntry{ai_names[i], ai_cars[i].get_state().drift_score, false});
         }
 
         return entries;
@@ -231,7 +232,7 @@ void run()
     };
 
     // Build list of fullscreen modes
-    const auto modes = core::backend::Window::get_available_modes();
+    const auto modes = core::window::Window::get_available_modes();
     std::vector<std::string> mode_names;
     mode_names.reserve(modes.size());
     for (const auto &mode : modes) {
@@ -249,10 +250,10 @@ void run()
     int fps_index = settings::current::fps_idx;          // FPS setting from centralized config
 
     // Widgets
-    core::ui::FpsCounter fps_counter{window.raw()};                                          // FPS counter in the top-left corner
-    core::ui::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
-    core::ui::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
-    core::ui::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
+    core::widgets::FpsCounter fps_counter{window.raw()};                                          // FPS counter in the top-left corner
+    core::widgets::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
+    core::widgets::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
+    core::widgets::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
 
     // TODO: Add vsync and fullscreen saving
 
@@ -269,7 +270,7 @@ void run()
         // // Window was resized
         // else if (event.is<sf::Event::Resized>()) [[unlikely]] {
         //     // macOS fullscreen fix: query the actual size after resizing
-        //     camera_view.setSize(core::backend::to_vector2f(window->getSize()));
+        //     camera_view.setSize(core::window::to_vector2f(window->getSize()));
         //     camera_view.zoom(camera_zoom_factor);
         // }
 
@@ -285,7 +286,7 @@ void run()
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
         window_size_u = window.get_resolution();
-        window_size_f = core::backend::to_vector2f(window_size_u);
+        window_size_f = core::window::to_vector2f(window_size_u);
 
         // Currently selected vehicle
         game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
@@ -494,7 +495,7 @@ void run()
 
                         ImGui::SeparatorText("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
-                            window.set_window_state(fullscreen ? core::backend::WindowState::Fullscreen : core::backend::WindowState::Windowed);
+                            window.set_window_state(fullscreen ? core::window::WindowState::Fullscreen : core::window::WindowState::Windowed);
                             settings::current::fullscreen = fullscreen;
                         }
 
@@ -505,7 +506,7 @@ void run()
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
                                     mode_index = i;
                                     settings::current::resolution_idx = mode_index;
-                                    window.set_window_state(core::backend::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
+                                    window.set_window_state(core::window::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
                                 }
                                 if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
