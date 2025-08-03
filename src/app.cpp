@@ -62,6 +62,10 @@ void run()
     // - settings::current::fps_idx
     // - settings::current::mode_idx
     // - settings::current::anti_aliasing_idx
+    // - settings::current::prefer_gamepad
+    // - settings::current::gamepad_steering_axis
+    // - settings::current::gamepad_throttle_axis
+    // - settings::current::gamepad_handbrake_button
     // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
     core::io::ConfigContext config_context;
 
@@ -126,6 +130,9 @@ void run()
         game::entities::Car(textures.get("car_green"), rng, race_track, game::entities::CarControlMode::AI),
         game::entities::Car(textures.get("car_red"), rng, race_track, game::entities::CarControlMode::AI),
         game::entities::Car(textures.get("car_yellow"), rng, race_track, game::entities::CarControlMode::AI)};
+
+    // Create gamepad instance
+    core::gamepad::Gamepad gamepad(0);
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&player_car, &ai_cars]() {
@@ -291,18 +298,18 @@ void run()
         // Currently selected vehicle
         game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
-        // Gamepad is connected and has all required axes/buttons
-        const bool gamepad_available = core::gamepad::is_valid();
+        // Check if gamepad is usable with current configuration
+        const bool gamepad_available = gamepad.is_usable();
 
         if (current_state == core::states::GameState::Playing) [[likely]] {
             game::entities::CarInput player_input = {};
             if (gamepad_available && settings::current::prefer_gamepad) {
-                // SPDLOG_DEBUG("Controller connected, using gamepad input!");
-                const float gamepad_throttle = core::gamepad::get_throttle();
-                player_input.throttle = (gamepad_throttle > 0.0f) ? gamepad_throttle : 0.0f;
-                player_input.brake = (gamepad_throttle < 0.0f) ? -gamepad_throttle : 0.0f;
-                player_input.steering = core::gamepad::get_steer();
-                player_input.handbrake = core::gamepad::get_handbrake() ? 1.0f : 0.0f;
+                // Use gamepad input
+                const core::gamepad::GamepadInput gamepad_input = gamepad.get_input();
+                player_input.throttle = gamepad_input.throttle;
+                player_input.brake = gamepad_input.brake;
+                player_input.steering = gamepad_input.steering;
+                player_input.handbrake = gamepad_input.handbrake ? 1.0f : 0.0f;
             }
             else {
                 // Fallback to keyboard state
@@ -425,9 +432,9 @@ void run()
                         // Display connected controller name if gamepad is available
                         ImGui::SeparatorText("Current Input Device");
 
-                        if (gamepad_available) {
-                            const std::string controller_name = core::gamepad::get_name();
-                            ImGui::Text("Gamepad: %s", controller_name.c_str());
+                        const core::gamepad::GamepadInfo gamepad_info = gamepad.get_info();
+                        if (gamepad_info.connected) {
+                            ImGui::Text("Gamepad: %s", gamepad_info.name.c_str());
                         }
                         else {
                             ImGui::Text("Keyboard");
@@ -439,26 +446,85 @@ void run()
                             // Setting is automatically updated by the checkbox
                         }
 
-                        if (!gamepad_available) {
-                            ImGui::TextWrapped("No gamepad currently connected. The preference will take effect when a gamepad is connected.");
+                        if (!gamepad_info.connected) {
+                            ImGui::TextWrapped("No gamepad currently connected. Configure axis mapping below - settings will be applied when a gamepad is connected.");
+                        }
+                        else if (!gamepad_available) {
+                            ImGui::TextWrapped("Gamepad connected but not properly configured. Please adjust axis mapping below.");
+                        }
+
+                        ImGui::SeparatorText("Gamepad Configuration");
+
+                        // Show available axes if connected
+                        if (gamepad_info.connected && !gamepad_info.available_axes.empty()) {
+                            ImGui::Text("Available axes on this controller:");
+                            ImGui::Indent();
+                            for (const int axis : gamepad_info.available_axes) {
+                                if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
+                                    ImGui::BulletText("Axis %d: %s", axis, settings::constants::gamepad_axis_labels[axis]);
+                                }
+                            }
+                            ImGui::Unindent();
+                            ImGui::Spacing();
+                        }
+
+                        // Axis mapping controls (always enabled)
+                        if (ImGui::Combo("Steering Axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                            // Setting is automatically updated by the combo
+                        }
+
+                        // Show warning if this axis is not available
+                        if (gamepad_info.connected && !gamepad_info.has_configured_steering_axis) {
+                            ImGui::SameLine();
+                            ImGui::Text("(Not available)");
+                        }
+
+                        if (ImGui::Combo("Throttle/Brake Axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                            // Setting is automatically updated by the combo
+                        }
+
+                        // Show warning if this axis is not available
+                        if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
+                            ImGui::SameLine();
+                            ImGui::Text("(Not available)");
+                        }
+
+                        ImGui::SliderInt("Handbrake Button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d");
+
+                        // Show warning if this button is not available
+                        if (gamepad_info.connected && !gamepad_info.has_configured_handbrake_button) {
+                            ImGui::SameLine();
+                            ImGui::Text("(Not available)");
+                        }
+
+                        // Live feedback when controller is connected
+                        if (gamepad_info.connected) {
+                            ImGui::SeparatorText("Live Input Values");
+                            ImGui::Text("Steering: %.2f", static_cast<double>(gamepad.get_raw_axis_value(settings::current::gamepad_steering_axis)));
+                            ImGui::Text("Throttle/Brake: %.2f", static_cast<double>(gamepad.get_raw_axis_value(settings::current::gamepad_throttle_axis)));
+                            ImGui::Text("Handbrake: %s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "Pressed" : "Released");
+
+                            // Configuration status
+                            ImGui::SeparatorText("Configuration Status");
+                            ImGui::Text("Controller usable: %s", gamepad_available ? "Yes" : "No");
                         }
 
                         ImGui::Spacing();
 
                         // if (gamepad_available) {
-                        ImGui::SeparatorText("Gamepad Controls (Xbox layout)");
+                        ImGui::SeparatorText("Gamepad Controls");
                         ImGui::Columns(2, "gamepad_controls", false);
                         ImGui::TextWrapped("Gas/Brake:");
                         ImGui::NextColumn();
-                        ImGui::TextWrapped("Right Stick (Up/Down)");
+                        ImGui::TextWrapped("Configurable Axis (default: Right Trigger)");
                         ImGui::NextColumn();
                         ImGui::TextWrapped("Steering:");
                         ImGui::NextColumn();
-                        ImGui::TextWrapped("Left Stick (Left/Right)");
+                        ImGui::TextWrapped("Configurable Axis (default: Left Stick Left/Right)");
                         ImGui::NextColumn();
                         ImGui::TextWrapped("Handbrake:");
                         ImGui::NextColumn();
-                        ImGui::TextWrapped("A Button");
+                        ImGui::TextWrapped("Configurable Button (default: A Button)");
                         ImGui::NextColumn();
                         ImGui::Columns(1);
                         // }

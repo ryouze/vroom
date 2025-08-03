@@ -101,6 +101,9 @@ ConfigContext::ConfigContext(const std::string &filename)
             settings::current::anti_aliasing_idx = std::clamp(loaded_anti_aliasing_idx, 0, static_cast<int>(std::size(settings::constants::anti_aliasing_values)) - 1);
 
             settings::current::prefer_gamepad = tbl["prefer_gamepad"].value_or(settings::current::prefer_gamepad);
+            settings::current::gamepad_steering_axis = tbl["gamepad_steering_axis"].value_or(settings::current::gamepad_steering_axis);
+            settings::current::gamepad_throttle_axis = tbl["gamepad_throttle_axis"].value_or(settings::current::gamepad_throttle_axis);
+            settings::current::gamepad_handbrake_button = tbl["gamepad_handbrake_button"].value_or(settings::current::gamepad_handbrake_button);
 
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
@@ -139,6 +142,9 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("mode_idx", settings::current::mode_idx);
     tbl.insert_or_assign("anti_aliasing_idx", settings::current::anti_aliasing_idx);
     tbl.insert_or_assign("prefer_gamepad", settings::current::prefer_gamepad);
+    tbl.insert_or_assign("gamepad_steering_axis", settings::current::gamepad_steering_axis);
+    tbl.insert_or_assign("gamepad_throttle_axis", settings::current::gamepad_throttle_axis);
+    tbl.insert_or_assign("gamepad_handbrake_button", settings::current::gamepad_handbrake_button);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

@@ -33,6 +33,20 @@ inline constexpr const char *anti_aliasing_labels[] = {"Off", "2x", "4x", "8x", 
 inline constexpr unsigned anti_aliasing_values[] = {0, 2, 4, 8, 16};
 
 /**
+ * @brief Gamepad axis names for display in UI.
+ */
+inline constexpr const char *gamepad_axis_labels[] = {
+    "X (Left Stick Left/Right)",   // 0
+    "Y (Left Stick Up/Down)",      // 1
+    "Z (Right Stick Left/Right)",  // 2
+    "R (Right Stick Up/Down)",     // 3
+    "U (Left Trigger)",            // 4
+    "V (Right Trigger)",           // 5
+    "PovX (D-Pad Left/Right)",     // 6
+    "PovY (D-Pad Up/Down)"         // 7
+};
+
+/**
  * @brief Default width in pixels.
  *
  * @note This is only applicable in windowed mode.
@@ -119,6 +133,33 @@ inline int anti_aliasing_idx = 3;
  * @note This defaults to preferring gamepad input.
  */
 inline bool prefer_gamepad = true;
+
+/**
+ * @brief Gamepad axis used for steering (left/right).
+ *
+ * This corresponds to SFML sf::Joystick::Axis enum values.
+ *
+ * @note This defaults to X axis (0) which works for Xbox controllers on macOS.
+ */
+inline int gamepad_steering_axis = 0;  // sf::Joystick::Axis::X
+
+/**
+ * @brief Gamepad axis used for throttle/brake (up/down).
+ *
+ * This corresponds to SFML sf::Joystick::Axis enum values.
+ *
+ * @note This defaults to Y axis (1) which is left stick up/down and works on most controllers.
+ */
+inline int gamepad_throttle_axis = 1;  // sf::Joystick::Axis::Y
+
+/**
+ * @brief Gamepad button used for handbrake.
+ *
+ * This is an index into the SFML joystick buttons.
+ *
+ * @note This defaults to button 0 which is typically the A button on Xbox controllers.
+ */
+inline int gamepad_handbrake_button = 0;
 
 }  // namespace current
 
