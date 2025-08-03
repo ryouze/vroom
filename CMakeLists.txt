@@ -98,7 +98,7 @@ add_library(${PROJECT_NAME}-lib STATIC
   src/core/platform/posix.cpp
   src/core/platform/windows.cpp
   src/core/widgets.cpp
-  #src/core/window.cpp
+  src/core/window.cpp
   src/core/world.cpp
   src/game/entities.cpp
 )
