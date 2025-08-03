@@ -92,13 +92,13 @@ add_library(${PROJECT_NAME}-lib STATIC
   # find src -name "*.cpp" ! -name "main.cpp" | sort
   src/app.cpp
   src/assets/textures.cpp
+  src/core/backend.cpp
   src/core/gamepad.cpp
   src/core/imgui_sfml_ctx.cpp
   src/core/io.cpp
   src/core/platform/posix.cpp
   src/core/platform/windows.cpp
   src/core/widgets.cpp
-  src/core/window.cpp
   src/core/world.cpp
   src/game/entities.cpp
 )

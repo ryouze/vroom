@@ -1,5 +1,5 @@
 /**
- * @file window.hpp
+ * @file backend.hpp
  *
  * @brief SFML window abstraction.
  */
@@ -11,14 +11,14 @@
 
 #include <SFML/Graphics.hpp>
 
-namespace core::window {
+namespace core::backend {
 
 /**
- * @brief SFML window abstraction class.
+ * @brief SFML window abstraction class with automatic settings management.
  *
  * On construction, the window is created based on the settings defined in "settings.hpp".
  *
- * The user can modify the settings inside the "settings.hpp" file and then call the "recreate()" method to make this class read these changes and apply them to the window.
+ * @note To apply setting changes at runtime, modify the values in "settings.hpp" and call "recreate()".
  */
 class Window {
   public:
@@ -27,11 +27,11 @@ class Window {
     using render_callback_type = std::function<void(sf::RenderWindow &)>;
 
     /**
-     * @brief Construct a new SFML window.
+     * @brief Construct a new SFML window based on current settings.
      *
-     * On construction, the window is created based on the settings defined in "settings.hpp".
+     * This reads configuration from "settings.hpp" and creates the window with appropriate video mode, anti-aliasing, frame rate settings, and window constraints.
      *
-     * @note If any of these settings change (e.g., resolution, fullscreen mode, vsync, FPS limit), call the "recreate()" method to apply the changes.
+     * @note The window is immediately ready for use. To change settings later, modify values in "settings.hpp" and call "recreate()".
      */
     explicit Window();
 
@@ -40,15 +40,37 @@ class Window {
      */
     ~Window() = default;
 
+    // TODO: Find out why these deleters fail to compile
+
+    // Window(const Window &) = delete;
+    // Window &operator=(const Window &) = delete;
+
+    // Window(Window &&) = default;
+    // Window &operator=(Window &&) = default;
+
     /**
-     * @brief Recreate the window with current settings - resolution, fullscreen mode, vsync, FPS limit, etc.
+     * @brief Recreate the window with current settings from "settings.hpp".
      *
-     * @note This is a simple alias to the internal "create()" method, keeping the code more readable by separating "create" and "recreate" actions.
+     * This closes the existing window and creates a new one with updated configuration.
+     *
+     * @note This causes a brief window flicker during recreation, as the old window is closed and a new one is created.
+     *
+     * @details This is an alias for the "create()" method. The goal is to make the class more intuitive to use.
      */
     void recreate();
 
-    // Get the window instance itself
+    /**
+     * @brief Get direct access to the underlying SFML RenderWindow.
+     *
+     * @return Mutable reference to the SFML RenderWindow instance.
+     */
     [[nodiscard]] sf::RenderWindow &raw() { return this->window_; }
+
+    /**
+     * @brief Get read-only access to the underlying SFML RenderWindow.
+     *
+     * @return Read-only reference to the SFML RenderWindow instance.
+     */
     [[nodiscard]] const sf::RenderWindow &raw() const { return this->window_; }
 
     /**
@@ -64,14 +86,6 @@ class Window {
              const update_callback_type &on_update,
              const render_callback_type &on_render);
 
-    // TODO: Find out why these deleters fail to compile
-
-    // Window(const Window &) = delete;
-    // Window &operator=(const Window &) = delete;
-
-    // Window(Window &&) = default;
-    // Window &operator=(Window &&) = default;
-
     /**
      * @brief Reference to all available fullscreen video modes (resolutions).
      *
@@ -83,19 +97,23 @@ class Window {
     /**
      * @brief Create the SFML window with the current settings.
      *
+     * If the window already exists, it will be closed and recreated with the new settings.
+     *
      * Settings used:
-     * - settings::constants::anti_aliasing_level
+     * - settings::current::anti_aliasing
      * - settings::current::fullscreen
      * - settings::current::mode_idx
+     * - settings::current::vsync
+     * - settings::current::fps_idx
      * - settings::constants::windowed_width
      * - settings::constants::windowed_height
-     *
-     * // TODO: Make sure all the variables used in this method are listed above. Perhaps write a Python script with regex.
+     * - settings::constants::windowed_min_width
+     * - settings::constants::windowed_min_height
      */
     void create();
 
     /**
-     * @brief An instance of the SFML RenderWindow.
+     * @brief The underlying SFML RenderWindow instance.
      *
      * @note This can be accessed using the "raw()" method.
      */
@@ -111,4 +129,4 @@ class Window {
  */
 [[nodiscard]] sf::Vector2f to_vector2f(const sf::Vector2u &vector);
 
-}  // namespace core::window
+}  // namespace core::backend

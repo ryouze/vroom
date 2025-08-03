@@ -18,13 +18,13 @@
 
 #include "app.hpp"
 #include "assets/textures.hpp"
+#include "core/backend.hpp"
 #include "core/colors.hpp"
 #include "core/gamepad.hpp"
 #include "core/imgui_sfml_ctx.hpp"
 #include "core/io.hpp"
 #include "core/states.hpp"
 #include "core/widgets.hpp"
-#include "core/window.hpp"
 #include "core/world.hpp"
 #include "game/entities.hpp"
 #include "generated.hpp"
@@ -64,15 +64,16 @@ void run()
     // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
     core::io::ConfigContext config_context;
 
-    // Create SFML window
-    // This uses the current settings from "settings.hpp", which might've been modified by ConfigContext
-    core::window::Window window;
+    // Create SFML window based on current settings from "settings.hpp"
+    // If they were modified by ConfigContext, the window will indeed use these new settings
+    core::backend::Window window;
+
     // Create RAII context with theme and no INI file
     core::imgui_sfml_ctx::ImGuiContext imgui_context{window.raw()};
 
     // Get window size, update during game loop
     sf::Vector2u window_size_u = window.raw().getSize();
-    sf::Vector2f window_size_f = core::window::to_vector2f(window_size_u);
+    sf::Vector2f window_size_f = core::backend::to_vector2f(window_size_u);
 
     // Setup main camera view and zoom factor
     sf::View camera_view;
@@ -268,7 +269,7 @@ void run()
         // // Window was resized
         // else if (event.is<sf::Event::Resized>()) [[unlikely]] {
         //     // macOS fullscreen fix: query the actual size after resizing
-        //     camera_view.setSize(core::window::to_vector2f(window->getSize()));
+        //     camera_view.setSize(core::backend::to_vector2f(window->getSize()));
         //     camera_view.zoom(camera_zoom_factor);
         // }
 
@@ -284,7 +285,7 @@ void run()
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
         window_size_u = window.raw().getSize();
-        window_size_f = core::window::to_vector2f(window_size_u);
+        window_size_f = core::backend::to_vector2f(window_size_u);
 
         // Currently selected vehicle
         game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];

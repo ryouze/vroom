@@ -1,5 +1,5 @@
 /**
- * @file window.cpp
+ * @file backend.cpp
  */
 
 #include <algorithm>  // for std::min
@@ -10,11 +10,11 @@
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
 
+#include "backend.hpp"
 #include "generated.hpp"
 #include "settings.hpp"
-#include "window.hpp"
 
-namespace core::window {
+namespace core::backend {
 
 Window::Window()
 {
@@ -135,4 +135,4 @@ sf::Vector2f to_vector2f(const sf::Vector2u &vector)
     return {static_cast<float>(vector.x), static_cast<float>(vector.y)};
 }
 
-}  // namespace core::window
+}  // namespace core::backend
