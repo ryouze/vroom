@@ -103,13 +103,15 @@ class Gamepad {
     [[nodiscard]] GamepadInput get_input() const;
 
     /**
-     * @brief Get raw axis value for display purposes.
+     * @brief Get processed axis value for display purposes.
+     *
+     * This applies the same processing as get_input() including deadzone and inversion.
      *
      * @param axis_index Axis index (0-7).
      *
-     * @return Raw axis value (-100.0 to 100.0) or 0.0 if axis not available.
+     * @return Processed axis value (-1.0 to 1.0) or 0.0 if axis not available.
      */
-    [[nodiscard]] float get_raw_axis_value(int axis_index) const;
+    [[nodiscard]] float get_processed_axis_value(int axis_index) const;
 
     /**
      * @brief Check if a specific button is pressed.

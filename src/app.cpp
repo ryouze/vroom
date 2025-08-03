@@ -429,6 +429,8 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Controls")) {
+                        ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
+
                         // Display connected controller name if gamepad is available
                         ImGui::SeparatorText("Current Input Device");
 
@@ -479,6 +481,10 @@ void run()
                             ImGui::Text("(Not available)");
                         }
 
+                        if (ImGui::Checkbox("Invert Steering", &settings::current::gamepad_invert_steering)) {
+                            // Setting is automatically updated by the checkbox
+                        }
+
                         if (ImGui::Combo("Throttle/Brake Axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
                             // Setting is automatically updated by the combo
                         }
@@ -487,6 +493,10 @@ void run()
                         if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
                             ImGui::SameLine();
                             ImGui::Text("(Not available)");
+                        }
+
+                        if (ImGui::Checkbox("Invert Throttle/Brake", &settings::current::gamepad_invert_throttle)) {
+                            // Setting is automatically updated by the checkbox
                         }
 
                         ImGui::SliderInt("Handbrake Button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d");
@@ -500,8 +510,8 @@ void run()
                         // Live feedback when controller is connected
                         if (gamepad_info.connected) {
                             ImGui::SeparatorText("Live Input Values");
-                            ImGui::Text("Steering: %.2f", static_cast<double>(gamepad.get_raw_axis_value(settings::current::gamepad_steering_axis)));
-                            ImGui::Text("Throttle/Brake: %.2f", static_cast<double>(gamepad.get_raw_axis_value(settings::current::gamepad_throttle_axis)));
+                            ImGui::Text("Steering: %.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
+                            ImGui::Text("Throttle/Brake: %.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
                             ImGui::Text("Handbrake: %s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "Pressed" : "Released");
 
                             // Configuration status
@@ -509,28 +519,24 @@ void run()
                             ImGui::Text("Controller usable: %s", gamepad_available ? "Yes" : "No");
                         }
 
-                        ImGui::Spacing();
-
-                        // if (gamepad_available) {
-                        ImGui::SeparatorText("Gamepad Controls");
-                        ImGui::Columns(2, "gamepad_controls", false);
+                        ImGui::SeparatorText("Control Reference");
+                        ImGui::Columns(2, "controls_ref", false);
                         ImGui::TextWrapped("Gas/Brake:");
                         ImGui::NextColumn();
-                        ImGui::TextWrapped("Configurable Axis (default: Right Trigger)");
+                        ImGui::TextWrapped("Configurable Axis");
                         ImGui::NextColumn();
                         ImGui::TextWrapped("Steering:");
                         ImGui::NextColumn();
-                        ImGui::TextWrapped("Configurable Axis (default: Left Stick Left/Right)");
+                        ImGui::TextWrapped("Configurable Axis");
                         ImGui::NextColumn();
                         ImGui::TextWrapped("Handbrake:");
                         ImGui::NextColumn();
-                        ImGui::TextWrapped("Configurable Button (default: A Button)");
+                        ImGui::TextWrapped("Configurable Button");
                         ImGui::NextColumn();
                         ImGui::Columns(1);
-                        // }
-                        // else {
+
                         ImGui::SeparatorText("Keyboard Controls");
-                        ImGui::Columns(2, "keyboard_controls", false);
+                        ImGui::Columns(2, "keyboard_ref", false);
                         ImGui::TextWrapped("Gas:");
                         ImGui::NextColumn();
                         ImGui::TextWrapped("Up Arrow");
@@ -552,13 +558,11 @@ void run()
                         ImGui::TextWrapped("ESC");
                         ImGui::NextColumn();
                         ImGui::Columns(1);
-                        // }
 
-                        // ImGui::Spacing();
                         ImGui::Separator();
-
                         ImGui::TextWrapped("Note: ESC key always works to pause the game regardless of input preference.");
 
+                        ImGui::PopItemWidth();
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Graphics")) {

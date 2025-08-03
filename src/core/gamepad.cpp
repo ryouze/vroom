@@ -61,13 +61,20 @@ GamepadInput Gamepad::get_input() const
     // Get steering input
     if (sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_steering_axis))) {
         const float raw_steering = sf::Joystick::getAxisPosition(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_steering_axis));
-        input.steering = apply_deadzone(std::clamp(raw_steering / 100.0f, -1.0f, 1.0f));
+        float normalized_steering = std::clamp(raw_steering / 100.0f, -1.0f, 1.0f);
+        if (settings::current::gamepad_invert_steering) {
+            normalized_steering = -normalized_steering;
+        }
+        input.steering = apply_deadzone(normalized_steering);
     }
 
     // Get throttle/brake input
     if (sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_throttle_axis))) {
         const float raw_throttle = sf::Joystick::getAxisPosition(this->controller_id_, static_cast<sf::Joystick::Axis>(settings::current::gamepad_throttle_axis));
-        const float normalized_throttle = std::clamp(-raw_throttle / 100.0f, -1.0f, 1.0f);  // Flip and normalize
+        float normalized_throttle = std::clamp(-raw_throttle / 100.0f, -1.0f, 1.0f);  // Flip and normalize
+        if (settings::current::gamepad_invert_throttle) {
+            normalized_throttle = -normalized_throttle;
+        }
 
         if (normalized_throttle > 0.0f) {
             input.throttle = apply_deadzone(normalized_throttle);
@@ -85,13 +92,24 @@ GamepadInput Gamepad::get_input() const
     return input;
 }
 
-float Gamepad::get_raw_axis_value(const int axis_index) const
+float Gamepad::get_processed_axis_value(const int axis_index) const
 {
     if (!sf::Joystick::isConnected(this->controller_id_) || !sf::Joystick::hasAxis(this->controller_id_, static_cast<sf::Joystick::Axis>(axis_index))) {
         return 0.0f;
     }
 
-    return sf::Joystick::getAxisPosition(this->controller_id_, static_cast<sf::Joystick::Axis>(axis_index));
+    const float raw_value = sf::Joystick::getAxisPosition(this->controller_id_, static_cast<sf::Joystick::Axis>(axis_index));
+    float normalized_value = std::clamp(raw_value / 100.0f, -1.0f, 1.0f);
+
+    // Apply inversion based on axis type
+    if (axis_index == settings::current::gamepad_steering_axis && settings::current::gamepad_invert_steering) {
+        normalized_value = -normalized_value;
+    }
+    else if (axis_index == settings::current::gamepad_throttle_axis && settings::current::gamepad_invert_throttle) {
+        normalized_value = -normalized_value;
+    }
+
+    return apply_deadzone(normalized_value);
 }
 
 bool Gamepad::is_button_pressed(const int button_index) const

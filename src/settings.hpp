@@ -161,6 +161,24 @@ inline int gamepad_throttle_axis = 1;  // sf::Joystick::Axis::Y
  */
 inline int gamepad_handbrake_button = 0;
 
+/**
+ * @brief Whether to invert the steering axis.
+ *
+ * If true, the steering axis will be inverted (left becomes right and vice versa).
+ *
+ * @note This defaults to false.
+ */
+inline bool gamepad_invert_steering = false;
+
+/**
+ * @brief Whether to invert the throttle/brake axis.
+ *
+ * If true, the throttle/brake axis will be inverted.
+ *
+ * @note This defaults to false.
+ */
+inline bool gamepad_invert_throttle = false;
+
 }  // namespace current
 
 }  // namespace settings

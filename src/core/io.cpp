@@ -104,6 +104,8 @@ ConfigContext::ConfigContext(const std::string &filename)
             settings::current::gamepad_steering_axis = tbl["gamepad_steering_axis"].value_or(settings::current::gamepad_steering_axis);
             settings::current::gamepad_throttle_axis = tbl["gamepad_throttle_axis"].value_or(settings::current::gamepad_throttle_axis);
             settings::current::gamepad_handbrake_button = tbl["gamepad_handbrake_button"].value_or(settings::current::gamepad_handbrake_button);
+            settings::current::gamepad_invert_steering = tbl["gamepad_invert_steering"].value_or(settings::current::gamepad_invert_steering);
+            settings::current::gamepad_invert_throttle = tbl["gamepad_invert_throttle"].value_or(settings::current::gamepad_invert_throttle);
 
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
@@ -145,6 +147,8 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("gamepad_steering_axis", settings::current::gamepad_steering_axis);
     tbl.insert_or_assign("gamepad_throttle_axis", settings::current::gamepad_throttle_axis);
     tbl.insert_or_assign("gamepad_handbrake_button", settings::current::gamepad_handbrake_button);
+    tbl.insert_or_assign("gamepad_invert_steering", settings::current::gamepad_invert_steering);
+    tbl.insert_or_assign("gamepad_invert_throttle", settings::current::gamepad_invert_throttle);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {
