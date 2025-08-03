@@ -2,6 +2,8 @@
  * @file io.cpp
  */
 
+#include <algorithm>   // for std::clamp, std::max
+#include <array>       // for std::size
 #include <cstdlib>     // for std::getenv
 #include <exception>   // for std::exception
 #include <filesystem>  // for std::filesystem
@@ -85,9 +87,19 @@ ConfigContext::ConfigContext(const std::string &filename)
             const toml::table tbl = toml::parse_file(this->path_.string());
             settings::current::fullscreen = tbl["fullscreen"].value_or(settings::current::fullscreen);
             settings::current::vsync = tbl["vsync"].value_or(settings::current::vsync);
-            settings::current::fps_idx = tbl["fps_idx"].value_or(settings::current::fps_idx);
-            settings::current::mode_idx = tbl["mode_idx"].value_or(settings::current::mode_idx);
-            settings::current::anti_aliasing_idx = tbl["anti_aliasing_idx"].value_or(settings::current::anti_aliasing_idx);
+
+            // Clamp fps_idx to valid range [0, size-1] to prevent out-of-bounds access
+            const int loaded_fps_idx = tbl["fps_idx"].value_or(settings::current::fps_idx);
+            settings::current::fps_idx = std::clamp(loaded_fps_idx, 0, static_cast<int>(std::size(settings::constants::fps_values)) - 1);
+
+            // Clamp mode_idx to be non-negative (upper bound is checked in backend.cpp)
+            const int loaded_mode_idx = tbl["mode_idx"].value_or(settings::current::mode_idx);
+            settings::current::mode_idx = std::max(loaded_mode_idx, 0);
+
+            // Clamp anti_aliasing_idx to valid range [0, size-1] to prevent out-of-bounds access
+            const int loaded_anti_aliasing_idx = tbl["anti_aliasing_idx"].value_or(settings::current::anti_aliasing_idx);
+            settings::current::anti_aliasing_idx = std::clamp(loaded_anti_aliasing_idx, 0, static_cast<int>(std::size(settings::constants::anti_aliasing_values)) - 1);
+
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
