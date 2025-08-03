@@ -100,6 +100,8 @@ ConfigContext::ConfigContext(const std::string &filename)
             const int loaded_anti_aliasing_idx = tbl["anti_aliasing_idx"].value_or(settings::current::anti_aliasing_idx);
             settings::current::anti_aliasing_idx = std::clamp(loaded_anti_aliasing_idx, 0, static_cast<int>(std::size(settings::constants::anti_aliasing_values)) - 1);
 
+            settings::current::prefer_gamepad = tbl["prefer_gamepad"].value_or(settings::current::prefer_gamepad);
+
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -136,6 +138,7 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("fps_idx", settings::current::fps_idx);
     tbl.insert_or_assign("mode_idx", settings::current::mode_idx);
     tbl.insert_or_assign("anti_aliasing_idx", settings::current::anti_aliasing_idx);
+    tbl.insert_or_assign("prefer_gamepad", settings::current::prefer_gamepad);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

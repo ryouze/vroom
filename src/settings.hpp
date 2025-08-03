@@ -111,6 +111,15 @@ inline int mode_idx = 0;
  */
 inline int anti_aliasing_idx = 3;
 
+/**
+ * @brief Whether to prefer gamepad input over keyboard when both are available.
+ *
+ * If true, gamepad input will be used when available. If false, keyboard input will be used even if gamepad is connected.
+ *
+ * @note This defaults to preferring gamepad input.
+ */
+inline bool prefer_gamepad = true;
+
 }  // namespace current
 
 }  // namespace settings

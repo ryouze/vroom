@@ -296,7 +296,7 @@ void run()
 
         if (current_state == core::states::GameState::Playing) [[likely]] {
             game::entities::CarInput player_input = {};
-            if (gamepad_available) {
+            if (gamepad_available && settings::current::prefer_gamepad) {
                 // SPDLOG_DEBUG("Controller connected, using gamepad input!");
                 const float gamepad_throttle = core::gamepad::get_throttle();
                 player_input.throttle = (gamepad_throttle > 0.0f) ? gamepad_throttle : 0.0f;
@@ -433,6 +433,16 @@ void run()
                             ImGui::Text("Keyboard");
                         }
 
+                        ImGui::SeparatorText("Input Preference");
+
+                        if (ImGui::Checkbox("Prefer Gamepad (when available)", &settings::current::prefer_gamepad)) {
+                            // Setting is automatically updated by the checkbox
+                        }
+
+                        if (!gamepad_available) {
+                            ImGui::TextWrapped("No gamepad currently connected. The preference will take effect when a gamepad is connected.");
+                        }
+
                         ImGui::Spacing();
 
                         // if (gamepad_available) {
@@ -481,7 +491,7 @@ void run()
                         // ImGui::Spacing();
                         ImGui::Separator();
 
-                        ImGui::TextWrapped("Note: If a controller is connected, keyboard input is ignored, except for ESC key to pause the game.");
+                        ImGui::TextWrapped("Note: ESC key always works to pause the game regardless of input preference.");
 
                         ImGui::EndTabItem();
                     }
