@@ -472,49 +472,59 @@ void run()
                                 ImGui::Unindent();
                             }
 
-                            // Steering Configuration
-                            ImGui::Text("Steering:");
-                            ImGui::SameLine(120);
-                            if (ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                                // Setting automatically updated
-                            }
-                            ImGui::SameLine();
-                            if (ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering)) {
-                                // Setting automatically updated
-                            }
-                            if (gamepad_info.connected && !gamepad_info.has_configured_steering_axis) {
-                                ImGui::SameLine();
-                                ImGui::Text("Unavailable");
-                            }
+                            if (ImGui::BeginTable("gamepad_config", 3, ImGuiTableFlags_SizingStretchProp)) {
+                                ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+                                ImGui::TableSetupColumn("Binding", ImGuiTableColumnFlags_WidthStretch);
+                                ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthStretch);
 
-                            // Throttle/Brake Configuration
-                            ImGui::Text("Throttle/Brake:");
-                            ImGui::SameLine(120);
-                            if (ImGui::Combo("##throttle_axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                                // Setting automatically updated
-                            }
-                            ImGui::SameLine();
-                            if (ImGui::Checkbox("Invert##throttle", &settings::current::gamepad_invert_throttle)) {
-                                // Setting automatically updated
-                            }
-                            if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
+                                // Steering
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Steering");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 80.f);
+                                ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                ImGui::PopItemWidth();
                                 ImGui::SameLine();
-                                ImGui::Text("Unavailable");
-                            }
+                                ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering);
+                                ImGui::TableSetColumnIndex(2);
+                                if (gamepad_info.connected && !gamepad_info.has_configured_steering_axis) {
+                                    ImGui::Text("Unavailable");
+                                }
 
-                            // Handbrake Configuration
-                            ImGui::Text("Handbrake:");
-                            ImGui::SameLine(120);
-                            if (ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d")) {
-                                // Setting automatically updated
-                            }
-                            if (gamepad_info.connected && !gamepad_info.has_configured_handbrake_button) {
+                                // Throttle/Brake
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Throttle/Brake");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 80.f);
+                                ImGui::Combo("##throttle_axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                ImGui::PopItemWidth();
                                 ImGui::SameLine();
-                                ImGui::Text("Unavailable");
+                                ImGui::Checkbox("Invert##throttle", &settings::current::gamepad_invert_throttle);
+                                ImGui::TableSetColumnIndex(2);
+                                if (gamepad_info.connected && !gamepad_info.has_configured_throttle_axis) {
+                                    ImGui::Text("Unavailable");
+                                }
+
+                                // Handbrake
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("Handbrake");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::PushItemWidth(-1);
+                                ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d");
+                                ImGui::PopItemWidth();
+                                ImGui::TableSetColumnIndex(2);
+                                if (gamepad_info.connected && !gamepad_info.has_configured_handbrake_button) {
+                                    ImGui::Text("Unavailable");
+                                }
+
+                                ImGui::EndTable();
                             }
                         }
 
-                        // Live input display
+                        // Live Input Display
                         if (gamepad_info.connected) {
                             if (ImGui::BeginTable("live_input", 3, ImGuiTableFlags_SizingStretchSame)) {
                                 ImGui::TableSetupColumn("Steering");
