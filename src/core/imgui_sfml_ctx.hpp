@@ -6,10 +6,6 @@
 
 #pragma once
 
-#include <format>      // for std::format
-#include <functional>  // for std::function
-#include <string>      // for std::string
-
 #include <SFML/Graphics.hpp>
 
 namespace core::imgui_sfml_ctx {

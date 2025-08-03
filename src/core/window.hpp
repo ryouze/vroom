@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <SFML/Graphics.hpp>
+#include <functional>  // for std::function
+#include <vector>      // for std::vector
 
-#include "generated.hpp"
-#include "settings.hpp"
+#include <SFML/Graphics.hpp>
 
 namespace core::window {
 

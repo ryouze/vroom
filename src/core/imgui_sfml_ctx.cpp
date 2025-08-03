@@ -2,7 +2,6 @@
  * @file imgui_sfml_ctx.cpp
  */
 
-#include <algorithm>  // for std::min
 #include <stdexcept>  // for std::runtime_error
 
 #include <SFML/Graphics.hpp>

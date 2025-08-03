@@ -3,7 +3,9 @@
  */
 
 #include <algorithm>  // for std::min
-#include <stdexcept>  // for std::runtime_error
+#include <cstddef>    // for std::size_t
+#include <format>     // for std::format
+#include <string>     // for std::string
 
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
