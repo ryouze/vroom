@@ -61,6 +61,7 @@ void run()
     // - settings::current::vsync
     // - settings::current::fps_idx
     // - settings::current::mode_idx
+    // - settings::current::anti_aliasing_idx
     // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
     core::io::ConfigContext config_context;
 
@@ -492,7 +493,7 @@ void run()
                         ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
 #endif
 
-                        ImGui::SeparatorText("Display Mode");
+                        ImGui::SeparatorText("Display");
                         if (ImGui::Checkbox("Fullscreen", &settings::current::fullscreen)) {
                             window.recreate();
                         }
@@ -515,6 +516,10 @@ void run()
                         ImGui::TextWrapped("Note: macOS only supports borderless fullscreen mode");
 #endif
                         ImGui::EndDisabled();
+
+                        if (ImGui::Combo("Anti-Aliasing", &settings::current::anti_aliasing_idx, settings::constants::anti_aliasing_labels, IM_ARRAYSIZE(settings::constants::anti_aliasing_labels))) {
+                            window.recreate();
+                        }
 
                         ImGui::SeparatorText("Frame Rate");
                         if (ImGui::Checkbox("V-Sync", &settings::current::vsync)) {

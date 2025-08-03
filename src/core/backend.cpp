@@ -48,8 +48,8 @@ void Window::run(const event_callback_type &on_event,
 
 void Window::create()
 {
-    // Create context settings with the default 8x anti-aliasing level
-    const sf::ContextSettings settings{.antiAliasingLevel = settings::current::anti_aliasing};
+    // Create context settings with the current anti-aliasing level
+    const sf::ContextSettings settings{.antiAliasingLevel = settings::constants::anti_aliasing_values[settings::current::anti_aliasing_idx]};
     SPDLOG_DEBUG("Created context settings with '{}' anti-aliasing level", settings.antiAliasingLevel);
 
     // Create the window title based on the project name and version

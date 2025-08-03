@@ -43,7 +43,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ```md
 **Critical**:
 - Add more settings to `settings.hpp`.
-  - For example, add anti-aliasing.
 
 **Current**:
 - Allow user to change between keyboard and gamepad in the settings menu if a gamepad is connected.

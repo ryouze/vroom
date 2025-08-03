@@ -23,6 +23,16 @@ inline constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "16
 inline constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
 
 /**
+ * @brief Available anti-aliasing level labels for display in UI.
+ */
+inline constexpr const char *anti_aliasing_labels[] = {"Off", "2x", "4x", "8x", "16x"};
+
+/**
+ * @brief Available anti-aliasing level values.
+ */
+inline constexpr unsigned anti_aliasing_values[] = {0, 2, 4, 8, 16};
+
+/**
  * @brief Default width in pixels.
  *
  * @note This is only applicable in windowed mode.
@@ -77,7 +87,7 @@ inline bool vsync = false;
 /**
  * @brief Frame per second (FPS) limit index for the game.
  *
- * If vsync is enabled, this value is ignored. This is an index into the fps_values array.
+ * If vsync is enabled, this value is ignored. This is an index into the "fps_values" array.
  *
  * @note This defaults to 144 FPS (index 4).
  */
@@ -93,11 +103,13 @@ inline int fps_idx = 4;
 inline int mode_idx = 0;
 
 /**
- * @brief Anti-aliasing level.
+ * @brief Anti-aliasing level index.
  *
- * @note This defaults to 8x anti-aliasing.
+ * This is an index into the "anti_aliasing_values" array.
+ *
+ * @note This defaults to 8x anti-aliasing (index 3).
  */
-inline unsigned anti_aliasing = 8;
+inline int anti_aliasing_idx = 3;
 
 }  // namespace current
 

@@ -87,6 +87,7 @@ ConfigContext::ConfigContext(const std::string &filename)
             settings::current::vsync = tbl["vsync"].value_or(settings::current::vsync);
             settings::current::fps_idx = tbl["fps_idx"].value_or(settings::current::fps_idx);
             settings::current::mode_idx = tbl["mode_idx"].value_or(settings::current::mode_idx);
+            settings::current::anti_aliasing_idx = tbl["anti_aliasing_idx"].value_or(settings::current::anti_aliasing_idx);
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -122,6 +123,7 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("vsync", settings::current::vsync);
     tbl.insert_or_assign("fps_idx", settings::current::fps_idx);
     tbl.insert_or_assign("mode_idx", settings::current::mode_idx);
+    tbl.insert_or_assign("anti_aliasing_idx", settings::current::anti_aliasing_idx);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

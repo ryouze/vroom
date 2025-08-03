@@ -100,7 +100,7 @@ class Window {
      * If the window already exists, it will be closed and recreated with the new settings.
      *
      * Settings used:
-     * - settings::current::anti_aliasing
+     * - settings::current::anti_aliasing_idx
      * - settings::current::fullscreen
      * - settings::current::mode_idx
      * - settings::current::vsync
