@@ -119,12 +119,18 @@ class Window {
     using render_callback_type = std::function<void(sf::RenderWindow &)>;
 
     /**
-     * @brief Construct window with settings from the centralized configuration.
+     * @brief Construct window using settings from the centralized configuration.
      *
-     * @details This creates window in the state specified by the current settings.
-     * The window will use configured resolution for windowed mode or desktop mode for fullscreen.
+     * The window will be created with the current settings (fullscreen/windowed state, resolution, vsync, fps) from settings::current.
      */
     explicit Window();
+
+    /**
+     * @brief Initialize or reinitialize the window with current settings.
+     *
+     * This method handles both initial window creation and applying changes from the centralized configuration. It will recreate the window if necessary to apply the current settings properly.
+     */
+    void initialize_with_current_settings();
 
     // Default destructor
     ~Window() = default;
@@ -181,6 +187,13 @@ class Window {
     void apply_current_settings();
 
     /**
+     * @brief Get all available fullscreen video modes.
+     *
+     * @return Vector of available video modes sorted by resolution (best first).
+     */
+    [[nodiscard]] static std::vector<sf::VideoMode> get_available_modes();
+
+    /**
      * @brief Run the main application loop with provided callbacks.
      *
      * @param on_event Callback function for handling SFML events.
@@ -202,9 +215,17 @@ class Window {
   private:
     void create_window(const sf::VideoMode &mode,
                        const sf::State state);
-    void recreate_window(const sf::VideoMode &mode,
-                         const sf::State state);
     void apply_sync_settings();
+
+    /**
+     * @brief Get the video mode that should be used for the current settings.
+     *
+     * For fullscreen: returns the mode at settings::current::resolution_idx or desktop mode as fallback.
+     * For windowed: returns the windowed resolution from settings.
+     *
+     * @return The appropriate video mode for current settings.
+     */
+    [[nodiscard]] sf::VideoMode get_video_mode_for_current_settings() const;
 
     // Runtime state; always initialize in initializer list
     bool fullscreen_;

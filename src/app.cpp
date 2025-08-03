@@ -231,7 +231,7 @@ void run()
     };
 
     // Build list of fullscreen modes
-    const auto modes = sf::VideoMode::getFullscreenModes();
+    const auto modes = core::backend::Window::get_available_modes();
     std::vector<std::string> mode_names;
     mode_names.reserve(modes.size());
     for (const auto &mode : modes) {
