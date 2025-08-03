@@ -459,28 +459,22 @@ void run()
 
                             // Available axes info (compact)
                             if (gamepad_info.connected && !gamepad_info.available_axes.empty()) {
-                                ImGui::Text("Available axes: ");
-                                ImGui::SameLine();
-                                for (std::size_t i = 0; i < gamepad_info.available_axes.size(); ++i) {
-                                    const int axis = gamepad_info.available_axes[i];
-                                    if (i > 0) {
-                                        ImGui::SameLine();
-                                        ImGui::Text(", ");
-                                        ImGui::SameLine();
-                                    }
+                                ImGui::Text("Available axes:");
+                                ImGui::Indent();
+                                for (const int axis : gamepad_info.available_axes) {
                                     if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
-                                        ImGui::Text("%s", settings::constants::gamepad_axis_labels[axis]);
+                                        ImGui::BulletText("%s", settings::constants::gamepad_axis_labels[axis]);
                                     }
                                     else {
-                                        ImGui::Text("Axis %d", axis);
+                                        ImGui::BulletText("Axis %d", axis);
                                     }
                                 }
+                                ImGui::Unindent();
                             }
 
                             // Steering Configuration
                             ImGui::Text("Steering:");
                             ImGui::SameLine(120);
-                            ImGui::SetNextItemWidth(150);
                             if (ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
                                 // Setting automatically updated
                             }
@@ -496,7 +490,6 @@ void run()
                             // Throttle/Brake Configuration
                             ImGui::Text("Throttle/Brake:");
                             ImGui::SameLine(120);
-                            ImGui::SetNextItemWidth(150);
                             if (ImGui::Combo("##throttle_axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
                                 // Setting automatically updated
                             }
@@ -512,7 +505,6 @@ void run()
                             // Handbrake Configuration
                             ImGui::Text("Handbrake:");
                             ImGui::SameLine(120);
-                            ImGui::SetNextItemWidth(150);
                             if (ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d")) {
                                 // Setting automatically updated
                             }
@@ -524,20 +516,16 @@ void run()
 
                         // Live Input Display
                         if (gamepad_info.connected) {
-                            ImGui::SeparatorText("Live Input");
-                            ImGui::Columns(4, "live_input", false);
+                            ImGui::Columns(3, "live_input", false);
                             ImGui::SetColumnWidth(0, 80);
                             ImGui::SetColumnWidth(1, 80);
                             ImGui::SetColumnWidth(2, 80);
-                            ImGui::SetColumnWidth(3, 100);
 
                             ImGui::Text("Steering");
                             ImGui::NextColumn();
                             ImGui::Text("Throttle");
                             ImGui::NextColumn();
                             ImGui::Text("Handbrake");
-                            ImGui::NextColumn();
-                            ImGui::Text("Status");
                             ImGui::NextColumn();
 
                             ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
@@ -546,66 +534,17 @@ void run()
                             ImGui::NextColumn();
                             ImGui::Text("%s", gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
                             ImGui::NextColumn();
-                            ImGui::TextColored(gamepad_available ? sf::Color{0, 255, 0} : sf::Color{255, 100, 100}, "%s", gamepad_available ? "Ready" : "Error");
-                            ImGui::NextColumn();
+
                             ImGui::Columns(1);
                         }
 
-                        // Controls Reference
-                        ImGui::SeparatorText("Controls Reference");
+                        ImGui::SeparatorText("Keyboard Reference");
 
-                        ImGui::Columns(3, "controls_table", true);
-                        ImGui::SetColumnWidth(0, 100);
-                        ImGui::SetColumnWidth(1, 120);
-                        ImGui::SetColumnWidth(2, 120);
-
-                        ImGui::Text("Action");
-                        ImGui::NextColumn();
-                        ImGui::Text("Keyboard");
-                        ImGui::NextColumn();
-                        ImGui::Text("Gamepad");
-                        ImGui::NextColumn();
-                        ImGui::Separator();
-
-                        ImGui::Text("Accelerate");
-                        ImGui::NextColumn();
-                        ImGui::Text("Up Arrow");
-                        ImGui::NextColumn();
-                        ImGui::Text("Axis (Config)");
-                        ImGui::NextColumn();
-
-                        ImGui::Text("Brake");
-                        ImGui::NextColumn();
-                        ImGui::Text("Down Arrow");
-                        ImGui::NextColumn();
-                        ImGui::Text("Axis (Config)");
-                        ImGui::NextColumn();
-
-                        ImGui::Text("Steer");
-                        ImGui::NextColumn();
-                        ImGui::Text("Left/Right Arrow");
-                        ImGui::NextColumn();
-                        ImGui::Text("Axis (Config)");
-                        ImGui::NextColumn();
-
-                        ImGui::Text("Handbrake");
-                        ImGui::NextColumn();
-                        ImGui::Text("Space");
-                        ImGui::NextColumn();
-                        ImGui::Text("Button (Config)");
-                        ImGui::NextColumn();
-
-                        ImGui::Text("Pause");
-                        ImGui::NextColumn();
-                        ImGui::Text("ESC");
-                        ImGui::NextColumn();
-                        ImGui::Text("ESC");
-                        ImGui::NextColumn();
-
-                        ImGui::Columns(1);
-
-                        ImGui::Spacing();
-                        ImGui::Text("ESC always works regardless of input preference");
+                        ImGui::BulletText("Accelerate: Up Arrow");
+                        ImGui::BulletText("Brake: Down Arrow");
+                        ImGui::BulletText("Steer: Left/Right Arrow");
+                        ImGui::BulletText("Handbrake: Spacebar");
+                        ImGui::BulletText("Pause: ESC");
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
