@@ -42,8 +42,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
-- Add ALL settings to `settings.hpp`, then use them throught the codebase.
-  - The current settings are all over the place, from `backend.hpp` to `io.hpp`, and even in the `world.hpp` file.
+- Add more settings to `settings.hpp`.
+  - For example, add anti-aliasing.
 
 **Current**:
 - Allow user to change between keyboard and gamepad in the settings menu if a gamepad is connected.
