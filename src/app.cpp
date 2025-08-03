@@ -528,7 +528,7 @@ void run()
                         }
 
                         ImGui::BeginDisabled(vsync);
-                        if (ImGui::Combo("FPS Limit", &fps_index, settings::fps::labels, IM_ARRAYSIZE(settings::fps::labels))) {
+                        if (ImGui::Combo("FPS Limit", &fps_index, settings::defaults::fps_labels, IM_ARRAYSIZE(settings::defaults::fps_labels))) {
                             settings::current::fps_idx = fps_index;
                             window.apply_current_settings();
                         }

@@ -63,7 +63,7 @@ sf::VideoMode Window::get_video_mode_for_current_settings() const
         }
     }
     else {
-        const sf::Vector2u windowed_resolution = {settings::defaults::windowed_width, settings::defaults::windowed_height};
+        const sf::Vector2u windowed_resolution = {settings::defaults::windowed_default_width, settings::defaults::windowed_default_height};
         SPDLOG_DEBUG("Using windowed mode '{}x{}'", windowed_resolution.x, windowed_resolution.y);
         return sf::VideoMode{windowed_resolution};
     }
@@ -78,8 +78,8 @@ std::vector<sf::VideoMode> Window::get_available_modes()
 
 void Window::toggle_fullscreen()
 {
-    SPDLOG_DEBUG("Toggling fullscreen mode from '{}' to '{}'", 
-                 settings::current::fullscreen ? "fullscreen" : "windowed", 
+    SPDLOG_DEBUG("Toggling fullscreen mode from '{}' to '{}'",
+                 settings::current::fullscreen ? "fullscreen" : "windowed",
                  settings::current::fullscreen ? "windowed" : "fullscreen");
 
     // Toggle the fullscreen setting
@@ -116,14 +116,14 @@ void Window::create_window(const sf::VideoMode &mode,
     const sf::ContextSettings settings{.antiAliasingLevel = settings::defaults::anti_aliasing_level};
     const std::string window_title = std::format("{} ({})", generated::PROJECT_NAME, generated::PROJECT_VERSION);
     this->window_.create(mode, window_title, state, settings);
-    this->window_.setMinimumSize(sf::Vector2u{settings::defaults::minimum_width, settings::defaults::minimum_height});
+    this->window_.setMinimumSize(sf::Vector2u{settings::defaults::windowed_minimum_width, settings::defaults::windowed_minimum_height});
     this->apply_sync_settings();
     SPDLOG_DEBUG("Window created successfully with anti-aliasing level '{}'", settings::defaults::anti_aliasing_level);
 }
 
 void Window::apply_sync_settings()
 {
-    const unsigned frame_limit = settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)];
+    const unsigned frame_limit = settings::defaults::fps_values[static_cast<std::size_t>(settings::current::fps_idx)];
     SPDLOG_DEBUG("Applying sync settings with V-sync='{}' and frame_limit='{}'", settings::current::vsync, frame_limit);
     this->window_.setVerticalSyncEnabled(settings::current::vsync);
     this->window_.setFramerateLimit(settings::current::vsync ? 0u : frame_limit);
@@ -139,7 +139,7 @@ void Window::apply_current_settings()
 
     SPDLOG_DEBUG("Applied settings: fullscreen={}, vsync={}, fps_idx={} ({}), resolution_idx={}",
                  settings::current::fullscreen, settings::current::vsync, settings::current::fps_idx,
-                 settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)], settings::current::resolution_idx);
+                 settings::defaults::fps_values[static_cast<std::size_t>(settings::current::fps_idx)], settings::current::resolution_idx);
 }
 
 sf::Vector2f to_vector2f(const sf::Vector2u &vector)

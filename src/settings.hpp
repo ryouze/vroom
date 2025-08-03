@@ -13,7 +13,7 @@ namespace defaults {
 /**
  * @brief Whether the game runs in fullscreen or windowed mode.
  *
- * If true, use fullscreen mode, otherwise use windowed mode.
+ * If true, use fullscreen mode, if false, use windowed mode.
  *
  * @note This defaults to fullscreen.
  */
@@ -27,6 +27,16 @@ inline constexpr bool fullscreen = true;
  * @note This defaults to disabled.
  */
 inline constexpr bool vsync = false;
+
+/**
+ * @brief Available FPS limit labels for display in UI.
+ */
+inline constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
+
+/**
+ * @brief Available FPS limit values (0 means unlimited).
+ */
+inline constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
 
 /**
  * @brief Frame per second (FPS) limit index for the game.
@@ -49,22 +59,22 @@ inline constexpr int resolution_idx = 0;
 /**
  * @brief Default windowed resolution width in pixels.
  */
-inline constexpr unsigned windowed_width = 1280;
+inline constexpr unsigned windowed_default_width = 1280;
 
 /**
  * @brief Default windowed resolution height in pixels.
  */
-inline constexpr unsigned windowed_height = 720;
+inline constexpr unsigned windowed_default_height = 720;
 
 /**
  * @brief Minimum window width in pixels.
  */
-inline constexpr unsigned minimum_width = 800;
+inline constexpr unsigned windowed_minimum_width = 800;
 
 /**
  * @brief Minimum window height in pixels.
  */
-inline constexpr unsigned minimum_height = 600;
+inline constexpr unsigned windowed_minimum_height = 600;
 
 /**
  * @brief Anti-aliasing level.
@@ -75,19 +85,6 @@ inline constexpr unsigned anti_aliasing_level = 8;
 
 }  // namespace defaults
 
-namespace fps {
-
-/**
- * @brief Available FPS limit labels for display in UI.
- */
-inline constexpr const char *labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
-
-/**
- * @brief Available FPS limit values (0 means unlimited).
- */
-inline constexpr unsigned values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
-
-}  // namespace fps
 
 namespace current {
 
