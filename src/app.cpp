@@ -487,16 +487,16 @@ void run()
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
-                        bool fullscreen = window.is_fullscreen();
-                        bool vsync = window.is_vsync_enabled();
+                        bool fullscreen = settings::current::fullscreen;
+                        bool vsync = settings::current::vsync;
 
                         // ImGui::SeparatorText("Debug Info");
                         // ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
 
                         ImGui::SeparatorText("Display Mode");
                         if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
-                            window.set_window_state(fullscreen ? core::window::WindowState::Fullscreen : core::window::WindowState::Windowed);
                             settings::current::fullscreen = fullscreen;
+                            window.apply_current_settings();
                         }
 
                         ImGui::BeginDisabled(!fullscreen);
@@ -506,7 +506,7 @@ void run()
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
                                     mode_index = i;
                                     settings::current::resolution_idx = mode_index;
-                                    window.set_window_state(core::window::WindowState::Fullscreen, modes[static_cast<std::size_t>(mode_index)]);
+                                    window.apply_current_settings();
                                 }
                                 if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
@@ -521,16 +521,16 @@ void run()
 
                         ImGui::SeparatorText("Frame Rate");
                         if (ImGui::Checkbox("V-Sync", &vsync)) {
-                            window.set_vsync(vsync);
                             settings::current::vsync = vsync;
+                            window.apply_current_settings();
                             // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
                             fps_index = 8;
                         }
 
                         ImGui::BeginDisabled(vsync);
                         if (ImGui::Combo("FPS Limit", &fps_index, settings::fps::labels, IM_ARRAYSIZE(settings::fps::labels))) {
-                            window.set_fps_limit(settings::fps::values[static_cast<std::size_t>(fps_index)]);
                             settings::current::fps_idx = fps_index;
+                            window.apply_current_settings();
                         }
                         ImGui::EndDisabled();
 

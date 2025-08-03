@@ -14,14 +14,6 @@
 
 namespace core::window {
 
-/**
- * @brief Window display state enumeration.
- */
-enum class WindowState {
-    Fullscreen,
-    Windowed
-};
-
 class Window {
   public:
     using event_callback_type = std::function<void(const sf::Event &)>;
@@ -46,8 +38,6 @@ class Window {
     ~Window() = default;
 
     // Do not put these simple getters/setters in .cpp
-    [[nodiscard]] bool is_fullscreen() const { return this->fullscreen_; }
-    [[nodiscard]] bool is_vsync_enabled() const { return this->vsync_enabled_; }
     [[nodiscard]] sf::RenderWindow &raw() { return this->window_; }
     [[nodiscard]] const sf::RenderWindow &raw() const { return this->window_; }
     [[nodiscard]] sf::Vector2u get_resolution() const { return this->window_.getSize(); }
@@ -60,33 +50,11 @@ class Window {
     void close() { this->window_.close(); }
 
     /**
-     * @brief Set window display state and optionally specify video mode for fullscreen.
+     * @brief Toggle fullscreen mode and reinitialize window with current settings.
      *
-     * @param state Target window state (fullscreen or windowed).
-     * @param mode Video mode to use when switching to fullscreen. Defaults to desktop mode.
-     *
-     * @note When switching to windowed mode, the mode parameter is ignored and the stored windowed resolution is used.
+     * This method toggles between fullscreen and windowed mode using the current settings.
      */
-    void set_window_state(const WindowState state,
-                          const sf::VideoMode &mode = sf::VideoMode::getDesktopMode());
-
-    /**
-     * @brief Set FPS limit and disable V-sync.
-     *
-     * @param fps_limit Target frames per second limit.
-     *
-     * @note Setting an FPS limit will automatically disable V-sync as they are mutually exclusive.
-     */
-    void set_fps_limit(const unsigned fps_limit);
-
-    /**
-     * @brief Enable or disable V-sync.
-     *
-     * @param enable True to enable V-sync, false to disable.
-     *
-     * @note Enabling V-sync will automatically disable any FPS limit as they are mutually exclusive.
-     */
-    void set_vsync(const bool enable);
+    void toggle_fullscreen();
 
     /**
      * @brief Apply current settings from the centralized configuration.
@@ -137,12 +105,6 @@ class Window {
      */
     [[nodiscard]] sf::VideoMode get_video_mode_for_current_settings() const;
 
-    // Runtime state; always initialize in initializer list
-    bool fullscreen_;
-    bool vsync_enabled_;
-    unsigned frame_limit_;
-    sf::Vector2u windowed_resolution_;
-
     sf::RenderWindow window_;
 };
 
@@ -155,4 +117,4 @@ class Window {
  */
 [[nodiscard]] sf::Vector2f to_vector2f(const sf::Vector2u &vector);
 
-}  // namespace core::backend
+}  // namespace core::window

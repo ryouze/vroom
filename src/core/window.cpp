@@ -15,10 +15,6 @@
 namespace core::window {
 
 Window::Window()
-    : fullscreen_(settings::current::fullscreen),
-      vsync_enabled_(settings::current::vsync),
-      frame_limit_(settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)]),
-      windowed_resolution_(settings::defaults::windowed_width, settings::defaults::windowed_height)
 {
     SPDLOG_DEBUG("Initializing window with current settings: fullscreen='{}', vsync='{}', fps_idx='{}', resolution_idx='{}'",
                  settings::current::fullscreen, settings::current::vsync, settings::current::fps_idx, settings::current::resolution_idx);
@@ -31,24 +27,19 @@ void Window::initialize_with_current_settings()
 {
     SPDLOG_DEBUG("Initializing window with current settings");
 
-    // Update internal state to match current settings
-    this->fullscreen_ = settings::current::fullscreen;
-    this->vsync_enabled_ = settings::current::vsync;
-    this->frame_limit_ = settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)];
-
     // Get the appropriate video mode for current settings
     const sf::VideoMode mode = this->get_video_mode_for_current_settings();
-    const sf::State state = this->fullscreen_ ? sf::State::Fullscreen : sf::State::Windowed;
+    const sf::State state = settings::current::fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
 
     // Create or recreate the window
     if (this->window_.isOpen()) {
         SPDLOG_DEBUG("Recreating existing window with mode '{}x{}' in '{}' state",
-                     mode.size.x, mode.size.y, this->fullscreen_ ? "fullscreen" : "windowed");
+                     mode.size.x, mode.size.y, settings::current::fullscreen ? "fullscreen" : "windowed");
         this->window_.close();
     }
     else {
         SPDLOG_DEBUG("Creating new window with mode '{}x{}' in '{}' state",
-                     mode.size.x, mode.size.y, this->fullscreen_ ? "fullscreen" : "windowed");
+                     mode.size.x, mode.size.y, settings::current::fullscreen ? "fullscreen" : "windowed");
     }
 
     this->create_window(mode, state);
@@ -57,7 +48,7 @@ void Window::initialize_with_current_settings()
 
 sf::VideoMode Window::get_video_mode_for_current_settings() const
 {
-    if (this->fullscreen_) {
+    if (settings::current::fullscreen) {
         const auto available_modes = get_available_modes();
         if (!available_modes.empty() && settings::current::resolution_idx >= 0 &&
             settings::current::resolution_idx < static_cast<int>(available_modes.size())) {
@@ -72,8 +63,9 @@ sf::VideoMode Window::get_video_mode_for_current_settings() const
         }
     }
     else {
-        SPDLOG_DEBUG("Using windowed mode '{}x{}'", this->windowed_resolution_.x, this->windowed_resolution_.y);
-        return sf::VideoMode{this->windowed_resolution_};
+        const sf::Vector2u windowed_resolution = {settings::defaults::windowed_width, settings::defaults::windowed_height};
+        SPDLOG_DEBUG("Using windowed mode '{}x{}'", windowed_resolution.x, windowed_resolution.y);
+        return sf::VideoMode{windowed_resolution};
     }
 }
 
@@ -84,53 +76,19 @@ std::vector<sf::VideoMode> Window::get_available_modes()
     return modes;
 }
 
-void Window::set_window_state(const WindowState state,
-                              const sf::VideoMode &mode)
+void Window::toggle_fullscreen()
 {
-    const bool target_fullscreen = (state == WindowState::Fullscreen);
+    SPDLOG_DEBUG("Toggling fullscreen mode from '{}' to '{}'", 
+                 settings::current::fullscreen ? "fullscreen" : "windowed", 
+                 settings::current::fullscreen ? "windowed" : "fullscreen");
 
-    SPDLOG_DEBUG("Setting window state to '{}' with mode '{}x{}'",
-                 target_fullscreen ? "fullscreen" : "windowed", mode.size.x, mode.size.y);
-
-    // Update settings to match the requested change
-    settings::current::fullscreen = target_fullscreen;
-
-    // If switching to fullscreen with a specific mode, find and set the resolution index
-    if (target_fullscreen) {
-        const auto available_modes = get_available_modes();
-        for (int i = 0; i < static_cast<int>(available_modes.size()); ++i) {
-            if (available_modes[static_cast<std::size_t>(i)].size == mode.size) {
-                settings::current::resolution_idx = i;
-                SPDLOG_DEBUG("Set resolution index to '{}' for mode '{}x{}'", i, mode.size.x, mode.size.y);
-                break;
-            }
-        }
-    }
+    // Toggle the fullscreen setting
+    settings::current::fullscreen = !settings::current::fullscreen;
 
     // Apply the changes by reinitializing with current settings
     this->initialize_with_current_settings();
 
-    SPDLOG_DEBUG("Window state changed successfully");
-}
-
-void Window::set_fps_limit(const unsigned fps_limit)
-{
-    SPDLOG_DEBUG("Setting FPS limit to '{}' and disabling V-sync", fps_limit);
-    // Disallow fps limit when vsync is on
-    this->vsync_enabled_ = false;
-    this->frame_limit_ = fps_limit;
-    this->apply_sync_settings();
-}
-
-void Window::set_vsync(const bool enable)
-{
-    SPDLOG_DEBUG("Setting V-sync to '{}' ({})", enable ? "enabled" : "disabled", enable ? "disabling FPS limit" : "keeping current FPS limit");
-    // Disallow vsync when fps limit is set
-    this->vsync_enabled_ = enable;
-    if (this->vsync_enabled_) {
-        this->frame_limit_ = 0;
-    }
-    this->apply_sync_settings();
+    SPDLOG_DEBUG("Fullscreen mode toggled successfully");
 }
 
 void Window::run(const event_callback_type &on_event,
@@ -165,9 +123,10 @@ void Window::create_window(const sf::VideoMode &mode,
 
 void Window::apply_sync_settings()
 {
-    SPDLOG_DEBUG("Applying sync settings with V-sync='{}' and frame_limit='{}'", this->vsync_enabled_, this->frame_limit_);
-    this->window_.setVerticalSyncEnabled(this->vsync_enabled_);
-    this->window_.setFramerateLimit(this->vsync_enabled_ ? 0u : this->frame_limit_);
+    const unsigned frame_limit = settings::fps::values[static_cast<std::size_t>(settings::current::fps_idx)];
+    SPDLOG_DEBUG("Applying sync settings with V-sync='{}' and frame_limit='{}'", settings::current::vsync, frame_limit);
+    this->window_.setVerticalSyncEnabled(settings::current::vsync);
+    this->window_.setFramerateLimit(settings::current::vsync ? 0u : frame_limit);
 }
 
 void Window::apply_current_settings()
