@@ -8,7 +8,53 @@
 
 namespace settings {
 
-namespace defaults {
+namespace constants {
+
+/**
+ * @brief Available FPS limit labels for display in UI.
+ */
+inline constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
+
+/**
+ * @brief Available FPS limit values.
+ *
+ * @note A value of "0" means "unlimited" - the game will run as fast as possible, which will drain the battery quickly on mobile devices.
+ */
+inline constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
+
+/**
+ * @brief Default width in pixels.
+ *
+ * @note This is only applicable in windowed mode.
+ */
+inline constexpr unsigned windowed_width = 1280;
+
+/**
+ * @brief Default height in pixels.
+ *
+ * @note This is only applicable in windowed mode.
+ */
+inline constexpr unsigned windowed_height = 720;
+
+/**
+ * @brief Minimum width in pixels.
+ *
+ * @note This is only applicable in windowed mode.
+ */
+inline constexpr unsigned windowed_min_width = 800;
+
+/**
+ * @brief Minimum height in pixels.
+ *
+ * @note This is only applicable in windowed mode.
+ */
+inline constexpr unsigned windowed_min_height = 600;
+
+}  // namespace constants
+
+namespace current {
+
+// Set mutable settings that can be modified at runtime by a config file or the user via the GUI
 
 /**
  * @brief Whether the game runs in fullscreen or windowed mode.
@@ -17,7 +63,7 @@ namespace defaults {
  *
  * @note This defaults to fullscreen.
  */
-inline constexpr bool fullscreen = true;
+inline bool fullscreen = true;
 
 /**
  * @brief Whether the game uses vertical sync (VSync).
@@ -26,17 +72,7 @@ inline constexpr bool fullscreen = true;
  *
  * @note This defaults to disabled.
  */
-inline constexpr bool vsync = false;
-
-/**
- * @brief Available FPS limit labels for display in UI.
- */
-inline constexpr const char *fps_labels[] = {"30", "60", "90", "120", "144", "165", "240", "360", "Unlimited"};
-
-/**
- * @brief Available FPS limit values (0 means unlimited).
- */
-inline constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0};
+inline bool vsync = false;
 
 /**
  * @brief Frame per second (FPS) limit index for the game.
@@ -45,7 +81,7 @@ inline constexpr unsigned fps_values[] = {30, 60, 90, 120, 144, 165, 240, 360, 0
  *
  * @note This defaults to 144 FPS (index 4).
  */
-inline constexpr int fps_idx = 4;
+inline int fps_idx = 4;
 
 /**
  * @brief Index of the fullscreen resolution.
@@ -54,46 +90,14 @@ inline constexpr int fps_idx = 4;
  *
  * @note This defaults to the best available resolution (0).
  */
-inline constexpr int resolution_idx = 0;
-
-/**
- * @brief Default windowed resolution width in pixels.
- */
-inline constexpr unsigned windowed_default_width = 1280;
-
-/**
- * @brief Default windowed resolution height in pixels.
- */
-inline constexpr unsigned windowed_default_height = 720;
-
-/**
- * @brief Minimum window width in pixels.
- */
-inline constexpr unsigned windowed_minimum_width = 800;
-
-/**
- * @brief Minimum window height in pixels.
- */
-inline constexpr unsigned windowed_minimum_height = 600;
+inline int mode_idx = 0;
 
 /**
  * @brief Anti-aliasing level.
  *
  * @note This defaults to 8x anti-aliasing.
  */
-inline constexpr unsigned anti_aliasing_level = 8;
-
-}  // namespace defaults
-
-
-namespace current {
-
-// Set to default values, but they will be overwritten by the config file or by user
-
-inline bool fullscreen = defaults::fullscreen;
-inline bool vsync = defaults::vsync;
-inline int fps_idx = defaults::fps_idx;
-inline int resolution_idx = defaults::resolution_idx;
+inline unsigned anti_aliasing = 8;
 
 }  // namespace current
 

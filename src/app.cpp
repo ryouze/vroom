@@ -53,24 +53,26 @@ void run()
     // Define initial game state
     core::states::GameState current_state = core::states::GameState::Menu;
 
-    // Create SFML window with sane defaults and ImGui GUI
-    core::window::Window window;                                     // Fullscreen, 144 FPS limit
-    core::imgui_sfml_ctx::ImGuiContext imgui_context{window.raw()};  // RAII context with theme and no INI file
+    // Create a RAII context to load and save settings on scope exit
+    // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
+    // Then, it loads the configuration from a TOML file, creating default values if the file is missing
+    // And it sets the following values in "settings.hpp":
+    // - settings::current::fullscreen
+    // - settings::current::vsync
+    // - settings::current::fps_idx
+    // - settings::current::mode_idx
+    // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
+    core::io::ConfigContext config_context;
+
+    // Create SFML window
+    // This uses the current settings from "settings.hpp", which might've been modified by ConfigContext
+    core::window::Window window;
+    // Create RAII context with theme and no INI file
+    core::imgui_sfml_ctx::ImGuiContext imgui_context{window.raw()};
 
     // Get window size, update during game loop
-    sf::Vector2u window_size_u = window.get_resolution();
+    sf::Vector2u window_size_u = window.raw().getSize();
     sf::Vector2f window_size_f = core::window::to_vector2f(window_size_u);
-
-    // Create a configuration object to load and save settings
-    // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
-    core::io::Config config;
-
-    // Apply the loaded settings to the window
-    window.apply_current_settings();
-
-    // Update window size after potentially changing window state
-    window_size_u = window.get_resolution();
-    window_size_f = core::window::to_vector2f(window_size_u);
 
     // Setup main camera view and zoom factor
     sf::View camera_view;
@@ -232,10 +234,9 @@ void run()
     };
 
     // Build list of fullscreen modes
-    const auto modes = core::window::Window::get_available_modes();
     std::vector<std::string> mode_names;
-    mode_names.reserve(modes.size());
-    for (const auto &mode : modes) {
+    mode_names.reserve(window.available_fullscreen_modes.size());
+    for (const auto &mode : window.available_fullscreen_modes) {
         mode_names.emplace_back(std::format("{}x{} ({}-bit)", mode.size.x, mode.size.y, mode.bitsPerPixel));
     }
 
@@ -245,9 +246,6 @@ void run()
     for (auto &name : mode_names) {
         mode_cstr.emplace_back(name.c_str());
     }
-
-    int mode_index = settings::current::resolution_idx;  // Which resolution is selected
-    int fps_index = settings::current::fps_idx;          // FPS setting from centralized config
 
     // Widgets
     core::widgets::FpsCounter fps_counter{window.raw()};                                          // FPS counter in the top-left corner
@@ -263,7 +261,7 @@ void run()
 
         // Window was closed
         if (event.is<sf::Event::Closed>()) [[unlikely]] {
-            window.close();
+            window.raw().close();
         }
 
         // Note: we no longer need this, because we set the view size and zoom on every frame
@@ -285,7 +283,7 @@ void run()
         fps_counter.update_and_draw(dt);
 
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
-        window_size_u = window.get_resolution();
+        window_size_u = window.raw().getSize();
         window_size_f = core::window::to_vector2f(window_size_u);
 
         // Currently selected vehicle
@@ -330,7 +328,7 @@ void run()
             camera_view.setCenter(vehicle_state.position);
             camera_view.setSize(window_size_f);
             camera_view.zoom(camera_zoom_factor);
-            window.set_view(camera_view);
+            window.raw().setView(camera_view);
             speedometer.update_and_draw(vehicle_state.speed);
             minimap.update_and_draw(dt, vehicle_state.position);
             leaderboard.update_and_draw(collect_leaderboard_data());
@@ -362,7 +360,7 @@ void run()
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Quit", {button_width, 0.f})) {
-                    window.close();
+                    window.raw().close();
                 }
 
                 if (offset > 0.f) {
@@ -487,26 +485,24 @@ void run()
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
                         ImGui::PushItemWidth(-200.f);  // Negative width leaves space for labels
-                        bool fullscreen = settings::current::fullscreen;
-                        bool vsync = settings::current::vsync;
 
-                        // ImGui::SeparatorText("Debug Info");
-                        // ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
+#ifndef NDEBUG
+                        ImGui::SeparatorText("Debug");
+                        ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
+#endif
 
                         ImGui::SeparatorText("Display Mode");
-                        if (ImGui::Checkbox("Fullscreen", &fullscreen)) {
-                            settings::current::fullscreen = fullscreen;
-                            window.apply_current_settings();
+                        if (ImGui::Checkbox("Fullscreen", &settings::current::fullscreen)) {
+                            window.recreate();
                         }
 
-                        ImGui::BeginDisabled(!fullscreen);
-                        if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<std::size_t>(mode_index)])) {
-                            for (int i = 0; i < static_cast<int>(modes.size()); ++i) {
-                                const bool is_selected = (i == mode_index);
+                        ImGui::BeginDisabled(!settings::current::fullscreen);
+                        if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<std::size_t>(settings::current::mode_idx)])) {
+                            for (int i = 0; i < static_cast<int>(window.available_fullscreen_modes.size()); ++i) {
+                                const bool is_selected = (i == settings::current::mode_idx);
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
-                                    mode_index = i;
-                                    settings::current::resolution_idx = mode_index;
-                                    window.apply_current_settings();
+                                    settings::current::mode_idx = i;
+                                    window.recreate();
                                 }
                                 if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
@@ -520,17 +516,15 @@ void run()
                         ImGui::EndDisabled();
 
                         ImGui::SeparatorText("Frame Rate");
-                        if (ImGui::Checkbox("V-Sync", &vsync)) {
-                            settings::current::vsync = vsync;
-                            window.apply_current_settings();
+                        if (ImGui::Checkbox("V-Sync", &settings::current::vsync)) {
+                            window.recreate();
                             // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
-                            fps_index = 8;
+                            settings::current::fps_idx = 8;
                         }
 
-                        ImGui::BeginDisabled(vsync);
-                        if (ImGui::Combo("FPS Limit", &fps_index, settings::defaults::fps_labels, IM_ARRAYSIZE(settings::defaults::fps_labels))) {
-                            settings::current::fps_idx = fps_index;
-                            window.apply_current_settings();
+                        ImGui::BeginDisabled(settings::current::vsync);
+                        if (ImGui::Combo("FPS Limit", &settings::current::fps_idx, settings::constants::fps_labels, IM_ARRAYSIZE(settings::constants::fps_labels))) {
+                            window.recreate();
                         }
                         ImGui::EndDisabled();
 
@@ -632,7 +626,7 @@ void run()
                 }
 
                 if (ImGui::Button("Quit", {button_width, 0.0f})) {
-                    window.close();
+                    window.raw().close();
                 }
 
                 ImGui::Unindent(indent_amount);
@@ -666,7 +660,7 @@ void run()
         rt.display();
     };
 
-    window.request_focus();  // Ask OS to switch to this window
+    window.raw().requestFocus();  // Ask OS to switch to this window
 
     window.run(on_event, on_update, on_render);  // Start the main loop
 }

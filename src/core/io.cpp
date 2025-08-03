@@ -65,7 +65,7 @@ std::filesystem::path get_application_storage_location(const std::string &applic
     }
 }
 
-Config::Config(const std::string &filename)
+ConfigContext::ConfigContext(const std::string &filename)
     : path_(get_application_storage_location(generated::PROJECT_NAME) / filename)
 {
     SPDLOG_DEBUG("Created config path: '{}'", this->path_.string());
@@ -83,10 +83,10 @@ Config::Config(const std::string &filename)
         // If the file exists, load it, otherwise create it with defaults
         if (std::filesystem::exists(this->path_)) {
             const toml::table tbl = toml::parse_file(this->path_.string());
-            settings::current::fullscreen = tbl["fullscreen"].value_or(settings::defaults::fullscreen);
-            settings::current::vsync = tbl["vsync"].value_or(settings::defaults::vsync);
-            settings::current::fps_idx = tbl["fps_idx"].value_or(settings::defaults::fps_idx);
-            settings::current::resolution_idx = tbl["resolution_idx"].value_or(settings::defaults::resolution_idx);
+            settings::current::fullscreen = tbl["fullscreen"].value_or(settings::current::fullscreen);
+            settings::current::vsync = tbl["vsync"].value_or(settings::current::vsync);
+            settings::current::fps_idx = tbl["fps_idx"].value_or(settings::current::fps_idx);
+            settings::current::mode_idx = tbl["mode_idx"].value_or(settings::current::mode_idx);
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -104,7 +104,7 @@ Config::Config(const std::string &filename)
     }
 }
 
-Config::~Config() noexcept
+ConfigContext::~ConfigContext() noexcept
 {
     try {
         this->save();
@@ -113,7 +113,7 @@ Config::~Config() noexcept
     }
 }
 
-void Config::save() const noexcept
+void ConfigContext::save() const noexcept
 {
     //     SPDLOG_DEBUG("Now saving config to '{}'", this->path_.string());
 
@@ -121,7 +121,7 @@ void Config::save() const noexcept
     tbl.insert_or_assign("fullscreen", settings::current::fullscreen);
     tbl.insert_or_assign("vsync", settings::current::vsync);
     tbl.insert_or_assign("fps_idx", settings::current::fps_idx);
-    tbl.insert_or_assign("resolution_idx", settings::current::resolution_idx);
+    tbl.insert_or_assign("mode_idx", settings::current::mode_idx);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

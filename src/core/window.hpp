@@ -6,11 +6,10 @@
 
 #pragma once
 
-#include <format>      // for std::format
-#include <functional>  // for std::function
-#include <string>      // for std::string
-
 #include <SFML/Graphics.hpp>
+
+#include "generated.hpp"
+#include "settings.hpp"
 
 namespace core::window {
 
@@ -20,56 +19,29 @@ class Window {
     using update_callback_type = std::function<void(const float)>;
     using render_callback_type = std::function<void(sf::RenderWindow &)>;
 
-    /**
-     * @brief Construct window using settings from the centralized configuration.
-     *
-     * The window will be created with the current settings (fullscreen/windowed state, resolution, vsync, fps) from settings::current.
-     */
-    explicit Window();
-
-    /**
-     * @brief Initialize or reinitialize the window with current settings.
-     *
-     * This method handles both initial window creation and applying changes from the centralized configuration. It will recreate the window if necessary to apply the current settings properly.
-     */
-    void initialize_with_current_settings();
+    // On construction, create the window with current settings
+    explicit Window()
+    {
+        this->create();
+    }
 
     // Default destructor
     ~Window() = default;
 
-    // Do not put these simple getters/setters in .cpp
+    /**
+     * @brief Recreate the window with current settings - resolution, fullscreen mode, vsync, FPS limit, etc.
+     *
+     * @note This is a simple alias to the internal `create()` method, keeping the code more readable by separating "create" and "recreate" actions.
+     */
+    void recreate()
+    {
+        SPDLOG_DEBUG("Recreating window with current settings");
+        this->create();
+    }
+
+    // Get the window instance itself
     [[nodiscard]] sf::RenderWindow &raw() { return this->window_; }
     [[nodiscard]] const sf::RenderWindow &raw() const { return this->window_; }
-    [[nodiscard]] sf::Vector2u get_resolution() const { return this->window_.getSize(); }
-    void request_focus() { this->window_.requestFocus(); }
-    void set_view(const sf::View &view) { this->window_.setView(view); }
-    void clear(const sf::Color &color) { this->window_.clear(color); }
-    template <typename Drawable>
-    void draw(const Drawable &drawable) { this->window_.draw(drawable); }
-    void display() { this->window_.display(); }
-    void close() { this->window_.close(); }
-
-    /**
-     * @brief Toggle fullscreen mode and reinitialize window with current settings.
-     *
-     * This method toggles between fullscreen and windowed mode using the current settings.
-     */
-    void toggle_fullscreen();
-
-    /**
-     * @brief Apply current settings from the centralized configuration.
-     *
-     * This method applies the fullscreen, vsync, and fps settings from settings::current to the window.
-     * Should be called after configuration is loaded to ensure the window matches the saved settings.
-     */
-    void apply_current_settings();
-
-    /**
-     * @brief Get all available fullscreen video modes.
-     *
-     * @return Vector of available video modes sorted by resolution (best first).
-     */
-    [[nodiscard]] static std::vector<sf::VideoMode> get_available_modes();
 
     /**
      * @brief Run the main application loop with provided callbacks.
@@ -82,28 +54,129 @@ class Window {
      */
     void run(const event_callback_type &on_event,
              const update_callback_type &on_update,
-             const render_callback_type &on_render);
+             const render_callback_type &on_render)
+    {
+        SPDLOG_INFO("Starting main window loop!");
+        sf::Clock clock;
+        while (this->window_.isOpen()) {
+            // Allow user of this call to explicitly handle events themselves
+            this->window_.handleEvents(on_event);
+            // Prevent extreme dt by clamping to 0.1 seconds
+            constexpr float dt_max = 0.1f;
+            const float dt = std::min(clock.restart().asSeconds(), dt_max);
+            on_update(dt);
+            on_render(this->window_);
+        }
+        SPDLOG_INFO("Main window loop ended!");
+    }
 
-    Window(const Window &) = delete;
-    Window &operator=(const Window &) = delete;
+    // Window(const Window &) = delete;
+    // Window &operator=(const Window &) = delete;
 
-    Window(Window &&) = default;
-    Window &operator=(Window &&) = default;
-
-  private:
-    void create_window(const sf::VideoMode &mode,
-                       const sf::State state);
-    void apply_sync_settings();
+    // Window(Window &&) = default;
+    // Window &operator=(Window &&) = default;
 
     /**
-     * @brief Get the video mode that should be used for the current settings.
-     *
-     * For fullscreen: returns the mode at settings::current::resolution_idx or desktop mode as fallback.
-     * For windowed: returns the windowed resolution from settings.
-     *
-     * @return The appropriate video mode for current settings.
+     * @brief Reference to all available fullscreen video modes (resolutions), sorted from best to worst.
      */
-    [[nodiscard]] sf::VideoMode get_video_mode_for_current_settings() const;
+    const std::vector<sf::VideoMode> &available_fullscreen_modes = sf::VideoMode::getFullscreenModes();
+
+  private:
+    /**
+     * @brief Create the SFML window with the current settings.
+     *
+     * Settings used:
+     * - settings::constants::anti_aliasing_level
+     * - settings::current::fullscreen
+     * - settings::current::mode_idx
+     * - settings::constants::windowed_width
+     * - settings::constants::windowed_height
+     *
+     * // TODO: Make sure all the variables used in this method are listed above. Perhaps write a Python script with regex.
+     */
+    void create()
+    {
+        // Create context settings with the default 8x anti-aliasing level
+        const sf::ContextSettings settings{.antiAliasingLevel = settings::current::anti_aliasing};
+        SPDLOG_DEBUG("Created context settings with '{}' anti-aliasing level", settings.antiAliasingLevel);
+
+        // Create the window title based on the project name and version
+        const std::string window_title = std::format("{} ({})", generated::PROJECT_NAME, generated::PROJECT_VERSION);
+        SPDLOG_DEBUG("Created '{}' window title", window_title);
+
+        // Get the window state based on current settings
+        const sf::State state = settings::current::fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
+
+        // Get the video mode (resolution) based on current settings
+        sf::VideoMode mode;
+        if (settings::current::fullscreen) {
+            // If fullscreen, we need to determine the video mode based on current settings (the "config.toml" file)
+            SPDLOG_DEBUG("Current mode is fullscreen, determining video mode based on current settings...");
+
+            // Run a sanity check on the resolution indices and available modes
+            if (!this->available_fullscreen_modes.empty() &&                                            // Non-empty list (probably impossible)
+                settings::current::mode_idx >= 0 &&                                                     // Config index is non-negative (different monitor?)
+                settings::current::mode_idx < static_cast<int>(this->available_fullscreen_modes.size()  // Config index is within bounds (different monitor?)
+                                                               )) {
+                // If everything is valid, use the selected mode from "config.toml"
+                mode = this->available_fullscreen_modes[static_cast<std::size_t>(settings::current::mode_idx)];
+                SPDLOG_DEBUG("Current settings are valid, set video mode to '{}x{}' (current index: '{}')", mode.size.x, mode.size.y, settings::current::mode_idx);
+            }
+
+            else {
+                // Otherwise, use the desktop mode as fallback and reset the config index to best available mode so it won't cause issues next time
+                mode = sf::VideoMode::getDesktopMode();
+                settings::current::mode_idx = 0;
+                SPDLOG_WARN("Current settings are invalid, falling back to desktop mode '{}x{}' and resetting current index to '0'", mode.size.x, mode.size.y);
+            }
+        }
+        else {
+            // If windowed, use the default windowed resolution from settings
+            // We don't store user preferences for windowed mode, because fullscreen is the primary way of running the game
+            mode = sf::VideoMode{sf::Vector2u{settings::constants::windowed_width,
+                                              settings::constants::windowed_height}};
+            SPDLOG_DEBUG("Current mode is windowed, using default resolution '{}x{}'", mode.size.x, mode.size.y);
+        }
+
+        // If window is already open, close it, so the "create" method can recreate it
+        if (this->window_.isOpen()) {
+            SPDLOG_DEBUG("Window was already open, closing it so we can recreate it with new values");
+            this->window_.close();
+        }
+
+        // Create the window with the determined video mode, title, state, and context settings
+        this->window_.create(mode, window_title, state, settings);
+
+        // Set minimum size (only relevant for windowed mode)
+        this->window_.setMinimumSize(sf::Vector2u{settings::constants::windowed_min_width,
+                                                  settings::constants::windowed_min_height});
+
+        // Set FPS/vsync settings
+        if (settings::current::vsync) {
+            // If vsync is enabled, disable FPS limit (0 = disabled)
+            this->window_.setFramerateLimit(0u);
+            // Then, enable vsync
+            this->window_.setVerticalSyncEnabled(true);
+            SPDLOG_DEBUG("Disabled FPS limit and enabled V-sync");
+        }
+        else {
+            // If vsync is disabled, disable vsync
+            this->window_.setVerticalSyncEnabled(false);
+            // Then, get the FPS limit and enable it
+            const unsigned fps_limit = settings::constants::fps_values[settings::current::fps_idx];
+
+            // TODO: Check if this is working correctly (no limit is applied and it's generating 2500+ FPS)
+            if (fps_limit == 0) {
+                SPDLOG_WARN("FPS limit is set to '0', which means no limit!");
+            }
+
+            this->window_.setFramerateLimit(fps_limit);
+            SPDLOG_DEBUG("Enabled '{}' FPS limit and disabled V-sync", fps_limit);
+        }
+
+        // Log the successful creation of the window
+        SPDLOG_DEBUG("Window created successfully with mode '{}x{}', title '{}', state '{}', and context settings (anti-aliasing level: {})", mode.size.x, mode.size.y, window_title, state == sf::State::Fullscreen ? "fullscreen" : "windowed", settings.antiAliasingLevel);
+    }
 
     sf::RenderWindow window_;
 };
@@ -115,6 +188,9 @@ class Window {
  *
  * @return Converted vector with floating-point values (e.g., {1280.f, 800.f}).
  */
-[[nodiscard]] sf::Vector2f to_vector2f(const sf::Vector2u &vector);
+[[nodiscard]] sf::Vector2f to_vector2f(const sf::Vector2u &vector)
+{
+    return {static_cast<float>(vector.x), static_cast<float>(vector.y)};
+}
 
 }  // namespace core::window

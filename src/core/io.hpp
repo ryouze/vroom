@@ -38,21 +38,21 @@ namespace core::io {
  *
  * The file is saved automatically on destruction.
  */
-class Config {
+class ConfigContext {
   public:
     /**
      * @brief Attempt to load a TOML configuration file from the platform-specific application data directory, creating default values if the file is missing.
      *
      * @param filename Name of the configuration file (default: "config.toml"). This filename will be appended to the platform-specific application data directory path (e.g., "~/Library/Application Support/MyApp/config.toml").
      */
-    explicit Config(const std::string &filename = "config.toml");
+    explicit ConfigContext(const std::string &filename = "config.toml");
 
     /**
-     * @brief Destroy the Config object.
+     * @brief Destroy the ConfigContext object.
      *
      * On destruction, save the current configuration state to the TOML file.
      */
-    ~Config() noexcept;
+    ~ConfigContext() noexcept;
 
   private:
     /**
