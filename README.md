@@ -24,6 +24,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Procedurally generated track with user-defined parameters (try it yourself!).
 - Waypoint AI with real-time collision detection and distance-based throttle control.
 - Analog input with support for both keyboard and gamepad (Xbox).
+- Persistent settings/preferences: saved to disk as a TOML config file and automatically loaded on startup.
 - Comprehensive documentation with doxygen-style comments.
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
