@@ -33,6 +33,7 @@ Car::Car(const sf::Texture &texture,
       steering_wheel_angle_(0.0f),
       current_waypoint_index_number_(1),
       drift_score_(0.0f),
+      current_lateral_slip_velocity_(0.0f),
       ai_update_timer_(0.0f)
 {
     this->sprite_.setOrigin({this->sprite_.getTexture().getSize().x / 2.0f, this->sprite_.getTexture().getSize().y / 2.0f});
@@ -71,14 +72,22 @@ void Car::reset()
 
     // Reset drift score
     this->drift_score_ = 0.0f;
+
+    // Reset lateral slip velocity
+    this->current_lateral_slip_velocity_ = 0.0f;
 }
 
 [[nodiscard]] CarState Car::get_state() const
 {
+    // Calculate heading angle from sprite rotation
+    const float heading_radians = this->sprite_.getRotation().asRadians();
+
     return CarState{
         .position = this->sprite_.getPosition(),
         .velocity = this->velocity_,
         .speed = std::hypot(this->velocity_.x, this->velocity_.y),
+        .heading_radians = heading_radians,
+        .lateral_slip_velocity = this->current_lateral_slip_velocity_,
         .steering_angle = this->steering_wheel_angle_,
         .control_mode = this->control_mode_,
         .waypoint_index = this->current_waypoint_index_number_,
@@ -367,6 +376,9 @@ void Car::apply_physics_step(const float dt)
 
     // Calculate drift score based on lateral slip velocity and car speed
     const float lateral_speed = std::hypot(lateral_velocity_vector.x, lateral_velocity_vector.y);
+
+    // Store lateral slip velocity for use in get_state() to avoid recalculation
+    this->current_lateral_slip_velocity_ = lateral_speed;
     const float drift_threshold_pixels_per_second = 50.0f;              // Minimum lateral speed to count as drifting
     const float speed_multiplier_threshold_pixels_per_second = 100.0f;  // Speed at which drift score multiplier reaches 1.0
 

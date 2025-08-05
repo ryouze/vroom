@@ -206,6 +206,15 @@ inline bool gamepad_invert_brake = false;
  */
 inline float engine_volume = 0.6f;
 
+/**
+ * @brief Tire screeching sound volume as a float (0.0-1.0).
+ *
+ * Controls the volume of the tire screeching sound effect when drifting.
+ *
+ * @note This defaults to 0.5 (50%).
+ */
+inline float tire_screech_volume = 0.5f;
+
 }  // namespace current
 
 }  // namespace settings

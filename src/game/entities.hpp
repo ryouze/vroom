@@ -213,6 +213,16 @@ struct CarState final {
     float speed;
 
     /**
+     * @brief Current heading angle in radians.
+     */
+    float heading_radians;
+
+    /**
+     * @brief Current lateral slip velocity magnitude in pixels per second.
+     */
+    float lateral_slip_velocity;
+
+    /**
      * @brief Current steering wheel angle in degrees.
      */
     float steering_angle;
@@ -430,6 +440,13 @@ class Car final {
      * Score increases based on drift angle magnitude, speed, and duration while the car is sliding sideways.
      */
     float drift_score_;
+
+    /**
+     * @brief Current lateral slip velocity magnitude in pixels per second.
+     *
+     * This is calculated during physics updates and cached to avoid recalculation in get_state().
+     */
+    float current_lateral_slip_velocity_;
 
     /**
      * @brief Distance factor for waypoint reach detection used by both AI and waypoint tracking.

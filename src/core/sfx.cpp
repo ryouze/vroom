@@ -134,4 +134,74 @@ std::size_t EngineSound::determine_gear(const float speed) const
     return 1;
 }
 
+TireScreechSound::TireScreechSound(const sf::SoundBuffer &sound_buffer)
+    : tire_screech_sound_(sound_buffer),
+      current_target_volume_(0.0f),
+      current_actual_volume_(0.0f)
+{
+    this->tire_screech_sound_.setLooping(true);
+    this->tire_screech_sound_.setPitch(this->base_pitch_);
+    this->tire_screech_sound_.setVolume(0.0f);  // Start silent
+
+    SPDLOG_DEBUG("TireScreechSound created with base pitch '{}', max pitch '{}', drift threshold '{}', max volume slip velocity '{}'",
+                 this->base_pitch_,
+                 this->max_pitch_,
+                 this->drift_threshold_pixels_per_second_,
+                 this->max_volume_slip_velocity_pixels_per_second_);
+}
+
+void TireScreechSound::update(const float lateral_slip_velocity, const float car_speed)
+{
+    // Determine if we should be screeching based on thresholds
+    const bool should_screech = (lateral_slip_velocity > this->drift_threshold_pixels_per_second_) &&
+                                (car_speed > this->minimum_speed_threshold_pixels_per_second_);
+
+    if (should_screech) {
+        // Calculate volume based on lateral slip velocity (0.0 to 1.0)
+        const float volume_ratio = std::clamp(lateral_slip_velocity / this->max_volume_slip_velocity_pixels_per_second_, 0.0f, 1.0f);
+        this->current_target_volume_ = volume_ratio;
+
+        // Calculate pitch based on lateral slip velocity
+        const float pitch_ratio = std::clamp(lateral_slip_velocity / this->max_pitch_slip_velocity_pixels_per_second_, 0.0f, 1.0f);
+        const float pitch = std::lerp(this->base_pitch_, this->max_pitch_, pitch_ratio);
+        this->tire_screech_sound_.setPitch(pitch);
+
+        // Start playing if not already playing
+        if (this->tire_screech_sound_.getStatus() != sf::SoundSource::Status::Playing) {
+            this->tire_screech_sound_.play();
+        }
+    }
+    else {
+        // Fade out when not drifting
+        this->current_target_volume_ = 0.0f;
+    }
+
+    // Smooth volume transitions to avoid abrupt start/stop
+    this->current_actual_volume_ = std::lerp(this->current_actual_volume_, this->current_target_volume_, this->volume_smoothing_factor_);
+
+    // Apply volume from settings and current calculated volume
+    const float final_volume = this->current_actual_volume_ * settings::current::tire_screech_volume * 100.0f;
+    this->tire_screech_sound_.setVolume(final_volume);
+
+    // Stop playing if volume is essentially zero to save resources
+    if (this->current_actual_volume_ < 0.01f && this->tire_screech_sound_.getStatus() == sf::SoundSource::Status::Playing) {
+        this->tire_screech_sound_.stop();
+    }
+}
+
+void TireScreechSound::stop()
+{
+    if (this->tire_screech_sound_.getStatus() == sf::SoundSource::Status::Playing) {
+        this->tire_screech_sound_.stop();
+        this->current_target_volume_ = 0.0f;
+        this->current_actual_volume_ = 0.0f;
+        SPDLOG_DEBUG("Tire screeching sound stopped");
+    }
+}
+
+bool TireScreechSound::is_playing() const
+{
+    return this->tire_screech_sound_.getStatus() == sf::SoundSource::Status::Playing;
+}
+
 }  // namespace core::sfx

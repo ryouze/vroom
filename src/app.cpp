@@ -272,6 +272,9 @@ void run()
     // Engine sound system
     core::sfx::EngineSound engine_sound{sounds.get("engine")};
 
+    // Tire screeching sound system
+    core::sfx::TireScreechSound tire_screech_sound{sounds.get("tires")};
+
     // TODO: Add vsync and fullscreen saving
 
     const auto on_event = [&](const sf::Event &event) {
@@ -356,12 +359,18 @@ void run()
             if (!engine_sound.is_playing()) {
                 engine_sound.start();
             }
+
+            // Update tire screeching sound based on the currently selected vehicle's drift state
+            tire_screech_sound.update(vehicle_state.lateral_slip_velocity, vehicle_state.speed);
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
         else if (current_state == core::states::GameState::Paused) {
             // Stop engine sound when paused
             engine_sound.stop();
+
+            // Stop tire screeching sound when paused
+            tire_screech_sound.stop();
 
             // Common UI constants
             constexpr float settings_window_width = 500.f;
@@ -651,6 +660,11 @@ void run()
                         float volume_percent = settings::current::engine_volume * 100.0f;
                         if (ImGui::SliderFloat("Car Engine", &volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
                             settings::current::engine_volume = volume_percent / 100.0f;
+                        }
+
+                        float tire_volume_percent = settings::current::tire_screech_volume * 100.0f;
+                        if (ImGui::SliderFloat("Tire Screeching", &tire_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::tire_screech_volume = tire_volume_percent / 100.0f;
                         }
 
                         ImGui::PopItemWidth();
