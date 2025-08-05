@@ -40,13 +40,13 @@ class Window {
      */
     ~Window() = default;
 
-    // TODO: Find out why these deleters fail to compile
+    // Disable copy semantics - Window manages unique SFML resources
+    Window(const Window &) = delete;
+    Window &operator=(const Window &) = delete;
 
-    // Window(const Window &) = delete;
-    // Window &operator=(const Window &) = delete;
-
-    // Window(Window &&) = default;
-    // Window &operator=(Window &&) = default;
+    // Allow move construction but disable move assignment for safety
+    Window(Window &&) = default;
+    Window &operator=(Window &&) = delete;
 
     /**
      * @brief Recreate the window with current settings from "settings.hpp".

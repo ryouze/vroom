@@ -27,6 +27,17 @@ class Gamepad {
                      const float deadzone = 0.15f);
 
     /**
+     * @brief Default destructor.
+     */
+    ~Gamepad() = default;
+
+    // Allow copy and move construction but disable assignment (due to const members)
+    Gamepad(const Gamepad &) = default;
+    Gamepad &operator=(const Gamepad &) = delete;
+    Gamepad(Gamepad &&) = default;
+    Gamepad &operator=(Gamepad &&) = delete;
+
+    /**
      * @brief Check if the gamepad is currently connected.
      *
      * @return True if the gamepad is connected, false otherwise.

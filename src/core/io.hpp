@@ -54,6 +54,14 @@ class ConfigContext {
      */
     ~ConfigContext() noexcept;
 
+    // Disable copy semantics - manages unique file resource
+    ConfigContext(const ConfigContext &) = delete;
+    ConfigContext &operator=(const ConfigContext &) = delete;
+
+    // Allow move construction but disable move assignment (due to const members)
+    ConfigContext(ConfigContext &&) = default;
+    ConfigContext &operator=(ConfigContext &&) = delete;
+
   private:
     /**
      * @brief Save the current configuration state to the TOML file.

@@ -81,6 +81,19 @@ class FpsCounter final : public IWidget {
                         const Corner corner = Corner::TopLeft);
 
     /**
+     * @brief Default destructor.
+     */
+    ~FpsCounter() = default;
+
+    // Disable copy semantics - holds reference to external resource
+    FpsCounter(const FpsCounter &) = delete;
+    FpsCounter &operator=(const FpsCounter &) = delete;
+
+    // Allow move construction but disable move assignment (due to reference members)
+    FpsCounter(FpsCounter &&) = default;
+    FpsCounter &operator=(FpsCounter &&) = delete;
+
+    /**
      * @brief Update the FPS counter and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
      *
      * The FPS recalculation is performed only once per second, but the graphics are updated every frame.
@@ -164,6 +177,19 @@ class Speedometer final : public IWidget {
                          const Corner corner = Corner::BottomRight);
 
     /**
+     * @brief Default destructor.
+     */
+    ~Speedometer() = default;
+
+    // Disable copy semantics - holds reference to external resource
+    Speedometer(const Speedometer &) = delete;
+    Speedometer &operator=(const Speedometer &) = delete;
+
+    // Allow move construction but disable move assignment (due to reference members)
+    Speedometer(Speedometer &&) = default;
+    Speedometer &operator=(Speedometer &&) = delete;
+
+    /**
      * @brief Update the speedometer and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
      *
      * @param speed Current car speed in pixels per hour (px/h).
@@ -237,6 +263,19 @@ class Minimap final : public IWidget {
                      // You can either pass by value and "std::move" it into the member, or use "GameEntitiesDrawer&&"" and std::forward.
                      GameEntitiesDrawer game_entities_drawer,
                      const Corner corner = Corner::BottomLeft);
+
+    /**
+     * @brief Default destructor.
+     */
+    ~Minimap() = default;
+
+    // Disable copy semantics - holds reference to external resource and function object
+    Minimap(const Minimap &) = delete;
+    Minimap &operator=(const Minimap &) = delete;
+
+    // Allow move construction but disable move assignment (due to reference members)
+    Minimap(Minimap &&) = default;
+    Minimap &operator=(Minimap &&) = delete;
 
     /**
      * @brief Update the minimap and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
@@ -397,6 +436,19 @@ class Leaderboard final : public IWidget {
                          const Corner corner = Corner::TopRight);
 
     /**
+     * @brief Default destructor.
+     */
+    ~Leaderboard() = default;
+
+    // Disable copy semantics - holds reference to external resource
+    Leaderboard(const Leaderboard &) = delete;
+    Leaderboard &operator=(const Leaderboard &) = delete;
+
+    // Allow move construction but disable move assignment (due to reference members)
+    Leaderboard(Leaderboard &&) = default;
+    Leaderboard &operator=(Leaderboard &&) = delete;
+
+    /**
      * @brief Update the leaderboard and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
      *
      * @param entries Vector of leaderboard entries containing car names and drift scores.
@@ -429,4 +481,4 @@ class Leaderboard final : public IWidget {
     ImVec2 offset_;
 };
 
-}  // namespace core::ui
+}  // namespace core::widgets
