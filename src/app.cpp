@@ -60,17 +60,7 @@ void run()
     // Create a RAII context to load and save settings on scope exit
     // This uses platform-specific APIs (e.g., POSIX, WinAPI) to get platform-appropriate paths
     // Then, it loads the configuration from a TOML file, creating default values if the file is missing
-    // And it sets the following values in "settings.hpp":
-    // - settings::current::fullscreen
-    // - settings::current::vsync
-    // - settings::current::fps_idx
-    // - settings::current::mode_idx
-    // - settings::current::anti_aliasing_idx
-    // - settings::current::prefer_gamepad
-    // - settings::current::gamepad_steering_axis
-    // - settings::current::gamepad_gas_axis
-    // - settings::current::gamepad_brake_axis
-    // - settings::current::gamepad_handbrake_button
+    // And it sets values in "settings.hpp"
     // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
     core::io::ConfigContext config_context;
 

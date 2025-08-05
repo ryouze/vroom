@@ -99,16 +99,10 @@ class Window {
      *
      * If the window already exists, it will be closed and recreated with the new settings.
      *
-     * Settings used:
+     * Settings used (not an exhaustive list):
      * - settings::current::anti_aliasing_idx
      * - settings::current::fullscreen
      * - settings::current::mode_idx
-     * - settings::current::vsync
-     * - settings::current::fps_idx
-     * - settings::constants::windowed_width
-     * - settings::constants::windowed_height
-     * - settings::constants::windowed_min_width
-     * - settings::constants::windowed_min_height
      */
     void create();
 
