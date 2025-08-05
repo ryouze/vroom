@@ -291,6 +291,10 @@ ctest --verbose
   - Used the `swin_unet / art` model with 2x scaling, no denoising, 64×64 tiling (no shuffle), TTA disabled, and alpha channel set to auto.
 <!-- - [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard and gamepad icons. -->
 
+**Sounds:**
+- [Car Engine Loop](https://opengameart.org/content/car-engine-loop-96khz-4s)
+
+
 ## Contributing
 
 All contributions are welcome.

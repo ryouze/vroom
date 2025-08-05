@@ -21,6 +21,7 @@
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
 #include "core/colors.hpp"
+#include "core/engine.hpp"
 #include "core/imgui_sfml_ctx.hpp"
 #include "core/input.hpp"
 #include "core/io.hpp"
@@ -266,6 +267,9 @@ void run()
     core::widgets::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
     core::widgets::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
 
+    // Engine sound system
+    core::engine::EngineSound engine_sound{sounds.get("engine")};
+
     // TODO: Add vsync and fullscreen saving
 
     const auto on_event = [&](const sf::Event &event) {
@@ -344,10 +348,19 @@ void run()
             speedometer.update_and_draw(vehicle_state.speed);
             minimap.update_and_draw(dt, vehicle_state.position);
             leaderboard.update_and_draw(collect_leaderboard_data());
+
+            // Update engine sound based on the currently selected vehicle's speed
+            engine_sound.update(vehicle_state.speed);
+            if (!engine_sound.is_playing()) {
+                engine_sound.start();
+            }
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
         else if (current_state == core::states::GameState::Paused) {
+            // Stop engine sound when paused
+            engine_sound.stop();
+
             // Common UI constants
             constexpr float settings_window_width = 500.f;
             constexpr float settings_window_height = 550.f;
@@ -658,6 +671,9 @@ void run()
         // Handle each core::states::GameState
         // Menu state
         else [[unlikely]] {
+            // Stop engine sound when in menu
+            engine_sound.stop();
+
             // Main menu
             constexpr float main_menu_width = 240.0f;
             constexpr float button_width = 160.0f;
