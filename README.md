@@ -43,27 +43,19 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ```md
 **Critical**:
-- Add more settings to `settings.hpp`.
+- Nothing.
 
 **Current**:
-- Allow user to change between keyboard and gamepad in the settings menu if a gamepad is connected.
-  - Currently, the gamepad always takes over keyboard input, which is fine for me, but not for everyone.
-- Research if we are using the correct axis for throttle (I think the current one also combines triggers? Not sure, doesn't work on macOS, need to test on Linux).
-  - The current implementation uses the right stick for throttle and brake, which is not ideal.
 - Throttle drift score updates.
-- Refactor the way config values are read and written (the widgets should read from the Config class, instead of having to set both the widget and the config class values themselves).
-- Add more values to the stored config.
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
   - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
 - Add ImGui window to backend and test again if everything is working correctly.
-- Tweak variable names in the `game` module (`.hpp` & `.cpp`).
 - Check all headers with `header-warden`.
 
 **Later**:
 - Expand automated tests.
 - Read the SFML documentation.
   - Study the `sf::View` class in detail to ensure the camera is handled correctly.
-- Review and improve `const` usage in UI code, particularly in `src/core/ui.hpp` and `src/core/ui.cpp`. [`src/core/ui.hpp:330`]
 - Add keyboard input prompts (game controls on the main menu?). You have already downloaded them from Kenney's website and added to credits.
 
 **Ideas**
@@ -77,7 +69,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Evaluate the necessity of the `#ifndef NDEBUG` blocks for ImGui includes in `src/core/game.cpp` and `src/core/backend.cpp`. Determine if these are still needed or if ImGui should be a standard part of the debug/dev experience.
 
 **Finishing Touches**
-- Add basic audio support, with sound effects for the car engine. Avoid adding music, as it would bloat the file size.
 - Improve the packaging workflow:
   - Research the use of CPack for cross-platform distribution.
 - Add new screenshots of the main menu, settings, game, and a GIF (or video) of the game in action.
