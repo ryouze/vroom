@@ -222,22 +222,22 @@ class TireScreechSound final {
     /**
      * @brief Minimum lateral slip velocity required to trigger tire screeching sound in pixels per second.
      */
-    static constexpr float drift_threshold_pixels_per_second_ = 50.0f;
+    static constexpr float drift_threshold_pixels_per_second_ = 150.0f;
 
     /**
      * @brief Minimum car speed required for tire screeching in pixels per second.
      */
-    static constexpr float minimum_speed_threshold_pixels_per_second_ = 30.0f;
+    static constexpr float minimum_speed_threshold_pixels_per_second_ = 250.0f;
 
     /**
      * @brief Lateral slip velocity at which tire screeching reaches maximum volume in pixels per second.
      */
-    static constexpr float max_volume_slip_velocity_pixels_per_second_ = 200.0f;
+    static constexpr float max_volume_slip_velocity_pixels_per_second_ = 300.0f;
 
     /**
      * @brief Lateral slip velocity at which tire screeching reaches maximum pitch in pixels per second.
      */
-    static constexpr float max_pitch_slip_velocity_pixels_per_second_ = 300.0f;
+    static constexpr float max_pitch_slip_velocity_pixels_per_second_ = 400.0f;
 
     /**
      * @brief Base pitch for tire screeching sound.

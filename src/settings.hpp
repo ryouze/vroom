@@ -211,9 +211,9 @@ inline float engine_volume = 0.6f;
  *
  * Controls the volume of the tire screeching sound effect when drifting.
  *
- * @note This defaults to 0.5 (50%).
+ * @note This defaults to 0.6 (60%).
  */
-inline float tire_screech_volume = 0.5f;
+inline float tire_screech_volume = 0.6f;
 
 }  // namespace current
 

@@ -293,6 +293,7 @@ ctest --verbose
 
 **Sounds:**
 - [Car Engine Loop](https://opengameart.org/content/car-engine-loop-96khz-4s)
+- [Car Tire Squeal Skid Loop](https://opengameart.org/content/car-tire-squeal-skid-loop)
 
 
 ## Contributing
