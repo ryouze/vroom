@@ -1,5 +1,5 @@
 /**
- * @file engine.cpp
+ * @file sfx.cpp
  */
 
 #include <algorithm>  // for std::clamp
@@ -8,10 +8,10 @@
 
 #include <spdlog/spdlog.h>
 
-#include "engine.hpp"
 #include "settings.hpp"
+#include "sfx.hpp"
 
-namespace core::engine {
+namespace core::sfx {
 
 EngineSound::EngineSound(const sf::SoundBuffer &sound_buffer)
     : engine_sound_(sound_buffer),
@@ -33,7 +33,7 @@ void EngineSound::update(const float speed)
     const std::size_t new_gear = this->determine_gear(speed);
     if (new_gear != this->current_gear_) {
         this->current_gear_ = new_gear;
-        SPDLOG_DEBUG("Engine gear shifted to gear '{}'", this->current_gear_);
+        // SPDLOG_DEBUG("Engine gear shifted to gear '{}'", this->current_gear_);
     }
 
     // Calculate fake RPM based on current speed and gear selection
@@ -134,4 +134,4 @@ std::size_t EngineSound::determine_gear(const float speed) const
     return 1;
 }
 
-}  // namespace core::engine
+}  // namespace core::sfx

@@ -1,7 +1,7 @@
 /**
- * @file engine.hpp
+ * @file sfx.hpp
  *
- * @brief Car engine sounds.
+ * @brief Car sound effects.
  */
 
 #pragma once
@@ -11,7 +11,7 @@
 
 #include <SFML/Audio.hpp>
 
-namespace core::engine {
+namespace core::sfx {
 
 /**
  * @brief Class that manages engine sound playback based on car speed.
@@ -164,4 +164,4 @@ class EngineSound final {
     };
 };
 
-}  // namespace core::engine
+}  // namespace core::sfx

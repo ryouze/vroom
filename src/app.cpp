@@ -21,10 +21,10 @@
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
 #include "core/colors.hpp"
-#include "core/engine.hpp"
 #include "core/imgui_sfml_ctx.hpp"
 #include "core/input.hpp"
 #include "core/io.hpp"
+#include "core/sfx.hpp"
 #include "core/states.hpp"
 #include "core/widgets.hpp"
 #include "core/world.hpp"
@@ -268,7 +268,7 @@ void run()
     core::widgets::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
 
     // Engine sound system
-    core::engine::EngineSound engine_sound{sounds.get("engine")};
+    core::sfx::EngineSound engine_sound{sounds.get("engine")};
 
     // TODO: Add vsync and fullscreen saving
 
