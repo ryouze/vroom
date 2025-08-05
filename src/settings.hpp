@@ -197,6 +197,15 @@ inline bool gamepad_invert_gas = false;
  */
 inline bool gamepad_invert_brake = false;
 
+/**
+ * @brief Engine sound volume as a float (0.0-1.0).
+ *
+ * Controls the volume of the engine sound effect.
+ *
+ * @note This defaults to 0.6 (60%).
+ */
+inline float engine_volume = 0.6f;
+
 }  // namespace current
 
 }  // namespace settings

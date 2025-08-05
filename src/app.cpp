@@ -641,6 +641,19 @@ void run()
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
                     }
+                    if (ImGui::BeginTabItem("Audio")) {
+                        ImGui::PushItemWidth(item_width);
+
+                        ImGui::SeparatorText("Volume");
+                        // Use a temporary variable to handle percentage display properly
+                        float volume_percent = settings::current::engine_volume * 100.0f;
+                        if (ImGui::SliderFloat("Car Engine", &volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::engine_volume = volume_percent / 100.0f;
+                        }
+
+                        ImGui::PopItemWidth();
+                        ImGui::EndTabItem();
+                    }
                     if (ImGui::BeginTabItem("About")) {
                         ImGui::SeparatorText("Build Information");
                         ImGui::BulletText("Version: %s", generated::PROJECT_VERSION);

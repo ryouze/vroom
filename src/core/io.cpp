@@ -109,6 +109,8 @@ ConfigContext::ConfigContext(const std::string &filename)
             settings::current::gamepad_invert_gas = tbl["gamepad_invert_gas"].value_or(settings::current::gamepad_invert_gas);
             settings::current::gamepad_invert_brake = tbl["gamepad_invert_brake"].value_or(settings::current::gamepad_invert_brake);
 
+            settings::current::engine_volume = tbl["engine_volume"].value_or(settings::current::engine_volume);
+
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
         else {
@@ -153,6 +155,7 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("gamepad_invert_steering", settings::current::gamepad_invert_steering);
     tbl.insert_or_assign("gamepad_invert_gas", settings::current::gamepad_invert_gas);
     tbl.insert_or_assign("gamepad_invert_brake", settings::current::gamepad_invert_brake);
+    tbl.insert_or_assign("engine_volume", settings::current::engine_volume);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

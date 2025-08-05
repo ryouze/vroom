@@ -9,6 +9,7 @@
 #include <spdlog/spdlog.h>
 
 #include "engine.hpp"
+#include "settings.hpp"
 
 namespace core::engine {
 
@@ -68,6 +69,9 @@ void EngineSound::update(const float speed)
 
     // Apply the calculated pitch to the engine sound
     this->engine_sound_.setPitch(pitch);
+
+    // Apply volume from settings (already in 0.0-1.0 range, convert to SFML's 0-100 range)
+    this->engine_sound_.setVolume(settings::current::engine_volume * 100.0f);
 }
 
 void EngineSound::start()
