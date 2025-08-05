@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include <array>    // for std::array
+#include <cstddef>  // for std::size_t
+
 #include <SFML/Audio.hpp>
 
 namespace core::engine {
@@ -80,7 +83,7 @@ class EngineSound final {
      *
      * @return Current gear (1-5).
      */
-    [[nodiscard]] int determine_gear(const float speed) const;
+    [[nodiscard]] std::size_t determine_gear(const float speed) const;
 
     /**
      * @brief SFML Sound object for engine sound playback.
@@ -90,7 +93,12 @@ class EngineSound final {
     /**
      * @brief Current gear (1-5).
      */
-    int current_gear_;
+    std::size_t current_gear_;
+
+    /**
+     * @brief Number of gears in the transmission.
+     */
+    static constexpr std::size_t gear_count_ = 5;
 
     /**
      * @brief Idle pitch when car is not moving.
@@ -123,11 +131,31 @@ class EngineSound final {
     static constexpr float idle_blend_speed_ = 450.0f;
 
     /**
+     * @brief Blending zone distance before gear shift for smooth transitions.
+     */
+    static constexpr float gear_blend_zone_ = 50.0f;
+
+    /**
+     * @brief Multiplier for next gear RPM calculation during gear transitions.
+     */
+    static constexpr float next_gear_rpm_multiplier_ = 1.2f * 0.2f;
+
+    /**
+     * @brief Maximum car speed in pixels per second.
+     */
+    static constexpr float max_car_speed_ = 2500.0f;
+
+    /**
+     * @brief Overlap multiplier between gears for smoother RPM transitions.
+     */
+    static constexpr float gear_overlap_multiplier_ = 1.2f;
+
+    /**
      * @brief Speed thresholds for gear shifts (pixels per second).
      *
      * @brief Better balanced gear shifts that don't change too frequently.
      */
-    static constexpr float gear_shift_speeds_[5] = {
+    static constexpr std::array<float, 5> gear_shift_speeds_ = {
         0.0f,     // 1st gear: 0 - 500 px/s
         500.0f,   // 2nd gear: 500 - 1000 px/s
         1000.0f,  // 3rd gear: 1000 - 1500 px/s

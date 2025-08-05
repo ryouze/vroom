@@ -3,7 +3,8 @@
  */
 
 #include <algorithm>  // for std::clamp
-#include <cmath>      // for std::fmod
+#include <cmath>      // for std::lerp
+#include <cstddef>    // for std::size_t
 
 #include <spdlog/spdlog.h>
 
@@ -27,46 +28,45 @@ EngineSound::EngineSound(const sf::SoundBuffer &sound_buffer)
 }
 void EngineSound::update(const float speed)
 {
-    // Determine current gear based on speed
-    const int new_gear = this->determine_gear(speed);
+    // Determine current gear based on speed thresholds
+    const std::size_t new_gear = this->determine_gear(speed);
     if (new_gear != this->current_gear_) {
         this->current_gear_ = new_gear;
         SPDLOG_DEBUG("Engine gear shifted to gear '{}'", this->current_gear_);
     }
 
-    // Calculate fake RPM based on speed and gear
+    // Calculate fake RPM based on current speed and gear selection
     const float rpm = this->calculate_rpm(speed);
 
-    // Map RPM to pitch (linear interpolation between min and max pitch)
+    // Map RPM to pitch using linear interpolation between min and max pitch values
     const float rpm_ratio = std::clamp((rpm - this->min_rpm_) / (this->max_rpm_ - this->min_rpm_), 0.0f, 1.0f);
-    float pitch = this->min_pitch_ + rpm_ratio * (this->max_pitch_ - this->min_pitch_);
+    float pitch = std::lerp(this->min_pitch_, this->max_pitch_, rpm_ratio);
 
-    // Add smooth gear transition blending
-    if (this->current_gear_ < 5 && speed > 0.0f) {
+    // Add smooth gear transition blending to prevent abrupt pitch changes during gear shifts
+    if (this->current_gear_ < this->gear_count_ && speed > 0.0f) {
         const float next_gear_threshold = this->gear_shift_speeds_[this->current_gear_];
-        const float gear_blend_zone = 50.0f;  // 30 px/s blending zone before gear shift (reduced from 100)
 
-        // Check if we're approaching a gear shift
-        if (speed > (next_gear_threshold - gear_blend_zone) && speed < next_gear_threshold) {
-            // Calculate next gear's pitch for blending
-            const float next_gear_rpm_range = (this->max_rpm_ - this->min_rpm_) / 5.0f;
-            const float next_gear_rpm = this->min_rpm_ + next_gear_rpm_range * 1.2f * 0.2f;  // Start of next gear RPM
+        // Check if we're approaching a gear shift within the blending zone
+        if (speed > (next_gear_threshold - this->gear_blend_zone_) && speed < next_gear_threshold) {
+            // Calculate the pitch that the next gear would produce for smooth blending
+            const float gear_rpm_range = (this->max_rpm_ - this->min_rpm_) / static_cast<float>(this->gear_count_);
+            const float next_gear_rpm = this->min_rpm_ + gear_rpm_range * this->next_gear_rpm_multiplier_;
             const float next_gear_rpm_ratio = std::clamp((next_gear_rpm - this->min_rpm_) / (this->max_rpm_ - this->min_rpm_), 0.0f, 1.0f);
-            const float next_gear_pitch = this->min_pitch_ + next_gear_rpm_ratio * (this->max_pitch_ - this->min_pitch_);
+            const float next_gear_pitch = std::lerp(this->min_pitch_, this->max_pitch_, next_gear_rpm_ratio);
 
-            // Blend between current and next gear pitch
-            const float blend_factor = (speed - (next_gear_threshold - gear_blend_zone)) / gear_blend_zone;
-            pitch = pitch * (1.0f - blend_factor) + next_gear_pitch * blend_factor;
+            // Blend between current gear pitch and next gear pitch based on position in blending zone
+            const float blend_factor = (speed - (next_gear_threshold - this->gear_blend_zone_)) / this->gear_blend_zone_;
+            pitch = std::lerp(pitch, next_gear_pitch, blend_factor);
         }
     }
 
-    // When at very low speeds, blend between idle pitch and calculated pitch
-    if (speed < this->idle_blend_speed_) {                           // Smooth transition zone
-        const float blend_factor = speed / this->idle_blend_speed_;  // 0.0 at speed=0, 1.0 at idle_blend_speed_
-        pitch = this->idle_pitch_ * (1.0f - blend_factor) + pitch * blend_factor;
+    // When at very low speeds, blend between idle pitch and calculated driving pitch for smooth startup
+    if (speed < this->idle_blend_speed_) {
+        const float blend_factor = speed / this->idle_blend_speed_;
+        pitch = std::lerp(this->idle_pitch_, pitch, blend_factor);
     }
 
-    // Set the pitch
+    // Apply the calculated pitch to the engine sound
     this->engine_sound_.setPitch(pitch);
 }
 
@@ -93,34 +93,41 @@ bool EngineSound::is_playing() const
 
 float EngineSound::calculate_rpm(const float speed) const
 {
-    // Base RPM calculation: idle RPM + speed-based component
+    // Start with base idle RPM as the minimum engine speed
     float rpm = this->min_rpm_;
 
-    // Add RPM based on speed within current gear range
-    if (this->current_gear_ > 0 && this->current_gear_ <= 5) {  // Changed to 5 gears
+    // Add RPM based on speed within the current gear's operating range
+    if (this->current_gear_ > 0 && this->current_gear_ <= this->gear_count_) {
+        // Get the speed range for the current gear (minimum speed for this gear)
         const float gear_min_speed = this->gear_shift_speeds_[this->current_gear_ - 1];
-        const float gear_max_speed = (this->current_gear_ < 5) ? this->gear_shift_speeds_[this->current_gear_] : 2500.0f;  // Max car speed
 
-        // Calculate speed within current gear range (0.0 to 1.0)
+        // Determine maximum speed for current gear (either next gear threshold or absolute max speed)
+        const float gear_max_speed = (this->current_gear_ < this->gear_count_) ? this->gear_shift_speeds_[this->current_gear_] : this->max_car_speed_;
+
+        // Calculate how far we are through the current gear's speed range (0.0 to 1.0)
         const float speed_in_gear = std::clamp((speed - gear_min_speed) / (gear_max_speed - gear_min_speed), 0.0f, 1.0f);
 
-        // Calculate gear-specific RPM range
-        const float gear_rpm_range = (this->max_rpm_ - this->min_rpm_) / 5.0f;  // Divide RPM range across 5 gears
-        rpm += speed_in_gear * gear_rpm_range * 1.2f;                           // 1.2f for overlap between gears
+        // Calculate the RPM range that each gear covers and add proportional RPM
+        const float gear_rpm_range = (this->max_rpm_ - this->min_rpm_) / static_cast<float>(this->gear_count_);
+        rpm += speed_in_gear * gear_rpm_range * this->gear_overlap_multiplier_;
     }
 
+    // Ensure RPM stays within realistic engine limits
     return std::clamp(rpm, this->min_rpm_, this->max_rpm_);
 }
 
-int EngineSound::determine_gear(const float speed) const
+std::size_t EngineSound::determine_gear(const float speed) const
 {
-    // Find the appropriate gear based on speed thresholds
-    for (int gear = 5; gear >= 1; --gear) {  // Changed to 5 gears
+    // Find the appropriate gear by checking speed thresholds from highest to lowest gear
+    // This ensures we select the highest gear that the current speed can support
+    for (std::size_t gear = this->gear_count_; gear >= 1; --gear) {
         if (speed >= this->gear_shift_speeds_[gear - 1]) {
             return gear;
         }
     }
-    return 1;  // Default to first gear for very low speeds
+
+    // Default to first gear for very low speeds or edge cases
+    return 1;
 }
 
 }  // namespace core::engine
