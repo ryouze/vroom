@@ -514,7 +514,7 @@ void run()
                                 ImGui::TableSetColumnIndex(0);
                                 ImGui::TextUnformatted("Handbrake");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, static_cast<int>(gamepad.get_button_count()) - 1, "Button %d");
+                                ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, gamepad_available ? static_cast<int>(gamepad.get_button_count()) : 15, "Button %d");
 
                                 ImGui::EndTable();
                             }
