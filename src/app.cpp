@@ -50,6 +50,7 @@
 
 // Embedded sounds
 #include "assets/data/sounds/car/engine.hpp"
+#include "assets/data/sounds/car/tires.hpp"
 
 namespace app {
 
@@ -114,6 +115,7 @@ void run()
     for (const auto &[identifier, data, size] : {
              // Car sounds
              std::tuple{"engine", engine::data, engine::size},
+             std::tuple{"tires", tires::data, tires::size},
          }) {
         sounds.load(identifier, {data, size});
     }
