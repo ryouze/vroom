@@ -5,6 +5,7 @@ notes/
 cmake/assets/Sounds/
 cmake/assets/Graphics/
 src/**/*.png
+src/**/*.mp3
 
 # Build directory
 build/
