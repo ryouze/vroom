@@ -25,6 +25,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Waypoint AI with real-time collision detection and distance-based throttle control.
 - Analog input with support for both keyboard and gamepad (Xbox).
 - Persistent settings/preferences: saved to disk as a TOML config file and automatically loaded on startup.
+- Car engine and tire screeching sound effects, with fading and volume control.
 - Comprehensive documentation with doxygen-style comments.
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
@@ -56,7 +57,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Expand automated tests.
 - Read the SFML documentation.
   - Study the `sf::View` class in detail to ensure the camera is handled correctly.
-- Add keyboard input prompts (game controls on the main menu?). You have already downloaded them from Kenney's website and added to credits.
 
 **Ideas**
 - Integrate parallel algorithms. Many STL algorithms (e.g., `copy`, `find`, `sort`) support parallel execution policies such as `seq`, `par`, and `par_unseq`, corresponding to "sequential", "parallel", and "parallel unsequenced", respectively. E.g., `auto result1 = std::find(std::execution::par, std::begin(longVector), std::end(longVector), 2);`.
@@ -292,8 +292,8 @@ ctest --verbose
 <!-- - [Input Prompts](https://www.kenney.nl/assets/input-prompts) - Keyboard and gamepad icons. -->
 
 **Sounds:**
-- [Car Engine Loop](https://opengameart.org/content/car-engine-loop-96khz-4s)
-- [Car Tire Squeal Skid Loop](https://opengameart.org/content/car-tire-squeal-skid-loop)
+- [Car Engine Loop](https://opengameart.org/content/car-engine-loop-96khz-4s) - Base car engine sound.
+- [Car Tire Squeal Skid Loop](https://opengameart.org/content/car-tire-squeal-skid-loop) - Tire screeching sound when drifting.
 
 
 ## Contributing
