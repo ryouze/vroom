@@ -28,9 +28,12 @@ class Gamepad {
      * @brief Construct a new Gamepad object.
      *
      * @param id Gamepad ID (default: "0").
+     * @param deadzone Deadzone for all analog inputs (default: "0.15").
      */
-    explicit Gamepad(const unsigned int id = 0)
-        : id_{id} {}
+    explicit Gamepad(const unsigned int id = 0,
+                     const float deadzone = 0.15f)
+        : id_{id},
+          deadzone_{deadzone} {}
 
     /**
      * @brief Check if the gamepad is currently connected.
@@ -57,9 +60,12 @@ class Gamepad {
             return 0.0f;
         }
 
-        // Get the axis value, take only negative values and flip it by default
+        // Get the axis value, take only negative values and flip it
         const float axis_value = sf::Joystick::getAxisPosition(this->id_, gas_axis);
-        const float normalized_value = std::max(0.0f, -axis_value) / 100.0f;
+        float normalized_value = std::max(0.0f, -axis_value) / 100.0f;
+
+        // Apply deadzone to prevent accidental input
+        normalized_value = this->apply_deadzone(normalized_value);
 
         // If flipped in settings, flip the value again
         return settings::current::gamepad_invert_gas ? (1.0f - normalized_value) : normalized_value;
@@ -80,11 +86,14 @@ class Gamepad {
             return 0.0f;
         }
 
-        // Get the axis value, take only positive values and flip it by default
+        // Get the axis value, take only positive values
         const float axis_value = sf::Joystick::getAxisPosition(this->id_, brake_axis);
-        const float normalized_value = std::max(0.0f, axis_value) / 100.0f;
+        float normalized_value = std::max(0.0f, axis_value) / 100.0f;
 
-        // If flipped in settings, flip the value again
+        // Apply deadzone to prevent accidental input
+        normalized_value = this->apply_deadzone(normalized_value);
+
+        // If flipped in settings, flip the value
         return settings::current::gamepad_invert_brake ? (1.0f - normalized_value) : normalized_value;
     }
 
@@ -105,7 +114,10 @@ class Gamepad {
 
         // Get the axis value, take all values
         const float percent = sf::Joystick::getAxisPosition(this->id_, steering_axis);
-        const float normalized_value = std::clamp(percent / 100.0f, -1.0f, 1.0f);
+        float normalized_value = std::clamp(percent / 100.0f, -1.0f, 1.0f);
+
+        // Apply deadzone to prevent accidental input
+        normalized_value = this->apply_deadzone(normalized_value);
 
         // If flipped in settings, flip the value
         return settings::current::gamepad_invert_steering ? -normalized_value : normalized_value;
@@ -136,9 +148,34 @@ class Gamepad {
 
   private:
     /**
+     * @brief Apply deadzone to analog input.
+     *
+     * @param value Input value in any range.
+     *
+     * @return Value with deadzone applied, maintaining the original range.
+     */
+    [[nodiscard]] float apply_deadzone(const float value) const
+    {
+        // If the value is within the deadzone, return 0.0f
+        // This is essentially applying the deadzone, as advertised
+        if (std::abs(value) < this->deadzone_) {
+            return 0.0f;
+        }
+
+        // Otherwise, scale the remaining range to maintain full output
+        const float sign = (value > 0.0f) ? 1.0f : -1.0f;
+        return sign * ((std::abs(value) - this->deadzone_) / (1.0f - this->deadzone_));
+    }
+
+    /**
      * @brief Gamepad ID.
      */
-    unsigned int id_;
+    const unsigned int id_;
+
+    /**
+     * @brief Deadzone threshold for all analog inputs.
+     */
+    const float deadzone_;
 };
 
 }  // namespace core::input
