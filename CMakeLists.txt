@@ -94,7 +94,6 @@ add_library(${PROJECT_NAME}-lib STATIC
   src/assets/sounds.cpp
   src/assets/textures.cpp
   src/core/backend.cpp
-  src/core/gamepad.cpp
   src/core/imgui_sfml_ctx.cpp
   src/core/io.cpp
   src/core/platform/posix.cpp

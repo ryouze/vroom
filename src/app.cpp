@@ -21,8 +21,8 @@
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
 #include "core/colors.hpp"
-#include "core/gamepad.hpp"
 #include "core/imgui_sfml_ctx.hpp"
+#include "core/input.hpp"
 #include "core/io.hpp"
 #include "core/states.hpp"
 #include "core/widgets.hpp"
@@ -68,7 +68,8 @@ void run()
     // - settings::current::anti_aliasing_idx
     // - settings::current::prefer_gamepad
     // - settings::current::gamepad_steering_axis
-    // - settings::current::gamepad_throttle_axis
+    // - settings::current::gamepad_gas_axis
+    // - settings::current::gamepad_brake_axis
     // - settings::current::gamepad_handbrake_button
     // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
     core::io::ConfigContext config_context;
@@ -146,7 +147,7 @@ void run()
         game::entities::Car(textures.get("car_yellow"), rng, race_track, game::entities::CarControlMode::AI)};
 
     // Create gamepad instance
-    core::gamepad::Gamepad gamepad(0);
+    core::input::Gamepad gamepad(0);
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&player_car, &ai_cars]() {
@@ -304,9 +305,6 @@ void run()
         imgui_context.update(dt);
         fps_counter.update_and_draw(dt);
 
-        // Update gamepad info cache
-        gamepad.update(dt);
-
         // Get window sizes, highly re-used during game loop and mandatory for correct resizing
         window_size_u = window.raw().getSize();
         window_size_f = core::backend::to_vector2f(window_size_u);
@@ -315,17 +313,16 @@ void run()
         game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
         // Check if gamepad is usable with current configuration
-        const bool gamepad_available = gamepad.is_usable();
+        const bool gamepad_available = gamepad.is_connected();
 
         if (current_state == core::states::GameState::Playing) [[likely]] {
             game::entities::CarInput player_input = {};
             if (gamepad_available && settings::current::prefer_gamepad) {
                 // Use gamepad input
-                const core::gamepad::GamepadInput gamepad_input = gamepad.get_input();
-                player_input.throttle = gamepad_input.throttle;
-                player_input.brake = gamepad_input.brake;
-                player_input.steering = gamepad_input.steering;
-                player_input.handbrake = gamepad_input.handbrake ? 1.0f : 0.0f;
+                player_input.throttle = gamepad.get_gas();
+                player_input.brake = gamepad.get_brake();
+                player_input.steering = gamepad.get_steer();
+                player_input.handbrake = gamepad.get_handbrake() ? 1.0f : 0.0f;
             }
             else {
                 // Fallback to keyboard state
@@ -451,43 +448,31 @@ void run()
                     if (ImGui::BeginTabItem("Controls")) {
                         ImGui::PushItemWidth(item_width);
 
-                        // Get cached gamepad info
-                        const core::gamepad::GamepadInfo &gamepad_info = gamepad.get_info();
-
                         // Status Overview Section
-                        ImGui::SeparatorText("Status");
-                        if (gamepad_info.connected) {
-                            ImGui::Text("Active Device: %s", gamepad_info.name.c_str());
-                            ImGui::Text("Status: %s", gamepad_available ? "Ready" : "Configuration Required");
-                        }
-                        else {
-                            ImGui::TextUnformatted("Active Device: Keyboard");
-                            ImGui::TextUnformatted("Status: Ready");
-                        }
-
-                        // Input Preference
-                        if (ImGui::Checkbox("Prefer Gamepad When Available", &settings::current::prefer_gamepad)) {
-                            // Setting automatically updated
-                        }
+                        ImGui::SeparatorText("Overview");
+                        ImGui::Text("Gamepad Available: %s", gamepad_available ? "Yes" : "No");
+                        ImGui::Checkbox("Prefer Gamepad When Available", &settings::current::prefer_gamepad);
 
                         // Gamepad Configuration Section
-                        if (gamepad_info.connected || !settings::current::prefer_gamepad) {
+                        if (gamepad_available || !settings::current::prefer_gamepad) {
                             ImGui::SeparatorText("Gamepad Configuration");
 
-                            if (!gamepad_info.connected) {
+                            if (!gamepad_available) {
                                 ImGui::Text("No gamepad connected - settings will apply when connected");
                             }
 
                             // Available axes info (compact)
-                            if (gamepad_info.connected && !gamepad_info.available_axes.empty()) {
+                            if (gamepad_available) {
                                 ImGui::TextUnformatted("Available axes:");
                                 ImGui::Indent();
-                                for (const int axis : gamepad_info.available_axes) {
-                                    if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
-                                        ImGui::BulletText("%s", settings::constants::gamepad_axis_labels[axis]);
-                                    }
-                                    else {
-                                        ImGui::BulletText("Axis %d", axis);
+                                for (int axis = 0; axis < 8; ++axis) {
+                                    if (sf::Joystick::hasAxis(0, static_cast<sf::Joystick::Axis>(axis))) {
+                                        if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
+                                            ImGui::BulletText("%s", settings::constants::gamepad_axis_labels[axis]);
+                                        }
+                                        else {
+                                            ImGui::BulletText("Axis %d", axis);
+                                        }
                                     }
                                 }
                                 ImGui::Unindent();
@@ -506,40 +491,52 @@ void run()
                                 ImGui::SameLine();
                                 ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering);
 
-                                // Throttle/Brake
+                                // Gas
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Throttle/Brake");
+                                ImGui::TextUnformatted("Gas");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::Combo("##throttle_axis", &settings::current::gamepad_throttle_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                ImGui::Combo("##gas_axis", &settings::current::gamepad_gas_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
                                 ImGui::SameLine();
-                                ImGui::Checkbox("Invert##throttle", &settings::current::gamepad_invert_throttle);
+                                ImGui::Checkbox("Invert##gas", &settings::current::gamepad_invert_gas);
+
+                                // Brake
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::TextUnformatted("Brake");
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::Combo("##brake_axis", &settings::current::gamepad_brake_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                ImGui::SameLine();
+                                ImGui::Checkbox("Invert##brake", &settings::current::gamepad_invert_brake);
 
                                 // Handbrake
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
                                 ImGui::TextUnformatted("Handbrake");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, 15, "Button %d");
+                                ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, static_cast<int>(gamepad.get_button_count()) - 1, "Button %d");
 
                                 ImGui::EndTable();
                             }
                         }
 
-                        if (gamepad_info.connected) {
-                            if (ImGui::BeginTable("live_input", 3, ImGuiTableFlags_SizingStretchSame)) {
+                        if (gamepad_available) {
+                            if (ImGui::BeginTable("live_input", 4, ImGuiTableFlags_SizingStretchSame)) {
                                 ImGui::TableSetupColumn("Steering");
-                                ImGui::TableSetupColumn("Throttle");
+                                ImGui::TableSetupColumn("Gas");
+                                ImGui::TableSetupColumn("Brake");
                                 ImGui::TableSetupColumn("Handbrake");
                                 ImGui::TableHeadersRow();
 
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_steering_axis)));
+                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_steer()));
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_processed_axis_value(settings::current::gamepad_throttle_axis)));
+                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_gas()));
                                 ImGui::TableSetColumnIndex(2);
-                                ImGui::TextUnformatted(gamepad.is_button_pressed(settings::current::gamepad_handbrake_button) ? "ON" : "OFF");
+                                ImGui::Text("%.2f", static_cast<double>(gamepad.get_brake()));
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::TextUnformatted(gamepad.get_handbrake() ? "ON" : "OFF");
 
                                 ImGui::EndTable();
                             }

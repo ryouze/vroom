@@ -102,10 +102,12 @@ ConfigContext::ConfigContext(const std::string &filename)
 
             settings::current::prefer_gamepad = tbl["prefer_gamepad"].value_or(settings::current::prefer_gamepad);
             settings::current::gamepad_steering_axis = tbl["gamepad_steering_axis"].value_or(settings::current::gamepad_steering_axis);
-            settings::current::gamepad_throttle_axis = tbl["gamepad_throttle_axis"].value_or(settings::current::gamepad_throttle_axis);
+            settings::current::gamepad_gas_axis = tbl["gamepad_gas_axis"].value_or(settings::current::gamepad_gas_axis);
+            settings::current::gamepad_brake_axis = tbl["gamepad_brake_axis"].value_or(settings::current::gamepad_brake_axis);
             settings::current::gamepad_handbrake_button = tbl["gamepad_handbrake_button"].value_or(settings::current::gamepad_handbrake_button);
             settings::current::gamepad_invert_steering = tbl["gamepad_invert_steering"].value_or(settings::current::gamepad_invert_steering);
-            settings::current::gamepad_invert_throttle = tbl["gamepad_invert_throttle"].value_or(settings::current::gamepad_invert_throttle);
+            settings::current::gamepad_invert_gas = tbl["gamepad_invert_gas"].value_or(settings::current::gamepad_invert_gas);
+            settings::current::gamepad_invert_brake = tbl["gamepad_invert_brake"].value_or(settings::current::gamepad_invert_brake);
 
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
@@ -145,10 +147,12 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("anti_aliasing_idx", settings::current::anti_aliasing_idx);
     tbl.insert_or_assign("prefer_gamepad", settings::current::prefer_gamepad);
     tbl.insert_or_assign("gamepad_steering_axis", settings::current::gamepad_steering_axis);
-    tbl.insert_or_assign("gamepad_throttle_axis", settings::current::gamepad_throttle_axis);
+    tbl.insert_or_assign("gamepad_gas_axis", settings::current::gamepad_gas_axis);
+    tbl.insert_or_assign("gamepad_brake_axis", settings::current::gamepad_brake_axis);
     tbl.insert_or_assign("gamepad_handbrake_button", settings::current::gamepad_handbrake_button);
     tbl.insert_or_assign("gamepad_invert_steering", settings::current::gamepad_invert_steering);
-    tbl.insert_or_assign("gamepad_invert_throttle", settings::current::gamepad_invert_throttle);
+    tbl.insert_or_assign("gamepad_invert_gas", settings::current::gamepad_invert_gas);
+    tbl.insert_or_assign("gamepad_invert_brake", settings::current::gamepad_invert_brake);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

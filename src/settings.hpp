@@ -144,13 +144,22 @@ inline bool prefer_gamepad = true;
 inline int gamepad_steering_axis = 0;  // sf::Joystick::Axis::X
 
 /**
- * @brief Gamepad axis used for throttle/brake (up/down).
+ * @brief Gamepad axis used for gas/throttle.
  *
  * This corresponds to SFML sf::Joystick::Axis enum values.
  *
- * @note This defaults to Y axis (1) which is left stick up/down and works on most controllers.
+ * @note This defaults to R axis (3) which is right stick up/down and works on macOS.
  */
-inline int gamepad_throttle_axis = 1;  // sf::Joystick::Axis::Y
+inline int gamepad_gas_axis = 3;  // sf::Joystick::Axis::R
+
+/**
+ * @brief Gamepad axis used for brake.
+ *
+ * This corresponds to SFML sf::Joystick::Axis enum values.
+ *
+ * @note This defaults to R axis (3) which is right stick up/down and works on macOS.
+ */
+inline int gamepad_brake_axis = 3;  // sf::Joystick::Axis::R
 
 /**
  * @brief Gamepad button used for handbrake.
@@ -171,13 +180,22 @@ inline int gamepad_handbrake_button = 0;
 inline bool gamepad_invert_steering = false;
 
 /**
- * @brief Whether to invert the throttle/brake axis.
+ * @brief Whether to invert the gas axis.
  *
- * If true, the throttle/brake axis will be inverted.
+ * If true, the gas axis will be inverted.
  *
  * @note This defaults to false.
  */
-inline bool gamepad_invert_throttle = false;
+inline bool gamepad_invert_gas = false;
+
+/**
+ * @brief Whether to invert the brake axis.
+ *
+ * If true, the brake axis will be inverted.
+ *
+ * @note This defaults to false.
+ */
+inline bool gamepad_invert_brake = false;
 
 }  // namespace current
 
