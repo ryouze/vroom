@@ -12,7 +12,6 @@ function(fetch_and_link_external_dependencies target)
 
   # SYSTEM is used to prevent applying compile flags to the dependencies
   # Do not build unnecessary SFML modules
-  set(SFML_BUILD_AUDIO OFF)
   set(SFML_BUILD_NETWORK OFF)
   # Prevent SFML v3.0.1 from using the system locale (C locale when using VSCode on macOS)
   # if(NOT DEFINED ENV{LC_ALL})
@@ -69,6 +68,7 @@ function(fetch_and_link_external_dependencies target)
   # Link dependencies to the target
   target_link_libraries(${target} PUBLIC
     ImGui-SFML::ImGui-SFML  # ImGui-SFML already includes both ImGui and SFML
+    SFML::Audio             # SFML audio for sound effects and music
     spdlog::spdlog
     tomlplusplus::tomlplusplus
   )

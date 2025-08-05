@@ -17,6 +17,7 @@
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"
+#include "assets/sounds.hpp"
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
 #include "core/colors.hpp"
@@ -45,6 +46,9 @@
 #include "assets/data/textures/car/car_green_1.hpp"
 #include "assets/data/textures/car/car_red_1.hpp"
 #include "assets/data/textures/car/car_yellow_1.hpp"
+
+// Embedded sounds
+#include "assets/data/sounds/car/engine.hpp"
 
 namespace app {
 
@@ -110,6 +114,16 @@ void run()
              std::tuple{"car_yellow", car_yellow_1::data, car_yellow_1::size},
          }) {
         textures.load(identifier, {data, size});
+    }
+
+    // Setup sound manager and load sounds
+    // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
+    assets::sounds::SoundManager sounds;
+    for (const auto &[identifier, data, size] : {
+             // Car sounds
+             std::tuple{"engine", engine::data, engine::size},
+         }) {
+        sounds.load(identifier, {data, size});
     }
 
     // Create race track
