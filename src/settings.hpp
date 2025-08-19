@@ -202,9 +202,9 @@ inline bool gamepad_invert_brake = false;
  *
  * Controls the volume of the engine sound effect.
  *
- * @note This defaults to 0.6 (60%).
+ * @note This defaults to 0.5 (50%).
  */
-inline float engine_volume = 0.6f;
+inline float engine_volume = 0.5f;
 
 /**
  * @brief Tire screeching sound volume as a float (0.0-1.0).

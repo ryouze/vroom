@@ -41,20 +41,15 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 **Current**:
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
   - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
-- Add ImGui window to backend and test again if everything is working correctly.
 - Check all headers with `header-warden`.
 
 **Later**:
 - Nothing.
 
 **Ideas**
-- Integrate parallel algorithms. Many STL algorithms (e.g., `copy`, `find`, `sort`) support parallel execution policies such as `seq`, `par`, and `par_unseq`, corresponding to "sequential", "parallel", and "parallel unsequenced", respectively. E.g., `auto result1 = std::find(std::execution::par, std::begin(longVector), std::end(longVector), 2);`.
-  - This could be particularly useful for collision checking in `src/core/game.cpp`, which involves iterating over all track tiles until a collision is detected.
 - Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
   - Also implement compile-time enums and switch-case validation (I forgot why I wanted this?).
 - Use `std::pair` for grouping related values to avoid creating separate variables or structs. Example: `Coordinate = std::pair<int, int>;`.
-- Review the debug UI sections in `src/app.cpp` (e.g., lines around 409, 428, 492) and consider if any of this debug information should be exposed in a more polished way or removed.
-- Evaluate the necessity of the `#ifndef NDEBUG` blocks for ImGui includes in `src/core/game.cpp` and `src/core/backend.cpp`. Determine if these are still needed or if ImGui should be a standard part of the debug/dev experience.
 
 **Finishing Touches**
 - Improve the packaging workflow:
