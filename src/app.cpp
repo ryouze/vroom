@@ -52,6 +52,8 @@
 #include "assets/data/sounds/car/engine.hpp"
 #include "assets/data/sounds/car/hit.hpp"
 #include "assets/data/sounds/car/tires.hpp"
+#include "assets/data/sounds/ui/ok.hpp"
+#include "assets/data/sounds/ui/other.hpp"
 
 namespace app {
 
@@ -118,6 +120,8 @@ void run()
              std::tuple{"engine", engine::data, engine::size},
              std::tuple{"tires", tires::data, tires::size},
              std::tuple{"hit", hit::data, hit::size},
+             std::tuple{"ok", ok::data, ok::size},
+             std::tuple{"other", other::data, other::size},
          }) {
         sounds.load(identifier, {data, size});
     }

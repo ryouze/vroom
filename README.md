@@ -285,6 +285,7 @@ ctest --verbose
 - [Car Engine Loop](https://opengameart.org/content/car-engine-loop-96khz-4s) - Base car engine sound.
 - [Car Tire Squeal Skid Loop](https://opengameart.org/content/car-tire-squeal-skid-loop) - Tire screeching sound when drifting.
 - [Door Punch](https://opengameart.org/content/ingame-samples-audio) - Wall collision sound (slowed down to 60% in Audacity for extra impact).
+- [UI and Item sound effect Jingles Sample 2](https://opengameart.org/content/ui-and-item-sound-effect-jingles-sample-2) - UI sounds.
 
 
 ## Contributing
