@@ -17,7 +17,7 @@ EngineSound::EngineSound(const sf::SoundBuffer &sound_buffer)
     : engine_sound_(sound_buffer),
       current_gear_(1)
 {
-    this->engine_sound_.setLooping(true);             // SFML3 uses setLooping instead of setLoop
+    this->engine_sound_.setLooping(true);
     this->engine_sound_.setPitch(this->idle_pitch_);  // Start with idle pitch
 
     SPDLOG_DEBUG("EngineSound created with idle pitch '{}', min pitch '{}', max pitch '{}', min RPM '{}', max RPM '{}'",
@@ -202,7 +202,6 @@ void TireScreechSound::stop()
 WallHitSound::WallHitSound(const sf::SoundBuffer &sound_buffer)
     : wall_hit_sound_(sound_buffer)
 {
-    this->wall_hit_sound_.setLooping(false);  // Wall hit is a one-shot sound effect
     this->wall_hit_sound_.setPitch(this->base_pitch_);
     this->wall_hit_sound_.setVolume(0.0f);  // Start silent, volume set in play()
 
@@ -239,7 +238,7 @@ void WallHitSound::play(const float impact_speed)
     }
     this->wall_hit_sound_.play();
 
-    SPDLOG_DEBUG("Wall hit sound played with impact speed '{}', volume ratio '{}', final volume '{}', pitch '{}'", impact_speed, volume_ratio, final_volume, pitch);
+    // SPDLOG_DEBUG("Wall hit sound played with impact speed '{}', volume ratio '{}', final volume '{}', pitch '{}'", impact_speed, volume_ratio, final_volume, pitch);
 }
 
 UiSound::UiSound(const sf::SoundBuffer &ok_sound_buffer,
@@ -247,10 +246,7 @@ UiSound::UiSound(const sf::SoundBuffer &ok_sound_buffer,
     : ok_sound_(ok_sound_buffer),
       other_sound_(other_sound_buffer)
 {
-    this->ok_sound_.setLooping(false);
-    this->other_sound_.setLooping(false);
-
-    SPDLOG_DEBUG("UiSound created with ok and other sound buffers");
+    SPDLOG_DEBUG("UiSound created with '{}' volume", settings::current::ui_volume * 100.0f);
 }
 
 void UiSound::play_ok()
@@ -265,7 +261,7 @@ void UiSound::play_ok()
     }
     this->ok_sound_.play();
 
-    SPDLOG_DEBUG("UI 'ok' sound played with volume '{}'", final_volume);
+    // SPDLOG_DEBUG("UI 'ok' sound played with volume '{}'", final_volume);
 }
 
 void UiSound::play_other()
@@ -280,7 +276,7 @@ void UiSound::play_other()
     }
     this->other_sound_.play();
 
-    SPDLOG_DEBUG("UI 'other' sound played with volume '{}'", final_volume);
+    // SPDLOG_DEBUG("UI 'other' sound played with volume '{}'", final_volume);
 }
 
 }  // namespace core::sfx
