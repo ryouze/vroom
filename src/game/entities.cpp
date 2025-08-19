@@ -121,7 +121,7 @@ void Car::apply_input(const CarInput &input)
 void Car::update(const float dt)
 {
     // Update waypoint tracking for all cars to maintain race position
-    this->update_waypoint_tracking(dt);
+    this->update_waypoint_tracking();
 
     // Handle AI behavior if in AI mode
     if (this->control_mode_ == CarControlMode::AI) {
@@ -490,7 +490,7 @@ void Car::apply_physics_step(const float dt)
     this->last_position_ = this->sprite_.getPosition();
 }
 
-void Car::update_waypoint_tracking([[maybe_unused]] const float dt)
+void Car::update_waypoint_tracking()
 {
     // Get basic waypoint info
     const auto &waypoints = this->track_.get_waypoints();

@@ -366,11 +366,9 @@ class Car final {
     /**
      * @brief Update waypoint tracking for race position regardless of control mode.
      *
-     * @param dt Time passed since the previous frame, in seconds.
-     *
      * @note This is called automatically during "update()" for all cars to maintain accurate race position tracking.
      */
-    void update_waypoint_tracking(const float dt);
+    void update_waypoint_tracking();
 
     /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
