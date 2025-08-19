@@ -198,13 +198,6 @@ class TireScreechSound final {
      */
     void stop();
 
-    /**
-     * @brief Check if the tire screeching sound is currently playing.
-     *
-     * @return True if the sound is playing, false otherwise.
-     */
-    [[nodiscard]] bool is_playing() const;
-
     // Allow move semantics
     TireScreechSound(TireScreechSound &&) = default;
     TireScreechSound &operator=(TireScreechSound &&) = default;
@@ -263,6 +256,69 @@ class TireScreechSound final {
      * @brief Current actual volume for smooth transitions.
      */
     float current_actual_volume_ = 0.0f;
+};
+
+/**
+ * @brief Class that manages wall hit sound playback when the car collides with track boundaries.
+ *
+ * Plays a wall hit sound effect with volume adjusted based on collision impact speed.
+ */
+class WallHitSound final {
+  public:
+    /**
+     * @brief Construct a new WallHitSound object.
+     *
+     * @param sound_buffer Reference to the wall hit sound buffer to be played.
+     */
+    explicit WallHitSound(const sf::SoundBuffer &sound_buffer);
+
+    /**
+     * @brief Default destructor.
+     */
+    ~WallHitSound() = default;
+
+    /**
+     * @brief Play the wall hit sound with volume based on collision impact speed.
+     *
+     * @param impact_speed Speed at which the collision occurred in pixels per second.
+     *
+     * @note Volume is scaled based on impact speed, with minimum threshold to avoid playing at very low speeds.
+     */
+    void play_hit(const float impact_speed);
+
+    // Allow move semantics
+    WallHitSound(WallHitSound &&) = default;
+    WallHitSound &operator=(WallHitSound &&) = default;
+
+    // Disable copy semantics
+    WallHitSound(const WallHitSound &) = delete;
+    WallHitSound &operator=(const WallHitSound &) = delete;
+
+  private:
+    /**
+     * @brief SFML Sound object for wall hit sound playback.
+     */
+    sf::Sound wall_hit_sound_;
+
+    /**
+     * @brief Minimum impact speed required to trigger wall hit sound in pixels per second.
+     */
+    static constexpr float minimum_impact_speed_pixels_per_second_ = 100.0f;
+
+    /**
+     * @brief Impact speed at which wall hit sound reaches maximum volume in pixels per second.
+     */
+    static constexpr float max_volume_impact_speed_pixels_per_second_ = 800.0f;
+
+    /**
+     * @brief Base pitch for wall hit sound.
+     */
+    static constexpr float base_pitch_ = 1.0f;
+
+    /**
+     * @brief Maximum pitch multiplier for wall hit sound at high impact speeds.
+     */
+    static constexpr float max_pitch_ = 1.3f;
 };
 
 }  // namespace core::sfx

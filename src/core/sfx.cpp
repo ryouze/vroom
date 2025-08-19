@@ -199,9 +199,47 @@ void TireScreechSound::stop()
     }
 }
 
-bool TireScreechSound::is_playing() const
+WallHitSound::WallHitSound(const sf::SoundBuffer &sound_buffer)
+    : wall_hit_sound_(sound_buffer)
 {
-    return this->tire_screech_sound_.getStatus() == sf::SoundSource::Status::Playing;
+    this->wall_hit_sound_.setLooping(false);  // Wall hit is a one-shot sound effect
+    this->wall_hit_sound_.setPitch(this->base_pitch_);
+    this->wall_hit_sound_.setVolume(0.0f);  // Start silent, volume set in play_hit()
+
+    SPDLOG_DEBUG("WallHitSound created with base pitch '{}', max pitch '{}', minimum impact speed '{}', max volume impact speed '{}'",
+                 this->base_pitch_,
+                 this->max_pitch_,
+                 this->minimum_impact_speed_pixels_per_second_,
+                 this->max_volume_impact_speed_pixels_per_second_);
+}
+
+void WallHitSound::play_hit(const float impact_speed)
+{
+    // Only play if impact speed is above minimum threshold
+    if (impact_speed < this->minimum_impact_speed_pixels_per_second_) {
+        return;
+    }
+
+    // Calculate volume based on impact speed (0.0 to 1.0)
+    const float volume_ratio = std::clamp((impact_speed - this->minimum_impact_speed_pixels_per_second_) / (this->max_volume_impact_speed_pixels_per_second_ - this->minimum_impact_speed_pixels_per_second_), 0.0f, 1.0f);
+
+    // Calculate pitch based on impact speed
+    const float pitch_ratio = std::clamp(impact_speed / this->max_volume_impact_speed_pixels_per_second_, 0.0f, 1.0f);
+    const float pitch = std::lerp(this->base_pitch_, this->max_pitch_, pitch_ratio);
+
+    // Apply volume from settings and calculated ratio
+    const float final_volume = settings::current::wall_hit_volume * volume_ratio * 100.0f;
+
+    this->wall_hit_sound_.setVolume(final_volume);
+    this->wall_hit_sound_.setPitch(pitch);
+
+    // Stop any currently playing sound and start the new one
+    if (this->wall_hit_sound_.getStatus() == sf::SoundSource::Status::Playing) {
+        this->wall_hit_sound_.stop();
+    }
+    this->wall_hit_sound_.play();
+
+    SPDLOG_DEBUG("Wall hit sound played with impact speed '{}', volume ratio '{}', final volume '{}', pitch '{}'", impact_speed, volume_ratio, final_volume, pitch);
 }
 
 }  // namespace core::sfx

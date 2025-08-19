@@ -241,6 +241,16 @@ struct CarState final {
      * @brief Current accumulated drift score.
      */
     float drift_score;
+
+    /**
+     * @brief True if the car collided with a wall in the last frame.
+     */
+    bool just_hit_wall;
+
+    /**
+     * @brief Speed at which the last wall collision occurred in pixels per second.
+     */
+    float last_wall_hit_speed;
 };
 
 /**
@@ -447,6 +457,16 @@ class Car final {
      * This is calculated during physics updates and cached to avoid recalculation in get_state().
      */
     float current_lateral_slip_velocity_;
+
+    /**
+     * @brief True if the car hit a wall in the last physics update.
+     */
+    bool just_hit_wall_;
+
+    /**
+     * @brief Speed at which the last wall collision occurred in pixels per second.
+     */
+    float last_wall_hit_speed_;
 
     /**
      * @brief Distance factor for waypoint reach detection used by both AI and waypoint tracking.

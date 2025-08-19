@@ -50,6 +50,7 @@
 
 // Embedded sounds
 #include "assets/data/sounds/car/engine.hpp"
+#include "assets/data/sounds/car/hit.hpp"
 #include "assets/data/sounds/car/tires.hpp"
 
 namespace app {
@@ -116,6 +117,7 @@ void run()
              // Car sounds
              std::tuple{"engine", engine::data, engine::size},
              std::tuple{"tires", tires::data, tires::size},
+             std::tuple{"hit", hit::data, hit::size},
          }) {
         sounds.load(identifier, {data, size});
     }
@@ -275,6 +277,9 @@ void run()
     // Tire screeching sound system
     core::sfx::TireScreechSound tire_screech_sound{sounds.get("tires")};
 
+    // Wall hit sound system
+    core::sfx::WallHitSound wall_hit_sound{sounds.get("hit")};
+
     // TODO: Add vsync and fullscreen saving
 
     const auto on_event = [&](const sf::Event &event) {
@@ -362,6 +367,11 @@ void run()
 
             // Update tire screeching sound based on the currently selected vehicle's drift state
             tire_screech_sound.update(vehicle_state.lateral_slip_velocity, vehicle_state.speed);
+
+            // Play wall hit sound if the currently selected vehicle just hit a wall
+            if (vehicle_state.just_hit_wall) {
+                wall_hit_sound.play_hit(vehicle_state.last_wall_hit_speed);
+            }
         }
 
         // Paused state, this rarely happens, but more often than the initial menu state, that is gonna be shown only once
@@ -665,6 +675,11 @@ void run()
                         float tire_volume_percent = settings::current::tire_screech_volume * 100.0f;
                         if (ImGui::SliderFloat("Tire Screeching", &tire_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
                             settings::current::tire_screech_volume = tire_volume_percent / 100.0f;
+                        }
+
+                        float wall_hit_volume_percent = settings::current::wall_hit_volume * 100.0f;
+                        if (ImGui::SliderFloat("Wall Hits", &wall_hit_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::wall_hit_volume = wall_hit_volume_percent / 100.0f;
                         }
 
                         ImGui::PopItemWidth();

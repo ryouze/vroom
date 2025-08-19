@@ -34,6 +34,8 @@ Car::Car(const sf::Texture &texture,
       current_waypoint_index_number_(1),
       drift_score_(0.0f),
       current_lateral_slip_velocity_(0.0f),
+      just_hit_wall_(false),
+      last_wall_hit_speed_(0.0f),
       ai_update_timer_(0.0f)
 {
     this->sprite_.setOrigin({this->sprite_.getTexture().getSize().x / 2.0f, this->sprite_.getTexture().getSize().y / 2.0f});
@@ -75,6 +77,10 @@ void Car::reset()
 
     // Reset lateral slip velocity
     this->current_lateral_slip_velocity_ = 0.0f;
+
+    // Reset collision state
+    this->just_hit_wall_ = false;
+    this->last_wall_hit_speed_ = 0.0f;
 }
 
 [[nodiscard]] CarState Car::get_state() const
@@ -91,7 +97,9 @@ void Car::reset()
         .steering_angle = this->steering_wheel_angle_,
         .control_mode = this->control_mode_,
         .waypoint_index = this->current_waypoint_index_number_,
-        .drift_score = this->drift_score_};
+        .drift_score = this->drift_score_,
+        .just_hit_wall = this->just_hit_wall_,
+        .last_wall_hit_speed = this->last_wall_hit_speed_};
 }
 
 void Car::set_control_mode(const CarControlMode control_mode)
@@ -306,6 +314,10 @@ void Car::update_ai_behavior(const float dt)
 
 void Car::apply_physics_step(const float dt)
 {
+    // Reset collision state at the beginning of each physics step
+    this->just_hit_wall_ = false;
+    this->last_wall_hit_speed_ = 0.0f;
+
     // Compute forward unit vector from current heading
     const float heading_angle_radians = this->sprite_.getRotation().asRadians();
     const sf::Vector2f forward_unit_vector = {std::cos(heading_angle_radians), std::sin(heading_angle_radians)};
@@ -434,6 +446,10 @@ void Car::apply_physics_step(const float dt)
 
     // Handle collision with track boundaries
     if (!this->track_.is_on_track(this->sprite_.getPosition())) {
+        // Record collision state
+        this->just_hit_wall_ = true;
+        this->last_wall_hit_speed_ = current_speed;
+
         this->sprite_.setPosition(this->last_position_);
         // Restore last legal position
         this->velocity_ = -this->velocity_ * this->config_.collision_velocity_retention_ratio;

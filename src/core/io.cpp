@@ -111,6 +111,7 @@ ConfigContext::ConfigContext(const std::string &filename)
 
             settings::current::engine_volume = tbl["engine_volume"].value_or(settings::current::engine_volume);
             settings::current::tire_screech_volume = tbl["tire_screech_volume"].value_or(settings::current::tire_screech_volume);
+            settings::current::wall_hit_volume = tbl["wall_hit_volume"].value_or(settings::current::wall_hit_volume);
 
             SPDLOG_DEBUG("Config was loaded successfully!");
         }
@@ -158,6 +159,7 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("gamepad_invert_brake", settings::current::gamepad_invert_brake);
     tbl.insert_or_assign("engine_volume", settings::current::engine_volume);
     tbl.insert_or_assign("tire_screech_volume", settings::current::tire_screech_volume);
+    tbl.insert_or_assign("wall_hit_volume", settings::current::wall_hit_volume);
 
     std::ofstream ofs(this->path_, std::ios::trunc);
     if (!ofs) {

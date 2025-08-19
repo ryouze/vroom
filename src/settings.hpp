@@ -215,6 +215,15 @@ inline float engine_volume = 0.6f;
  */
 inline float tire_screech_volume = 0.6f;
 
+/**
+ * @brief Wall hit sound volume as a float (0.0-1.0).
+ *
+ * Controls the volume of the wall hit sound effect when the car collides with track boundaries.
+ *
+ * @note This defaults to 0.45 (45%).
+ */
+inline float wall_hit_volume = 0.45f;
+
 }  // namespace current
 
 }  // namespace settings
