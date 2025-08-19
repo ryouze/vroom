@@ -504,84 +504,82 @@ void run()
                         }
 
                         // Gamepad Configuration Section
-                        if (gamepad_available || !settings::current::prefer_gamepad) {
-                            ImGui::SeparatorText("Gamepad Configuration");
+                        ImGui::SeparatorText("Gamepad Configuration");
 
-                            if (!gamepad_available) {
-                                ImGui::Text("No gamepad connected - settings will apply when connected");
-                            }
+                        if (!gamepad_available) {
+                            ImGui::Text("No gamepad connected - settings will apply when connected");
+                        }
 
-                            // Available axes info (compact)
-                            if (gamepad_available) {
-                                ImGui::TextUnformatted("Available axes:");
-                                ImGui::Indent();
-                                for (int axis = 0; axis < 8; ++axis) {
-                                    if (sf::Joystick::hasAxis(0, static_cast<sf::Joystick::Axis>(axis))) {
-                                        if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
-                                            ImGui::BulletText("%s", settings::constants::gamepad_axis_labels[axis]);
-                                        }
-                                        else {
-                                            ImGui::BulletText("Axis %d", axis);
-                                        }
+                        // Available axes info (compact)
+                        if (gamepad_available) {
+                            ImGui::TextUnformatted("Available axes:");
+                            ImGui::Indent();
+                            for (int axis = 0; axis < 8; ++axis) {
+                                if (sf::Joystick::hasAxis(0, static_cast<sf::Joystick::Axis>(axis))) {
+                                    if (axis >= 0 && axis < IM_ARRAYSIZE(settings::constants::gamepad_axis_labels)) {
+                                        ImGui::BulletText("%s", settings::constants::gamepad_axis_labels[axis]);
+                                    }
+                                    else {
+                                        ImGui::BulletText("Axis %d", axis);
                                     }
                                 }
-                                ImGui::Unindent();
+                            }
+                            ImGui::Unindent();
+                        }
+
+                        if (ImGui::BeginTable("gamepad_config", 2, ImGuiTableFlags_SizingStretchProp)) {
+                            ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+                            ImGui::TableSetupColumn("Binding", ImGuiTableColumnFlags_WidthStretch);
+
+                            // Steering
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::TextUnformatted("Steering");
+                            ImGui::TableSetColumnIndex(1);
+                            if (ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                ui_sound.play_ok();
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering)) {
+                                ui_sound.play_ok();
                             }
 
-                            if (ImGui::BeginTable("gamepad_config", 2, ImGuiTableFlags_SizingStretchProp)) {
-                                ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
-                                ImGui::TableSetupColumn("Binding", ImGuiTableColumnFlags_WidthStretch);
-
-                                // Steering
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Steering");
-                                ImGui::TableSetColumnIndex(1);
-                                if (ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                                    ui_sound.play_ok();
-                                }
-                                ImGui::SameLine();
-                                if (ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering)) {
-                                    ui_sound.play_ok();
-                                }
-
-                                // Gas
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Gas");
-                                ImGui::TableSetColumnIndex(1);
-                                if (ImGui::Combo("##gas_axis", &settings::current::gamepad_gas_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                                    ui_sound.play_ok();
-                                }
-                                ImGui::SameLine();
-                                if (ImGui::Checkbox("Invert##gas", &settings::current::gamepad_invert_gas)) {
-                                    ui_sound.play_ok();
-                                }
-
-                                // Brake
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Brake");
-                                ImGui::TableSetColumnIndex(1);
-                                if (ImGui::Combo("##brake_axis", &settings::current::gamepad_brake_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
-                                    ui_sound.play_ok();
-                                }
-                                ImGui::SameLine();
-                                if (ImGui::Checkbox("Invert##brake", &settings::current::gamepad_invert_brake)) {
-                                    ui_sound.play_ok();
-                                }
-
-                                // Handbrake
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::TextUnformatted("Handbrake");
-                                ImGui::TableSetColumnIndex(1);
-                                if (ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, gamepad_available ? static_cast<int>(gamepad.get_button_count()) : 15, "Button %d")) {
-                                    ui_sound.play_ok();
-                                }
-
-                                ImGui::EndTable();
+                            // Gas
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::TextUnformatted("Gas");
+                            ImGui::TableSetColumnIndex(1);
+                            if (ImGui::Combo("##gas_axis", &settings::current::gamepad_gas_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                ui_sound.play_ok();
                             }
+                            ImGui::SameLine();
+                            if (ImGui::Checkbox("Invert##gas", &settings::current::gamepad_invert_gas)) {
+                                ui_sound.play_ok();
+                            }
+
+                            // Brake
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::TextUnformatted("Brake");
+                            ImGui::TableSetColumnIndex(1);
+                            if (ImGui::Combo("##brake_axis", &settings::current::gamepad_brake_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                ui_sound.play_ok();
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Checkbox("Invert##brake", &settings::current::gamepad_invert_brake)) {
+                                ui_sound.play_ok();
+                            }
+
+                            // Handbrake
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::TextUnformatted("Handbrake");
+                            ImGui::TableSetColumnIndex(1);
+                            if (ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, gamepad_available ? static_cast<int>(gamepad.get_button_count()) : 15, "Button %d")) {
+                                ui_sound.play_ok();
+                            }
+
+                            ImGui::EndTable();
                         }
 
                         if (gamepad_available) {
