@@ -117,7 +117,6 @@ void Window::create()
         // Then, get the FPS limit and enable it
         const unsigned fps_limit = settings::constants::fps_values[settings::current::fps_idx];
 
-        // TODO: Check if this is working correctly (no limit is applied and it's generating 2500+ FPS)
         if (fps_limit == 0) {
             SPDLOG_WARN("FPS limit is set to '0', which means no limit!");
         }

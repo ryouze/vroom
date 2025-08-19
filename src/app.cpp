@@ -174,16 +174,10 @@ void run()
         return entries;
     };
 
-    // Engine sound system
+    // Setup sound effects
     core::sfx::EngineSound engine_sound{sounds.get("engine")};
-
-    // Tire screeching sound system
     core::sfx::TireScreechSound tire_screech_sound{sounds.get("tires")};
-
-    // Wall hit sound system
     core::sfx::WallHitSound wall_hit_sound{sounds.get("hit")};
-
-    // UI sound system
     core::sfx::UiSound ui_sound{sounds.get("ok"), sounds.get("other")};
 
     // Full game reset: restore default track layout, reset cars, reset camera
@@ -288,8 +282,6 @@ void run()
     core::widgets::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
     core::widgets::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
     core::widgets::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
-
-    // TODO: Add vsync and fullscreen saving
 
     const auto on_event = [&](const sf::Event &event) {
         // Let ImGui handle the event
