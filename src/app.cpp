@@ -84,8 +84,7 @@ void run()
     sf::View camera_view;
     // camera_view.setCenter({0.f, 0.f}); // Not needed, because we set it to car position later
     float camera_zoom_factor = 2.5f;
-    camera_view.setSize(window_size_f);  // Same as window size
-    camera_view.zoom(camera_zoom_factor);
+    camera_view.setSize({window_size_f.x * camera_zoom_factor, window_size_f.y * camera_zoom_factor});  // Absolute size based on zoom
 
     // Create random number generator
     std::mt19937 rng{std::random_device{}()};
@@ -362,8 +361,7 @@ void run()
             }
             const auto vehicle_state = selected_vehicle_pointer->get_state();
             camera_view.setCenter(vehicle_state.position);
-            camera_view.setSize(window_size_f);
-            camera_view.zoom(camera_zoom_factor);
+            camera_view.setSize({window_size_f.x * camera_zoom_factor, window_size_f.y * camera_zoom_factor});  // Absolute size based on zoom
             window.raw().setView(camera_view);
             speedometer.update_and_draw(vehicle_state.speed);
             minimap.update_and_draw(dt, vehicle_state.position);

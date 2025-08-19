@@ -45,8 +45,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Check all headers with `header-warden`.
 
 **Later**:
-- Read the SFML documentation.
-  - Study the `sf::View` class in detail to ensure the camera is handled correctly.
+- Nothing.
 
 **Ideas**
 - Integrate parallel algorithms. Many STL algorithms (e.g., `copy`, `find`, `sort`) support parallel execution policies such as `seq`, `par`, and `par_unseq`, corresponding to "sequential", "parallel", and "parallel unsequenced", respectively. E.g., `auto result1 = std::find(std::execution::par, std::begin(longVector), std::end(longVector), 2);`.
