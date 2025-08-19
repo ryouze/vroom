@@ -70,8 +70,8 @@ void EngineSound::update(const float speed)
     // Apply the calculated pitch to the engine sound
     this->engine_sound_.setPitch(pitch);
 
-    // Apply volume from settings (already in 0.0-1.0 range, convert to SFML's 0-100 range)
-    this->engine_sound_.setVolume(settings::current::engine_volume * 100.0f);
+    // Apply volume from settings (already in 0.0-1.0 range, convert to SFML's 0-100 range
+    this->engine_sound_.setVolume(std::clamp(settings::current::engine_volume * 100.0f, 0.0f, 100.0f));
 }
 
 void EngineSound::start()
@@ -92,7 +92,7 @@ void EngineSound::stop()
 
 bool EngineSound::is_playing() const
 {
-    return this->engine_sound_.getStatus() == sf::SoundSource::Status::Playing;  // SFML3 uses sf::SoundSource::Status
+    return this->engine_sound_.getStatus() == sf::SoundSource::Status::Playing;
 }
 
 float EngineSound::calculate_rpm(const float speed) const
@@ -180,7 +180,7 @@ void TireScreechSound::update(const float lateral_slip_velocity, const float car
     this->current_actual_volume_ = std::lerp(this->current_actual_volume_, this->current_target_volume_, this->volume_smoothing_factor_);
 
     // Apply volume from settings and current calculated volume
-    const float final_volume = this->current_actual_volume_ * settings::current::tire_screech_volume * 100.0f;
+    const float final_volume = std::clamp(this->current_actual_volume_ * settings::current::tire_screech_volume * 100.0f, 0.0f, 100.0f);
     this->tire_screech_sound_.setVolume(final_volume);
 
     // Stop playing if volume is essentially zero to save resources
@@ -227,16 +227,10 @@ void WallHitSound::play(const float impact_speed)
     const float pitch = std::lerp(this->base_pitch_, this->max_pitch_, pitch_ratio);
 
     // Apply volume from settings and calculated ratio
-    const float final_volume = settings::current::wall_hit_volume * volume_ratio * 100.0f;
-
+    const float final_volume = std::clamp(settings::current::wall_hit_volume * volume_ratio * 100.0f, 0.0f, 100.0f);
     this->wall_hit_sound_.setVolume(final_volume);
     this->wall_hit_sound_.setPitch(pitch);
-
-    // Stop any currently playing sound and start the new one
-    if (this->wall_hit_sound_.getStatus() == sf::SoundSource::Status::Playing) {
-        this->wall_hit_sound_.stop();
-    }
-    this->wall_hit_sound_.play();
+    this->wall_hit_sound_.play(); // play() restarts if already playing in SFML 3
 
     // SPDLOG_DEBUG("Wall hit sound played with impact speed '{}', volume ratio '{}', final volume '{}', pitch '{}'", impact_speed, volume_ratio, final_volume, pitch);
 }
@@ -252,29 +246,18 @@ UiSound::UiSound(const sf::SoundBuffer &ok_sound_buffer,
 void UiSound::play_ok()
 {
     // Apply volume from settings (convert from 0.0-1.0 to 0-100 range for SFML)
-    const float final_volume = settings::current::ui_volume * 100.0f;
+    const float final_volume = std::clamp(settings::current::ui_volume * 100.0f, 0.0f, 100.0f);
     this->ok_sound_.setVolume(final_volume);
-
-    // Stop any currently playing sound and start the new one
-    if (this->ok_sound_.getStatus() == sf::SoundSource::Status::Playing) {
-        this->ok_sound_.stop();
-    }
-    this->ok_sound_.play();
+    this->ok_sound_.play();  // play() restarts if already playing in SFML 3
 
     // SPDLOG_DEBUG("UI 'ok' sound played with volume '{}'", final_volume);
 }
 
 void UiSound::play_other()
 {
-    // Apply volume from settings (convert from 0.0-1.0 to 0-100 range for SFML)
-    const float final_volume = settings::current::ui_volume * 100.0f;
+    const float final_volume = std::clamp(settings::current::ui_volume * 100.0f, 0.0f, 100.0f);
     this->other_sound_.setVolume(final_volume);
-
-    // Stop any currently playing sound and start the new one
-    if (this->other_sound_.getStatus() == sf::SoundSource::Status::Playing) {
-        this->other_sound_.stop();
-    }
-    this->other_sound_.play();
+    this->other_sound_.play();  // play() restarts if already playing in SFML 3
 
     // SPDLOG_DEBUG("UI 'other' sound played with volume '{}'", final_volume);
 }
