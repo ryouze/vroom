@@ -483,7 +483,7 @@ class Leaderboard final : public IWidget {
     /**
      * @brief How often to update the leaderboard data, in seconds.
      *
-     * @note This is set to 5Hz for good performance while still being responsive.
+     * @note This is set to 20Hz, as higher values (e.g., 60 Hz) are not visually distinguishable, per my own testing.
      */
     static constexpr float update_rate_ = 1.0f / 20.0f;
 
