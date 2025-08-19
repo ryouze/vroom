@@ -35,25 +35,17 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## To-Do
 
 ```md
-**Critical**:
-- Nothing.
-
-**Current**:
-- Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
-  - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
-- Check all headers with `header-warden`.
-
-**Later**:
-- Nothing.
-
 **Ideas**
 - Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
   - Also implement compile-time enums and switch-case validation (I forgot why I wanted this?).
 - Use `std::pair` for grouping related values to avoid creating separate variables or structs. Example: `Coordinate = std::pair<int, int>;`.
+- Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
+  - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
 
 **Finishing Touches**
 - Improve the packaging workflow:
   - Research the use of CPack for cross-platform distribution.
+- Check all headers with `header-warden`.
 - Add new screenshots of the main menu, settings, game, and a GIF (or video) of the game in action.
 ```
 
@@ -62,7 +54,7 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 This project has been tested on the following systems:
 
-- macOS 15.4 (Sequoia)
+- macOS 15.6 (Sequoia)
 - Manjaro 24.0 (Wynsdey)
 - Windows 11 23H2
 
