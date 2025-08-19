@@ -435,8 +435,12 @@ void run()
                 ImGui::Separator();
                 ImGui::Spacing();
 
+                static int last_active_tab = -1;
                 if (ImGui::BeginTabBar("settings_tabs")) {
+                    int current_active_tab = -1;
+
                     if (ImGui::BeginTabItem("Game")) {
+                        current_active_tab = 0;
                         ImGui::PushItemWidth(item_width);
 
                         ImGui::SeparatorText("Hacks");
@@ -461,12 +465,22 @@ void run()
                         float detour_probability = track_config.detour_probability;
                         bool track_config_changed = false;
 
-                        track_config_changed |= ImGui::SliderInt("Width", &track_width_tiles, 3, 30, "%d tiles");
-                        track_config_changed |= ImGui::SliderInt("Height", &track_height_tiles, 3, 30, "%d tiles");
-                        track_config_changed |= ImGui::SliderInt("Tile Size", &tile_size_pixels, 256, 2048, "%d px");
+                        if (ImGui::SliderInt("Width", &track_width_tiles, 3, 30, "%d tiles")) {
+                            ui_sound.play_ok();
+                            track_config_changed = true;
+                        }
+                        if (ImGui::SliderInt("Height", &track_height_tiles, 3, 30, "%d tiles")) {
+                            ui_sound.play_ok();
+                            track_config_changed = true;
+                        }
+                        if (ImGui::SliderInt("Tile Size", &tile_size_pixels, 256, 2048, "%d px")) {
+                            ui_sound.play_ok();
+                            track_config_changed = true;
+                        }
 
                         // Technically this isn't a percentage, because we go from 0.f to 1.f, but this code will be removed later, and I don't care
                         if (ImGui::SliderFloat("Detour Probability", &detour_probability, 0.0f, 1.0f, "%.1f")) {
+                            ui_sound.play_ok();
                             detour_probability = std::clamp(detour_probability, 0.0f, 1.0f);
                             track_config_changed = true;
                         }
@@ -478,7 +492,9 @@ void run()
                         }
 
                         ImGui::SeparatorText("Camera");
-                        ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.1fx");
+                        if (ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.1fx")) {
+                            ui_sound.play_ok();
+                        }
                         if (ImGui::Combo("Car", &selected_vehicle_index, vehicle_names.data(), static_cast<int>(vehicle_names.size()))) {
                             ui_sound.play_ok();
                         }
@@ -487,6 +503,7 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Controls")) {
+                        current_active_tab = 1;
                         ImGui::PushItemWidth(item_width);
 
                         // Status Overview Section
@@ -569,7 +586,9 @@ void run()
                                 ImGui::TableSetColumnIndex(0);
                                 ImGui::TextUnformatted("Handbrake");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, gamepad_available ? static_cast<int>(gamepad.get_button_count()) : 15, "Button %d");
+                                if (ImGui::SliderInt("##handbrake_button", &settings::current::gamepad_handbrake_button, 0, gamepad_available ? static_cast<int>(gamepad.get_button_count()) : 15, "Button %d")) {
+                                    ui_sound.play_ok();
+                                }
 
                                 ImGui::EndTable();
                             }
@@ -609,6 +628,7 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Graphics")) {
+                        current_active_tab = 2;
                         ImGui::PushItemWidth(item_width);
 
 #ifndef NDEBUG
@@ -671,7 +691,9 @@ void run()
                             ui_sound.play_ok();
                         }
                         ImGui::BeginDisabled(!minimap.enabled);
-                        ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s");
+                        if (ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s")) {
+                            ui_sound.play_ok();
+                        }
 
                         // Minimap resolution setting
                         static int minimap_resolution_index = []() {
@@ -704,6 +726,7 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("Audio")) {
+                        current_active_tab = 3;
                         ImGui::PushItemWidth(item_width);
 
                         ImGui::SeparatorText("Volume");
@@ -711,16 +734,19 @@ void run()
                         float volume_percent = settings::current::engine_volume * 100.0f;
                         if (ImGui::SliderFloat("Car Engine", &volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
                             settings::current::engine_volume = volume_percent / 100.0f;
+                            ui_sound.play_ok();
                         }
 
                         float tire_volume_percent = settings::current::tire_screech_volume * 100.0f;
                         if (ImGui::SliderFloat("Tire Screeching", &tire_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
                             settings::current::tire_screech_volume = tire_volume_percent / 100.0f;
+                            ui_sound.play_ok();
                         }
 
                         float wall_hit_volume_percent = settings::current::wall_hit_volume * 100.0f;
                         if (ImGui::SliderFloat("Wall Hits", &wall_hit_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
                             settings::current::wall_hit_volume = wall_hit_volume_percent / 100.0f;
+                            ui_sound.play_ok();
                         }
 
                         float ui_volume_percent = settings::current::ui_volume * 100.0f;
@@ -733,6 +759,7 @@ void run()
                         ImGui::EndTabItem();
                     }
                     if (ImGui::BeginTabItem("About")) {
+                        current_active_tab = 4;
                         ImGui::SeparatorText("Build Information");
                         ImGui::BulletText("Version: %s", generated::PROJECT_VERSION);
                         ImGui::BulletText("Build Configuration: %s", generated::BUILD_CONFIGURATION);
@@ -752,6 +779,13 @@ void run()
                         ImGui::BulletText("Operating System: %s (%s)", generated::OPERATING_SYSTEM, generated::ARCHITECTURE);
                         ImGui::EndTabItem();
                     }
+
+                    // Check if tab changed and play sound
+                    if (current_active_tab != -1 && current_active_tab != last_active_tab && last_active_tab != -1) {
+                        ui_sound.play_other();
+                    }
+                    last_active_tab = current_active_tab;
+
                     ImGui::EndTabBar();
                 }
 
@@ -795,12 +829,12 @@ void run()
                 }
 
                 if (ImGui::Button("Settings", {button_width, 0.0f})) {
-                    ui_sound.play_other();
+                    ui_sound.play_ok();
                     current_state = core::states::GameState::Paused;
                 }
 
                 if (ImGui::Button("Quit", {button_width, 0.0f})) {
-                    ui_sound.play_other();
+                    ui_sound.play_ok();
                     window.raw().close();
                 }
 

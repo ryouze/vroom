@@ -229,9 +229,9 @@ inline float wall_hit_volume = 0.45f;
  *
  * Controls the volume of the UI sound effects (buttons, menus, etc.).
  *
- * @note This defaults to 0.6 (60%).
+ * @note This defaults to 0.7 (70%).
  */
-inline float ui_volume = 0.6f;
+inline float ui_volume = 0.7f;
 
 }  // namespace current
 
