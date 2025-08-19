@@ -35,14 +35,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## To-Do
 
 ```md
-**Ideas**
-- Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
-  - Also implement compile-time enums and switch-case validation (I forgot why I wanted this?).
-- Use `std::pair` for grouping related values to avoid creating separate variables or structs. Example: `Coordinate = std::pair<int, int>;`.
-- Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
-  - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
-
-**Finishing Touches**
 - Improve the packaging workflow:
   - Research the use of CPack for cross-platform distribution.
 - Check all headers with `header-warden`.
