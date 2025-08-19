@@ -202,9 +202,9 @@ inline bool gamepad_invert_brake = false;
  *
  * Controls the volume of the engine sound effect.
  *
- * @note This defaults to 0.5 (50%).
+ * @note This defaults to 0.4 (40%).
  */
-inline float engine_volume = 0.5f;
+inline float engine_volume = 0.4f;
 
 /**
  * @brief Tire screeching sound volume as a float (0.0-1.0).
@@ -220,9 +220,9 @@ inline float tire_screech_volume = 0.6f;
  *
  * Controls the volume of the wall hit sound effect when the car collides with track boundaries.
  *
- * @note This defaults to 0.45 (45%).
+ * @note This defaults to 0.60 (60%).
  */
-inline float wall_hit_volume = 0.45f;
+inline float wall_hit_volume = 0.60f;
 
 /**
  * @brief UI sound volume as a float (0.0-1.0).
