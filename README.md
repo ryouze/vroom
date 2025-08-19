@@ -20,24 +20,16 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 ## Features
 
 - Written in modern C++ (C++20).
-- Highly optimized: 90 FPS while drawing only 3 watts on the Steam Deck OLED.
-- Procedurally generated track with user-defined parameters (try it yourself!).
-- Waypoint AI with real-time collision detection and distance-based throttle control.
+- Highly optimized: runs at 90 FPS while drawing only 3 watts on the Steam Deck OLED.
+- Procedurally generated tracks with user-defined parameters.
+- Waypoint-based AI with real-time collision detection and distance-based throttle control.
 - Analog input with support for both keyboard and gamepad (Xbox).
-- Persistent settings/preferences: saved to disk as a TOML config file and automatically loaded on startup.
-- Car engine and tire screeching sound effects, with fading and volume control.
-- Comprehensive documentation with doxygen-style comments.
+- Persistent settings/preferences: saved to disk as a TOML config file and automatically loaded at startup.
+- Car engine, tire-squealing, and wall-hit sound effects, with fading and volume control.
+- Comprehensive documentation with Doxygen-style comments.
 - Automatic third-party dependency management using CMake's [FetchContent](https://www.foonathan.net/2022/06/cmake-fetchcontent/).
 - No missing STL headers thanks to [header-warden](https://github.com/ryouze/header-warden).
 - Single binary distribution with embedded assets thanks to [asset-packer](https://github.com/ryouze/asset-packer).
-
-
-## Known Issues
-
-- On macOS, the FPS limiter is unreliable due to timing inaccuracies in SFML; this is unfixable.
-  - As a workaround, the default frame rate cap is set to 144 FPS, which seems sufficient for 120 Hz displays found in MBPs.
-  - On Linux, it appears to work correctly; moreover, on a Steam Deck OLED, it runs at a consistent 90 FPS while using only 3 watts of power.
-  - The game engine can easily exceed 2,500 FPS on Apple M1 Pro systems and 10,000+ FPS on a desktop PC with a dedicated GPU.
 
 
 ## To-Do
