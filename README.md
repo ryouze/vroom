@@ -53,7 +53,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Check all headers with `header-warden`.
 
 **Later**:
-- Expand automated tests.
 - Read the SFML documentation.
   - Study the `sf::View` class in detail to ensure the camera is handled correctly.
 

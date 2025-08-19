@@ -212,6 +212,10 @@ if(BUILD_TESTS)
   # Add test executable
   add_executable(tests
     # find tests -name "*.cpp" | sort
+    tests/assets/sounds.test.cpp
+    tests/assets/textures.test.cpp
+    tests/core/colors.test.cpp
+    tests/core/io.test.cpp
     tests/core/platform.test.cpp
     tests/core/world.test.cpp
     tests/game/entities.test.cpp
@@ -222,7 +226,7 @@ if(BUILD_TESTS)
   fetch_and_link_external_test_dependencies("tests")
 
   # Register tests separately with CTest
-  #add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
+  add_test(NAME "[src][assets]" COMMAND tests "[src][assets]")
   add_test(NAME "[src][core]" COMMAND tests "[src][core]")
   add_test(NAME "[src][game]" COMMAND tests "[src][game]")
 endif()
