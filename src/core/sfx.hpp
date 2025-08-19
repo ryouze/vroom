@@ -313,12 +313,12 @@ class WallHitSound final {
     /**
      * @brief Base pitch for wall hit sound.
      */
-    static constexpr float base_pitch_ = 0.6f;
+    static constexpr float base_pitch_ = 0.4f;
 
     /**
      * @brief Maximum pitch multiplier for wall hit sound at high impact speeds.
      */
-    static constexpr float max_pitch_ = 1.3f;
+    static constexpr float max_pitch_ = 1.0f;
 };
 
 }  // namespace core::sfx
