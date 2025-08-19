@@ -370,7 +370,7 @@ void run()
 
             // Play wall hit sound if the currently selected vehicle just hit a wall
             if (vehicle_state.just_hit_wall) {
-                wall_hit_sound.play_hit(vehicle_state.last_wall_hit_speed);
+                wall_hit_sound.play(vehicle_state.last_wall_hit_speed);
             }
         }
 

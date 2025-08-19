@@ -284,7 +284,7 @@ class WallHitSound final {
      *
      * @note Volume is scaled based on impact speed, with minimum threshold to avoid playing at very low speeds.
      */
-    void play_hit(const float impact_speed);
+    void play(const float impact_speed);
 
     // Allow move semantics
     WallHitSound(WallHitSound &&) = default;
@@ -308,12 +308,12 @@ class WallHitSound final {
     /**
      * @brief Impact speed at which wall hit sound reaches maximum volume in pixels per second.
      */
-    static constexpr float max_volume_impact_speed_pixels_per_second_ = 800.0f;
+    static constexpr float max_volume_impact_speed_pixels_per_second_ = 1000.0f;
 
     /**
      * @brief Base pitch for wall hit sound.
      */
-    static constexpr float base_pitch_ = 1.0f;
+    static constexpr float base_pitch_ = 0.6f;
 
     /**
      * @brief Maximum pitch multiplier for wall hit sound at high impact speeds.

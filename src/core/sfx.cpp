@@ -204,7 +204,7 @@ WallHitSound::WallHitSound(const sf::SoundBuffer &sound_buffer)
 {
     this->wall_hit_sound_.setLooping(false);  // Wall hit is a one-shot sound effect
     this->wall_hit_sound_.setPitch(this->base_pitch_);
-    this->wall_hit_sound_.setVolume(0.0f);  // Start silent, volume set in play_hit()
+    this->wall_hit_sound_.setVolume(0.0f);  // Start silent, volume set in play()
 
     SPDLOG_DEBUG("WallHitSound created with base pitch '{}', max pitch '{}', minimum impact speed '{}', max volume impact speed '{}'",
                  this->base_pitch_,
@@ -213,7 +213,7 @@ WallHitSound::WallHitSound(const sf::SoundBuffer &sound_buffer)
                  this->max_volume_impact_speed_pixels_per_second_);
 }
 
-void WallHitSound::play_hit(const float impact_speed)
+void WallHitSound::play(const float impact_speed)
 {
     // Only play if impact speed is above minimum threshold
     if (impact_speed < this->minimum_impact_speed_pixels_per_second_) {
