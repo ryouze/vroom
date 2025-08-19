@@ -451,13 +451,42 @@ class Leaderboard final : public IWidget {
     /**
      * @brief Update the leaderboard and draw it on the provided target as long as "enabled" is true. If "enabled" is false, do nothing.
      *
-     * @param entries Vector of leaderboard entries containing car names and drift scores.
+     * The leaderboard data is refreshed at a throttled rate to improve performance, but the graphics are updated every frame.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     * @param data_collector Function that collects the current leaderboard data when called.
      *
      * @note Call this once per frame, before ImGui is rendered to the screen (i.e., before "render()").
      */
-    void update_and_draw(const std::vector<LeaderboardEntry> &entries) const;
+    void update_and_draw(const float dt,
+                         const std::function<std::vector<LeaderboardEntry>()> &data_collector);
 
   private:
+    /**
+     * @brief Update the leaderboard data with throttling.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     * @param data_collector Function that collects the current leaderboard data when called.
+     *
+     * @note This method is called by "update_and_draw()" and is not intended to be called directly. Call this method once each frame. The value of "enabled" does NOT affect this method, use the higher-level "update_and_draw()" method instead.
+     */
+    void update(const float dt,
+                const std::function<std::vector<LeaderboardEntry>()> &data_collector);
+
+    /**
+     * @brief Draw the leaderboard in the corner provided during construction.
+     *
+     * @note This method is called by "update_and_draw()" and is not intended to be called directly. Call this after "update()" and before ImGui is rendered to the screen (i.e., before "render()"). The value of "enabled" does NOT affect this method, use the higher-level "update_and_draw()" method instead.
+     */
+    void draw() const;
+
+    /**
+     * @brief How often to update the leaderboard data, in seconds.
+     *
+     * @note This is set to 5Hz for good performance while still being responsive.
+     */
+    static constexpr float update_rate_ = 1.0f / 20.0f;
+
     /**
      * @brief Size of the leaderboard window  in pixels (width, height).
      */
@@ -479,6 +508,16 @@ class Leaderboard final : public IWidget {
      * @brief Padding offset based on the pivot point.
      */
     ImVec2 offset_;
+
+    /**
+     * @brief Accumulated time since the last leaderboard data update.
+     */
+    float accumulation_ = 0.0f;
+
+    /**
+     * @brief Cached leaderboard entries updated at throttled rate.
+     */
+    std::vector<LeaderboardEntry> cached_entries_;
 };
 
 }  // namespace core::widgets

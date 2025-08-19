@@ -47,7 +47,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 - Nothing.
 
 **Current**:
-- Throttle drift score updates.
 - Add `CarColor` enum, then set it in `Car` constructor, so the car is always aware what color it is.
   - This can be used in the `Leaderboard` UI widget and other places to avoid hardcoding the index-to-color mapping.
 - Add ImGui window to backend and test again if everything is working correctly.

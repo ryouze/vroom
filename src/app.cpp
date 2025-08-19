@@ -352,7 +352,7 @@ void run()
             window.raw().setView(camera_view);
             speedometer.update_and_draw(vehicle_state.speed);
             minimap.update_and_draw(dt, vehicle_state.position);
-            leaderboard.update_and_draw(collect_leaderboard_data());
+            leaderboard.update_and_draw(dt, collect_leaderboard_data);
 
             // Update engine sound based on the currently selected vehicle's speed
             engine_sound.update(vehicle_state.speed);

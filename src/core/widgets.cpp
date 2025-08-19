@@ -6,6 +6,7 @@
 #include <cstddef>      // for std::size_t
 #include <cstdint>      // for std::uint32_t
 #include <format>       // for std::format
+#include <functional>   // for std::function
 #include <stdexcept>    // for std::runtime_error
 #include <string>       // for std::string
 #include <type_traits>  // for std::underlying_type_t
@@ -296,13 +297,41 @@ Leaderboard::Leaderboard(sf::RenderTarget &window,
                  this->offset_.y);
 }
 
-void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) const
+void Leaderboard::update_and_draw(const float dt,
+                                  const std::function<std::vector<LeaderboardEntry>()> &data_collector)
 {
     // If disabled, do nothing
     if (!this->enabled) {
         return;
     }
 
+    this->update(dt, data_collector);
+    this->draw();
+}
+
+void Leaderboard::update(const float dt,
+                         const std::function<std::vector<LeaderboardEntry>()> &data_collector)
+{
+    // Accumulate the delta time
+    this->accumulation_ += dt;
+
+    // If the accumulated time exceeds the update rate, refresh the leaderboard data
+    if (this->accumulation_ >= this->update_rate_) {
+        // Collect fresh data only when throttle interval is reached
+        this->cached_entries_ = data_collector();
+
+        // Sort the cached entries for display (highest score first)
+        std::sort(this->cached_entries_.begin(), this->cached_entries_.end(),
+                  [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
+                      return a.drift_score > b.drift_score;  // Descending order
+                  });
+
+        this->accumulation_ -= this->update_rate_;  // Keep any overshoot
+    }
+}
+
+void Leaderboard::draw() const
+{
     // Get the current window size
     const auto [width, height] = this->window_.getSize();
 
@@ -319,20 +348,13 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
                      ImGuiWindowFlags_NoResize  // Prevent manual resizing
     );
 
-    // Create a sorted copy of entries for display (highest score first)
-    std::vector<LeaderboardEntry> sorted_entries = entries;
-    std::sort(sorted_entries.begin(), sorted_entries.end(),
-              [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
-                  return a.drift_score > b.drift_score;  // Descending order
-              });
-
     // Display header
     ImGui::Text("Drift Scores");
     ImGui::Separator();
 
-    // Display entries with position numbers
-    for (std::size_t i = 0; i < sorted_entries.size(); ++i) {
-        const auto &entry = sorted_entries[i];
+    // Display cached entries with position numbers
+    for (std::size_t i = 0; i < this->cached_entries_.size(); ++i) {
+        const auto &entry = this->cached_entries_[i];
 
         // Set yellow color for player entries
         if (entry.is_player) {
@@ -351,7 +373,7 @@ void Leaderboard::update_and_draw(const std::vector<LeaderboardEntry> &entries) 
     }
 
     // If no entries, show placeholder
-    if (sorted_entries.empty()) {
+    if (this->cached_entries_.empty()) {
         ImGui::Text("No cars detected");
     }
 
