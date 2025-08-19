@@ -140,7 +140,7 @@ void run()
         game::entities::Car(textures.get("car_yellow"), rng, race_track, game::entities::CarControlMode::AI)};
 
     // Create gamepad instance
-    core::input::Gamepad gamepad(0);
+    core::input::Gamepad gamepad;
 
     // Function to reset the cars to their spawn point and reset their speed
     const auto reset_cars = [&player_car, &ai_cars]() {
