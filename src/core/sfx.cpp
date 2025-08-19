@@ -242,4 +242,45 @@ void WallHitSound::play(const float impact_speed)
     SPDLOG_DEBUG("Wall hit sound played with impact speed '{}', volume ratio '{}', final volume '{}', pitch '{}'", impact_speed, volume_ratio, final_volume, pitch);
 }
 
+UiSound::UiSound(const sf::SoundBuffer &ok_sound_buffer,
+                 const sf::SoundBuffer &other_sound_buffer)
+    : ok_sound_(ok_sound_buffer),
+      other_sound_(other_sound_buffer)
+{
+    this->ok_sound_.setLooping(false);
+    this->other_sound_.setLooping(false);
+
+    SPDLOG_DEBUG("UiSound created with ok and other sound buffers");
+}
+
+void UiSound::play_ok()
+{
+    // Apply volume from settings (convert from 0.0-1.0 to 0-100 range for SFML)
+    const float final_volume = settings::current::ui_volume * 100.0f;
+    this->ok_sound_.setVolume(final_volume);
+
+    // Stop any currently playing sound and start the new one
+    if (this->ok_sound_.getStatus() == sf::SoundSource::Status::Playing) {
+        this->ok_sound_.stop();
+    }
+    this->ok_sound_.play();
+
+    SPDLOG_DEBUG("UI 'ok' sound played with volume '{}'", final_volume);
+}
+
+void UiSound::play_other()
+{
+    // Apply volume from settings (convert from 0.0-1.0 to 0-100 range for SFML)
+    const float final_volume = settings::current::ui_volume * 100.0f;
+    this->other_sound_.setVolume(final_volume);
+
+    // Stop any currently playing sound and start the new one
+    if (this->other_sound_.getStatus() == sf::SoundSource::Status::Playing) {
+        this->other_sound_.stop();
+    }
+    this->other_sound_.play();
+
+    SPDLOG_DEBUG("UI 'other' sound played with volume '{}'", final_volume);
+}
+
 }  // namespace core::sfx

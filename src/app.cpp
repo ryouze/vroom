@@ -175,6 +175,18 @@ void run()
         return entries;
     };
 
+    // Engine sound system
+    core::sfx::EngineSound engine_sound{sounds.get("engine")};
+
+    // Tire screeching sound system
+    core::sfx::TireScreechSound tire_screech_sound{sounds.get("tires")};
+
+    // Wall hit sound system
+    core::sfx::WallHitSound wall_hit_sound{sounds.get("hit")};
+
+    // UI sound system
+    core::sfx::UiSound ui_sound{sounds.get("ok"), sounds.get("other")};
+
     // Full game reset: restore default track layout, reset cars, reset camera
     const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor]() {
         race_track.reset();  // Rebuild track with default settings
@@ -189,7 +201,7 @@ void run()
     } key_states;
 
     // Handle key press events
-    const auto onKeyPressed = [&key_states, &current_state](const sf::Event::KeyPressed &pressed) {
+    const auto onKeyPressed = [&key_states, &current_state, &ui_sound](const sf::Event::KeyPressed &pressed) {
         switch (pressed.code) {
         [[likely]] case sf::Keyboard::Key::Up:
             key_states.gas = true;
@@ -210,10 +222,13 @@ void run()
             current_state = current_state == core::states::GameState::Playing
                                 ? core::states::GameState::Paused
                                 : core::states::GameState::Playing;
+            ui_sound.play_other();  // Play 'other' sound for pause/unpause
             break;
         [[unlikely]] case sf::Keyboard::Key::Enter:
-            if (current_state == core::states::GameState::Menu)
+            if (current_state == core::states::GameState::Menu) {
                 current_state = core::states::GameState::Playing;
+                ui_sound.play_ok();  // Play 'ok' sound for starting game
+            }
             break;
         default:
             break;
@@ -274,15 +289,6 @@ void run()
     core::widgets::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
     core::widgets::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
     core::widgets::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
-
-    // Engine sound system
-    core::sfx::EngineSound engine_sound{sounds.get("engine")};
-
-    // Tire screeching sound system
-    core::sfx::TireScreechSound tire_screech_sound{sounds.get("tires")};
-
-    // Wall hit sound system
-    core::sfx::WallHitSound wall_hit_sound{sounds.get("hit")};
 
     // TODO: Add vsync and fullscreen saving
 
@@ -406,15 +412,18 @@ void run()
                 }
 
                 if (ImGui::Button("Resume", {button_width, 0.f})) {
+                    ui_sound.play_ok();
                     current_state = core::states::GameState::Playing;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Main Menu", {button_width, 0.f})) {
+                    ui_sound.play_other();
                     reset_game();
                     current_state = core::states::GameState::Menu;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Quit", {button_width, 0.f})) {
+                    ui_sound.play_other();
                     window.raw().close();
                 }
 
@@ -432,6 +441,7 @@ void run()
 
                         ImGui::SeparatorText("Hacks");
                         if (ImGui::Button("Reset Game")) {
+                            ui_sound.play_other();
                             reset_game();
                             // Change to playing for instant visual feedback
                             current_state = core::states::GameState::Playing;
@@ -439,6 +449,7 @@ void run()
 
                         bool player_ai_controlled = (player_car.get_state().control_mode == game::entities::CarControlMode::AI);
                         if (ImGui::Checkbox("Enable AI Driver", &player_ai_controlled)) {
+                            ui_sound.play_ok();
                             player_car.set_control_mode(player_ai_controlled ? game::entities::CarControlMode::AI : game::entities::CarControlMode::Player);
                         }
 
@@ -468,7 +479,9 @@ void run()
 
                         ImGui::SeparatorText("Camera");
                         ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.1fx");
-                        ImGui::Combo("Car", &selected_vehicle_index, vehicle_names.data(), static_cast<int>(vehicle_names.size()));
+                        if (ImGui::Combo("Car", &selected_vehicle_index, vehicle_names.data(), static_cast<int>(vehicle_names.size()))) {
+                            ui_sound.play_ok();
+                        }
 
                         ImGui::PopItemWidth();
                         ImGui::EndTabItem();
@@ -479,7 +492,9 @@ void run()
                         // Status Overview Section
                         ImGui::SeparatorText("Overview");
                         ImGui::Text("Gamepad Available: %s", gamepad_available ? "Yes" : "No");
-                        ImGui::Checkbox("Prefer Gamepad When Available", &settings::current::prefer_gamepad);
+                        if (ImGui::Checkbox("Prefer Gamepad When Available", &settings::current::prefer_gamepad)) {
+                            ui_sound.play_ok();
+                        }
 
                         // Gamepad Configuration Section
                         if (gamepad_available || !settings::current::prefer_gamepad) {
@@ -515,27 +530,39 @@ void run()
                                 ImGui::TableSetColumnIndex(0);
                                 ImGui::TextUnformatted("Steering");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                if (ImGui::Combo("##steering_axis", &settings::current::gamepad_steering_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                    ui_sound.play_ok();
+                                }
                                 ImGui::SameLine();
-                                ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering);
+                                if (ImGui::Checkbox("Invert##steering", &settings::current::gamepad_invert_steering)) {
+                                    ui_sound.play_ok();
+                                }
 
                                 // Gas
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
                                 ImGui::TextUnformatted("Gas");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::Combo("##gas_axis", &settings::current::gamepad_gas_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                if (ImGui::Combo("##gas_axis", &settings::current::gamepad_gas_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                    ui_sound.play_ok();
+                                }
                                 ImGui::SameLine();
-                                ImGui::Checkbox("Invert##gas", &settings::current::gamepad_invert_gas);
+                                if (ImGui::Checkbox("Invert##gas", &settings::current::gamepad_invert_gas)) {
+                                    ui_sound.play_ok();
+                                }
 
                                 // Brake
                                 ImGui::TableNextRow();
                                 ImGui::TableSetColumnIndex(0);
                                 ImGui::TextUnformatted("Brake");
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::Combo("##brake_axis", &settings::current::gamepad_brake_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels));
+                                if (ImGui::Combo("##brake_axis", &settings::current::gamepad_brake_axis, settings::constants::gamepad_axis_labels, IM_ARRAYSIZE(settings::constants::gamepad_axis_labels))) {
+                                    ui_sound.play_ok();
+                                }
                                 ImGui::SameLine();
-                                ImGui::Checkbox("Invert##brake", &settings::current::gamepad_invert_brake);
+                                if (ImGui::Checkbox("Invert##brake", &settings::current::gamepad_invert_brake)) {
+                                    ui_sound.play_ok();
+                                }
 
                                 // Handbrake
                                 ImGui::TableNextRow();
@@ -591,6 +618,7 @@ void run()
 
                         ImGui::SeparatorText("Display");
                         if (ImGui::Checkbox("Fullscreen", &settings::current::fullscreen)) {
+                            ui_sound.play_ok();
                             window.recreate();
                         }
 
@@ -599,6 +627,7 @@ void run()
                             for (int i = 0; i < static_cast<int>(window.available_fullscreen_modes.size()); ++i) {
                                 const bool is_selected = (i == settings::current::mode_idx);
                                 if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
+                                    ui_sound.play_ok();
                                     settings::current::mode_idx = i;
                                     window.recreate();
                                 }
@@ -614,11 +643,13 @@ void run()
                         ImGui::EndDisabled();
 
                         if (ImGui::Combo("Anti-Aliasing", &settings::current::anti_aliasing_idx, settings::constants::anti_aliasing_labels, IM_ARRAYSIZE(settings::constants::anti_aliasing_labels))) {
+                            ui_sound.play_ok();
                             window.recreate();
                         }
 
                         ImGui::SeparatorText("Frame Rate");
                         if (ImGui::Checkbox("V-Sync", &settings::current::vsync)) {
+                            ui_sound.play_ok();
                             window.recreate();
                             // Hack: set FPS limit's label to "Unlimited", because we don't store previous value
                             settings::current::fps_idx = 8;
@@ -626,6 +657,7 @@ void run()
 
                         ImGui::BeginDisabled(settings::current::vsync);
                         if (ImGui::Combo("FPS Limit", &settings::current::fps_idx, settings::constants::fps_labels, IM_ARRAYSIZE(settings::constants::fps_labels))) {
+                            ui_sound.play_ok();
                             window.recreate();
                         }
                         ImGui::EndDisabled();
@@ -633,8 +665,10 @@ void run()
                         ImGui::SeparatorText("Widgets");
 
                         if (ImGui::Checkbox("FPS Counter", &fps_counter.enabled)) {
+                            ui_sound.play_ok();
                         }
                         if (ImGui::Checkbox("Minimap", &minimap.enabled)) {
+                            ui_sound.play_ok();
                         }
                         ImGui::BeginDisabled(!minimap.enabled);
                         ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s");
@@ -655,12 +689,15 @@ void run()
                         static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
 
                         if (ImGui::Combo("Minimap Resolution", &minimap_resolution_index, minimap_resolution_labels, IM_ARRAYSIZE(minimap_resolution_labels))) {
+                            ui_sound.play_ok();
                             minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
                         }
                         ImGui::EndDisabled();
                         if (ImGui::Checkbox("Speedometer", &speedometer.enabled)) {
+                            ui_sound.play_ok();
                         }
                         if (ImGui::Checkbox("Leaderboard", &leaderboard.enabled)) {
+                            ui_sound.play_ok();
                         }
 
                         ImGui::PopItemWidth();
@@ -684,6 +721,12 @@ void run()
                         float wall_hit_volume_percent = settings::current::wall_hit_volume * 100.0f;
                         if (ImGui::SliderFloat("Wall Hits", &wall_hit_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
                             settings::current::wall_hit_volume = wall_hit_volume_percent / 100.0f;
+                        }
+
+                        float ui_volume_percent = settings::current::ui_volume * 100.0f;
+                        if (ImGui::SliderFloat("UI Sounds", &ui_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::ui_volume = ui_volume_percent / 100.0f;
+                            ui_sound.play_ok();  // Play a sound when the slider changes
                         }
 
                         ImGui::PopItemWidth();
@@ -746,15 +789,18 @@ void run()
                 ImGui::Indent(indent_amount);
 
                 if (ImGui::Button("Play", {button_width, 0.0f})) {
+                    ui_sound.play_ok();
                     reset_game();
                     current_state = core::states::GameState::Playing;
                 }
 
                 if (ImGui::Button("Settings", {button_width, 0.0f})) {
+                    ui_sound.play_other();
                     current_state = core::states::GameState::Paused;
                 }
 
                 if (ImGui::Button("Quit", {button_width, 0.0f})) {
+                    ui_sound.play_other();
                     window.raw().close();
                 }
 

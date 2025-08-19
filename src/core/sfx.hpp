@@ -321,4 +321,59 @@ class WallHitSound final {
     static constexpr float max_pitch_ = 1.0f;
 };
 
+/**
+ * @brief Class that manages UI sound playback for menu interactions.
+ *
+ * Plays UI sound effects for various interface interactions like button clicks and menu navigation.
+ */
+class UiSound final {
+  public:
+    /**
+     * @brief Construct a new UiSound object.
+     *
+     * @param ok_sound_buffer Reference to the 'ok' sound buffer to be played for confirmations.
+     * @param other_sound_buffer Reference to the 'other' sound buffer to be played for misc actions.
+     */
+    UiSound(const sf::SoundBuffer &ok_sound_buffer,
+            const sf::SoundBuffer &other_sound_buffer);
+
+    /**
+     * @brief Default destructor.
+     */
+    ~UiSound() = default;
+
+    /**
+     * @brief Play the 'ok' sound for confirmations and most UI interactions.
+     *
+     * Used for button clicks, confirmations, and general UI navigation.
+     */
+    void play_ok();
+
+    /**
+     * @brief Play the 'other' sound for miscellaneous actions.
+     *
+     * Used for actions like opening/closing menus, toggling pause, and other special actions.
+     */
+    void play_other();
+
+    // Allow move semantics
+    UiSound(UiSound &&) = default;
+    UiSound &operator=(UiSound &&) = default;
+
+    // Disable copy semantics
+    UiSound(const UiSound &) = delete;
+    UiSound &operator=(const UiSound &) = delete;
+
+  private:
+    /**
+     * @brief SFML Sound object for 'ok' sound playback.
+     */
+    sf::Sound ok_sound_;
+
+    /**
+     * @brief SFML Sound object for 'other' sound playback.
+     */
+    sf::Sound other_sound_;
+};
+
 }  // namespace core::sfx
