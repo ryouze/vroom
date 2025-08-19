@@ -35,12 +35,11 @@ void TextureManager::load(const std::string &identifier,
 const sf::Texture &TextureManager::get(const std::string &identifier) const
 {
     // SPDLOG_DEBUG("Retrieving texture with identifier: {}", identifier);
-    const auto it = this->textures_.find(identifier);
-    if (it == this->textures_.cend()) {
+    if (!this->textures_.contains(identifier)) {
         throw std::out_of_range(std::format("Texture identifier not found: {}", identifier));
     }
     SPDLOG_DEBUG("Texture '{}' found, returning it!", identifier);
-    return it->second;
+    return this->textures_.at(identifier);
 }
 
 std::size_t TextureManager::size() const

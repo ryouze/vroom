@@ -53,7 +53,6 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
   - This could be particularly useful for collision checking in `src/core/game.cpp`, which involves iterating over all track tiles until a collision is detected.
 - Add `static_assert` checks throughout the codebase (e.g., `static_assert(isIntegral<int>() == true);`) to simplify debugging as the project scales.
   - Also implement compile-time enums and switch-case validation (I forgot why I wanted this?).
-- Use the `contains` method for associative containers (e.g., sets, maps) instead of the traditional "find and compare to end" idiom. This applies to areas like texture management in `src/assets/textures.cpp`.
 - Use `std::pair` for grouping related values to avoid creating separate variables or structs. Example: `Coordinate = std::pair<int, int>;`.
 - Review the debug UI sections in `src/app.cpp` (e.g., lines around 409, 428, 492) and consider if any of this debug information should be exposed in a more polished way or removed.
 - Evaluate the necessity of the `#ifndef NDEBUG` blocks for ImGui includes in `src/core/game.cpp` and `src/core/backend.cpp`. Determine if these are still needed or if ImGui should be a standard part of the debug/dev experience.

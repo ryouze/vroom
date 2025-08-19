@@ -34,12 +34,11 @@ void SoundManager::load(const std::string &identifier,
 const sf::SoundBuffer &SoundManager::get(const std::string &identifier) const
 {
     // SPDLOG_DEBUG("Retrieving sound buffer with identifier: {}", identifier);
-    const auto it = this->sound_buffers_.find(identifier);
-    if (it == this->sound_buffers_.cend()) {
+    if (!this->sound_buffers_.contains(identifier)) {
         throw std::out_of_range(std::format("Sound buffer identifier not found: {}", identifier));
     }
     SPDLOG_DEBUG("Sound buffer '{}' found, returning it!", identifier);
-    return it->second;
+    return this->sound_buffers_.at(identifier);
 }
 
 std::size_t SoundManager::size() const
