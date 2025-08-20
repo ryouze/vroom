@@ -6,8 +6,14 @@
 
 vroom is a cross-platform 2D racing game with arcade drift physics, procedurally-generated tracks, and waypoint AI.
 
-![Screenshot](assets/screenshot.jpeg)
-![Settings](assets/settings.jpeg)
+<p align="center">
+  <img src="assets/gameplay1.gif" width="45%" alt="Gameplay 1">
+  <img src="assets/gameplay2.gif" width="45%" alt="Gameplay 2">
+</p>
+
+<p align="center">
+  <img src="assets/screenshot.png" width="70%" alt="Screenshot">
+</p>
 
 
 ## Motivation
@@ -143,21 +149,18 @@ To start the program, simply run the `vroom` executable (`vroom.app` on macOS, `
 
 ### Controls
 
-#### Keyboard
 
-- **Gas**: Up Arrow (↑)
-- **Brake**: Down Arrow (↓)
-- **Left**: Left Arrow (←)
-- **Right**: Right Arrow (→)
-- **Handbrake**: Spacebar
-- **Menu Options**: ESC
 
-#### Gamepad (Xbox layout)
+| Action           | Keyboard        | Gamepad (Xbox layout) |
+| ---------------- | --------------- | --------------------- |
+| **Gas**          | Up Arrow (↑)    | Right Stick (↑)       |
+| **Brake**        | Down Arrow (↓)  | Right Stick (↓)       |
+| **Left**         | Left Arrow (←)  | Left Stick (←)        |
+| **Right**        | Right Arrow (→) | Left Stick (→)        |
+| **Handbrake**    | Spacebar        | A Button              |
+| **Menu Options** | ESC             | -                     |
 
-- **Gas/Brake**: Right Stick (↑↓)
-- **Steering**: Left Stick (←→)
-- **Handbrake**: A Button
-
+![Controls](assets/controls.png)
 
 ### How the AI Works
 
