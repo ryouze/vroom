@@ -684,21 +684,22 @@ void run()
                         }
 
                         // Minimap resolution setting
+                        static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
+                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
+                        static constexpr std::size_t minimap_resolution_count = IM_ARRAYSIZE(minimap_resolution_values);
+
                         static int minimap_resolution_index = []() {
                             // Initialize to match the default resolution
                             static constexpr sf::Vector2u default_res = {256u, 256u};
-                            static constexpr sf::Vector2u resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
-                            for (int i = 0; i < static_cast<int>(IM_ARRAYSIZE(resolution_values)); ++i) {
-                                if (resolution_values[i] == default_res) {
+                            for (int i = 0; i < static_cast<int>(minimap_resolution_count); ++i) {
+                                if (minimap_resolution_values[i] == default_res) {
                                     return i;
                                 }
                             }
                             return 2;  // Fallback to 256x256
                         }();
-                        static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
-                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
 
-                        if (ImGui::Combo("Minimap Resolution", &minimap_resolution_index, minimap_resolution_labels, IM_ARRAYSIZE(minimap_resolution_labels))) {
+                        if (ImGui::Combo("Minimap Resolution", &minimap_resolution_index, minimap_resolution_labels, static_cast<int>(minimap_resolution_count))) {
                             ui_sound.play_ok();
                             minimap.set_resolution(minimap_resolution_values[static_cast<std::size_t>(minimap_resolution_index)]);
                         }
