@@ -40,12 +40,8 @@ The primary goal is to learn and explore, not to build a groundbreaking game. Th
 
 ## To-Do
 
-```md
 - Improve the packaging workflow:
   - Research the use of CPack for cross-platform distribution.
-- Check all headers with `header-warden`.
-- Add new screenshots of the main menu, settings, game, and a GIF (or video) of the game in action.
-```
 
 
 ## Tested Systems
