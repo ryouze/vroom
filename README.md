@@ -6,6 +6,8 @@
 
 vroom is a cross-platform 2D racing game with arcade drift physics, procedurally-generated tracks, and waypoint AI.
 
+👉 Blog post: [How I Built a C++20 Game Engine from Scratch (vroom)](https://ryouze.net/posts/vroom/)
+
 <p align="center">
   <img src="assets/gameplay1.gif" width="45%" alt="Gameplay 1">
   <img src="assets/gameplay2.gif" width="45%" alt="Gameplay 2">
