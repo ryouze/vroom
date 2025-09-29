@@ -15,6 +15,7 @@
 
 #include "core/world.hpp"  // We depend on the Track class for car collision detection and waypoints
 #include "entities.hpp"
+#include "settings.hpp"
 
 namespace game::entities {
 
@@ -350,6 +351,9 @@ void Car::spawn_tire_marks(const float dt)
     if (!this->is_active_) {
         return;
     }
+    if (!settings::current::tire_marks) {
+        return;
+    }
 
     // Accumulate the delta time
     this->tire_update_timer_ += dt;
@@ -414,6 +418,10 @@ void Car::spawn_tire_marks(const float dt)
 void Car::update_tire_marks(const float dt)
 {
     if (!this->is_active_) {
+        return;
+    }
+    if (!settings::current::tire_marks) {
+        this->tire_marks_.clear();
         return;
     }
 

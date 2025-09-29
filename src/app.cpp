@@ -702,6 +702,13 @@ void run()
                         }
                         ImGui::EndDisabled();
 
+                        ImGui::SeparatorText("Effects");
+
+                        if (ImGui::Checkbox("Tire Marks", &settings::current::tire_marks)) {
+                            ui_sound.play_ok();
+                        }
+                        ImGui::TextWrapped("Note: This option has a high performance impact, consider disabling it on older hardware");
+
                         ImGui::SeparatorText("Widgets");
 
                         if (ImGui::Checkbox("FPS Counter", &fps_counter.enabled)) {
