@@ -23,6 +23,7 @@ Car::Car(const sf::Texture &texture,
          const CarControlMode control_mode,
          const CarConfig &config)
     : sprite_(texture),
+      shadow_sprite_(texture),
       track_(track),
       config_(config),
       rng_(rng),
@@ -38,7 +39,13 @@ Car::Car(const sf::Texture &texture,
       last_wall_hit_speed_(0.0f),
       ai_update_timer_(0.0f)
 {
-    this->sprite_.setOrigin({this->sprite_.getTexture().getSize().x / 2.0f, this->sprite_.getTexture().getSize().y / 2.0f});
+    this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
+
+    // Setup shadow sprite
+    this->shadow_sprite_.setOrigin(this->shadow_sprite_.getLocalBounds().getCenter());
+    this->shadow_sprite_.setColor({0, 0, 0, 80});  // Semi-transparent black shadow
+    this->shadow_sprite_.setScale({0.9f, 0.9f});   // Slightly smaller than the car
+
     this->reset();
 }
 
@@ -130,10 +137,19 @@ void Car::update(const float dt)
 
     // Apply physics regardless of control mode
     this->apply_physics_step(dt);
+
+    // Update shadow sprite position and rotation to match main sprite (with offset)
+    this->shadow_sprite_.setPosition({this->sprite_.getPosition().x + 10.0f,
+                                      this->sprite_.getPosition().y + 10.0f});
+    this->shadow_sprite_.setRotation(this->sprite_.getRotation());
 }
 
 void Car::draw(sf::RenderTarget &target) const
 {
+    // Draw shadow first (so it appears behind the car)
+    target.draw(this->shadow_sprite_);
+
+    // Draw the actual car on top of the shadow
     target.draw(this->sprite_);
 }
 

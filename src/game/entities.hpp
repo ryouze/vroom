@@ -378,6 +378,11 @@ class Car final {
     sf::Sprite sprite_;
 
     /**
+     * @brief Shadow sprite for the car, drawn behind the main sprite.
+     */
+    sf::Sprite shadow_sprite_;
+
+    /**
      * @brief Reference to the race track for collision detection and waypoint data.
      *
      * Used for boundary checking, collision detection, spawn point retrieval, and AI waypoint navigation.
