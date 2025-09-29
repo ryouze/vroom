@@ -17,6 +17,7 @@
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"
+#include "assets/builder.hpp"
 #include "assets/sounds.hpp"
 #include "assets/textures.hpp"
 #include "core/backend.hpp"
@@ -31,29 +32,6 @@
 #include "game/entities.hpp"
 #include "generated.hpp"
 #include "settings.hpp"
-
-// Embedded road textures
-#include "assets/data/textures/road/road_sand01.hpp"
-#include "assets/data/textures/road/road_sand35.hpp"
-#include "assets/data/textures/road/road_sand37.hpp"
-#include "assets/data/textures/road/road_sand39.hpp"
-#include "assets/data/textures/road/road_sand87.hpp"
-#include "assets/data/textures/road/road_sand88.hpp"
-#include "assets/data/textures/road/road_sand89.hpp"
-
-// Embedded car textures
-#include "assets/data/textures/car/car_black_1.hpp"
-#include "assets/data/textures/car/car_blue_1.hpp"
-#include "assets/data/textures/car/car_green_1.hpp"
-#include "assets/data/textures/car/car_red_1.hpp"
-#include "assets/data/textures/car/car_yellow_1.hpp"
-
-// Embedded sounds
-#include "assets/data/sounds/car/engine.hpp"
-#include "assets/data/sounds/car/hit.hpp"
-#include "assets/data/sounds/car/tires.hpp"
-#include "assets/data/sounds/ui/ok.hpp"
-#include "assets/data/sounds/ui/other.hpp"
 
 namespace app {
 
@@ -91,39 +69,11 @@ void run()
 
     // Setup texture manager and load textures
     // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
-    assets::textures::TextureManager textures;
-    for (const auto &[identifier, data, size] : {
-             // Road textures
-             std::tuple{"top_left", road_sand89::data, road_sand89::size},
-             std::tuple{"top_right", road_sand01::data, road_sand01::size},
-             std::tuple{"bottom_right", road_sand37::data, road_sand37::size},
-             std::tuple{"bottom_left", road_sand35::data, road_sand35::size},
-             std::tuple{"vertical", road_sand87::data, road_sand87::size},
-             std::tuple{"horizontal", road_sand88::data, road_sand88::size},
-             std::tuple{"horizontal_finish", road_sand39::data, road_sand39::size},
-             // Car textures
-             std::tuple{"car_black", car_black_1::data, car_black_1::size},
-             std::tuple{"car_blue", car_blue_1::data, car_blue_1::size},
-             std::tuple{"car_green", car_green_1::data, car_green_1::size},
-             std::tuple{"car_red", car_red_1::data, car_red_1::size},
-             std::tuple{"car_yellow", car_yellow_1::data, car_yellow_1::size},
-         }) {
-        textures.load(identifier, {data, size});
-    }
+    assets::textures::TextureManager textures = assets::builder::build_texture_manager();
 
     // Setup sound manager and load sounds
     // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
-    assets::sounds::SoundManager sounds;
-    for (const auto &[identifier, data, size] : {
-             // Car sounds
-             std::tuple{"engine", engine::data, engine::size},
-             std::tuple{"tires", tires::data, tires::size},
-             std::tuple{"hit", hit::data, hit::size},
-             std::tuple{"ok", ok::data, ok::size},
-             std::tuple{"other", other::data, other::size},
-         }) {
-        sounds.load(identifier, {data, size});
-    }
+    assets::sounds::SoundManager sounds = assets::builder::build_sound_manager();
 
     // Create race track
     core::world::Track race_track(

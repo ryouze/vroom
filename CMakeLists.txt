@@ -91,6 +91,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/generated.hpp.in" "${PROJECT_BINARY_DI
 add_library(${PROJECT_NAME}-lib STATIC
   # find src -name "*.cpp" ! -name "main.cpp" | sort
   src/app.cpp
+  src/assets/builder.cpp
   src/assets/sounds.cpp
   src/assets/textures.cpp
   src/core/backend.cpp
