@@ -358,13 +358,16 @@ void Car::spawn_tire_marks(const float dt)
     // Accumulate the delta time
     this->tire_update_timer_ += dt;
 
-    // If the accumulated time does not the update rate, ignore to save performance
-    if (this->tire_update_timer_ < this->tire_update_rate) {
+    // Calculate tire update rate from settings (convert Hz to seconds)
+    const float tire_update_rate = 1.0f / static_cast<float>(settings::current::tire_marks_rate);
+
+    // If the accumulated time does not exceed the update rate, ignore to save performance
+    if (this->tire_update_timer_ < tire_update_rate) {
         return;
     }
 
-    // Reset timer for next AI update cycle
-    this->tire_update_timer_ -= this->tire_update_rate;  // Keep any overshoot
+    // Reset timer for next tire update cycle
+    this->tire_update_timer_ -= tire_update_rate;  // Keep any overshoot
 
     // Constants for tire mark appearance and positioning
     static constexpr float tire_mark_radius = 12.0f;

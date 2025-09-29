@@ -101,6 +101,7 @@ ConfigContext::ConfigContext(const std::string &filename)
             settings::current::anti_aliasing_idx = std::clamp(loaded_anti_aliasing_idx, 0, static_cast<int>(std::size(settings::constants::anti_aliasing_values)) - 1);
 
             settings::current::tire_marks = tbl["tire_marks"].value_or(settings::current::tire_marks);
+            settings::current::tire_marks_rate = tbl["tire_marks_rate"].value_or(settings::current::tire_marks_rate);
 
             settings::current::prefer_gamepad = tbl["prefer_gamepad"].value_or(settings::current::prefer_gamepad);
             settings::current::gamepad_steering_axis = tbl["gamepad_steering_axis"].value_or(settings::current::gamepad_steering_axis);
@@ -153,6 +154,7 @@ void ConfigContext::save() const noexcept
     tbl.insert_or_assign("mode_idx", settings::current::mode_idx);
     tbl.insert_or_assign("anti_aliasing_idx", settings::current::anti_aliasing_idx);
     tbl.insert_or_assign("tire_marks", settings::current::tire_marks);
+    tbl.insert_or_assign("tire_marks_rate", settings::current::tire_marks_rate);
     tbl.insert_or_assign("prefer_gamepad", settings::current::prefer_gamepad);
     tbl.insert_or_assign("gamepad_steering_axis", settings::current::gamepad_steering_axis);
     tbl.insert_or_assign("gamepad_gas_axis", settings::current::gamepad_gas_axis);

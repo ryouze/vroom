@@ -568,13 +568,6 @@ class Car final {
     static constexpr float ai_update_rate = 1.0f / 30.0f;
 
     /**
-     * @brief Target interval for tire mark spawning in seconds (1/120 = ~0.0083 seconds for 120Hz).
-     *
-     * Tire marks will only be spawned when tire_update_timer_ exceeds this interval.
-     */
-    static constexpr float tire_update_rate = 1.0f / 120.0f;
-
-    /**
      * @brief Target interval for tire mark fade-out updates in seconds (1/20 = 0.05 seconds for 20Hz).
      *
      * Tire mark fade calculations will only be performed when tire_despawn_timer_ exceeds this interval.

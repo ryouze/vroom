@@ -135,6 +135,16 @@ inline int anti_aliasing_idx = 3;
 inline bool tire_marks = true;
 
 /**
+ * @brief Tire mark update rate in Hz (frequency of tire mark spawning).
+ *
+ * Controls how often new tire marks are spawned when drifting. Higher values create smoother tire trails but use more performance.
+ * Range: 10Hz to 240Hz. Lower values reduce performance impact but may create gaps in tire trails.
+ *
+ * @note This defaults to 120Hz for smooth tire mark trails.
+ */
+inline int tire_marks_rate = 90;
+
+/**
  * @brief Whether to prefer gamepad input over keyboard when both are available.
  *
  * If true, gamepad input will be used when available. If false, keyboard input will be used even if gamepad is connected.
