@@ -2,7 +2,7 @@
  * @file entities.cpp
  */
 
-#include <algorithm>  // for std::clamp, std::max, std::min
+#include <algorithm>  // for std::clamp, std::max, std::min, std::erase_if
 #include <cmath>      // for std::atan2, std::hypot, std::remainder, std::copysign, std::cos, std::sin, std::lerp
 #include <cstddef>    // for std::size_t
 #include <cstdint>    // for std::uint8_t
@@ -227,7 +227,7 @@ void Car::update_ai_behavior(const float dt)
     const float current_speed = std::hypot(this->velocity_.x, this->velocity_.y);
 
     // Cache random variations to avoid multiple RNG calls per parameter
-    std::uniform_real_distribution<float> random_distribution(random_variation_minimum_, random_variation_maximum_);
+    std::uniform_real_distribution<float> random_distribution(this->random_variation_minimum_, this->random_variation_maximum_);
     const float speed_random_variation = random_distribution(this->rng_);
     const float steering_random_variation = random_distribution(this->rng_);
     const float distance_random_variation = random_distribution(this->rng_);
@@ -382,29 +382,27 @@ void Car::spawn_tire_marks(const float dt)
     static constexpr float wheel_offset_forward = 40.0f;  // Distance from center to front/rear wheels
     static constexpr float wheel_offset_side = 20.0f;     // Distance from center to left/right wheels
 
+    // Pre-compute relative wheel positions in local coordinates
+    static constexpr std::array<sf::Vector2f, 4> wheel_positions = {{
+        {wheel_offset_forward, -wheel_offset_side},   // Front-left
+        {wheel_offset_forward, wheel_offset_side},    // Front-right
+        {-wheel_offset_forward, -wheel_offset_side},  // Rear-left
+        {-wheel_offset_forward, wheel_offset_side}    // Rear-right
+    }};
+
     // Calculate wheel positions relative to car center
     // Note: Car sprite faces right (0 degrees), so forward is +X direction
     const float cos_rotation = std::cos(car_rotation_radians);
     const float sin_rotation = std::sin(car_rotation_radians);
 
-    // Front-left wheel (forward in car's local +X, left in car's local -Y)
-    const sf::Vector2f front_left_offset = {wheel_offset_forward * cos_rotation - (-wheel_offset_side) * sin_rotation,
-                                            wheel_offset_forward * sin_rotation + (-wheel_offset_side) * cos_rotation};
-
-    // Front-right wheel (forward in car's local +X, right in car's local +Y)
-    const sf::Vector2f front_right_offset = {wheel_offset_forward * cos_rotation - wheel_offset_side * sin_rotation,
-                                             wheel_offset_forward * sin_rotation + wheel_offset_side * cos_rotation};
-
-    // Rear-left wheel (backward in car's local -X, left in car's local -Y)
-    const sf::Vector2f rear_left_offset = {(-wheel_offset_forward) * cos_rotation - (-wheel_offset_side) * sin_rotation,
-                                           (-wheel_offset_forward) * sin_rotation + (-wheel_offset_side) * cos_rotation};
-
-    // Rear-right wheel (backward in car's local -X, right in car's local +Y)
-    const sf::Vector2f rear_right_offset = {(-wheel_offset_forward) * cos_rotation - wheel_offset_side * sin_rotation,
-                                            (-wheel_offset_forward) * sin_rotation + wheel_offset_side * cos_rotation};
-
-    // Create tire marks at each wheel position
-    const std::array<sf::Vector2f, 4> wheel_offsets = {front_left_offset, front_right_offset, rear_left_offset, rear_right_offset};
+    // Transform local wheel positions to world coordinates
+    std::array<sf::Vector2f, 4> wheel_offsets;
+    for (std::size_t i = 0; i < wheel_positions.size(); ++i) {
+        const auto &[local_x, local_y] = wheel_positions[i];
+        wheel_offsets[i] = {
+            local_x * cos_rotation - local_y * sin_rotation,
+            local_x * sin_rotation + local_y * cos_rotation};
+    }
 
     for (const auto &offset : wheel_offsets) {
         TireMark tire_mark;
@@ -446,7 +444,7 @@ void Car::update_tire_marks(const float dt)
         // Fade out tire mark as it ages
         if (tire_mark.life_remaining > 0.0f) {
             const float alpha_ratio = tire_mark.life_remaining / this->initial_tire_lifetime_;
-            const std::uint8_t alpha = static_cast<std::uint8_t>(alpha_ratio * 255);
+            const std::uint8_t alpha = static_cast<std::uint8_t>(alpha_ratio * 255.0f);
 
             sf::Color current_color = tire_mark.circle.getFillColor();
             current_color.a = alpha;
@@ -455,10 +453,9 @@ void Car::update_tire_marks(const float dt)
     }
 
     // Remove expired tire marks
-    this->tire_marks_.erase(std::remove_if(
-                                this->tire_marks_.begin(), this->tire_marks_.end(),
-                                [](const TireMark &mark) { return mark.life_remaining <= 0.0f; }),
-                            this->tire_marks_.end());
+    std::erase_if(this->tire_marks_,
+                  // Remove if life_remaining is zero or negative
+                  [](const TireMark &mark) { return mark.life_remaining <= 0.0f; });
 }
 
 void Car::apply_physics_step(const float dt)
@@ -513,16 +510,14 @@ void Car::apply_physics_step(const float dt)
         const float drag = this->config_.engine_braking_rate_pixels_per_second_squared * dt;
         const float speed_after_drag = std::max(current_speed - drag, 0.0f);
         const float drag_scale = (current_speed > 0.0f) ? speed_after_drag / current_speed : 0.0f;
-        this->velocity_.x *= drag_scale;
-        this->velocity_.y *= drag_scale;
+        this->velocity_ *= drag_scale;
         current_speed = speed_after_drag;
     }
 
     // Cap speed to configured maximum
     if (current_speed > this->config_.maximum_movement_pixels_per_second) {
         const float max_speed_scale = this->config_.maximum_movement_pixels_per_second / current_speed;
-        this->velocity_.x *= max_speed_scale;
-        this->velocity_.y *= max_speed_scale;
+        this->velocity_ *= max_speed_scale;
         current_speed = this->config_.maximum_movement_pixels_per_second;
     }
 
@@ -540,18 +535,19 @@ void Car::apply_physics_step(const float dt)
 
     // Store lateral slip velocity for use in get_state() to avoid recalculation
     this->current_lateral_slip_velocity_ = lateral_speed;
-    const float drift_threshold_pixels_per_second = 50.0f;              // Minimum lateral speed to count as drifting
-    const float speed_multiplier_threshold_pixels_per_second = 100.0f;  // Speed at which drift score multiplier reaches 1.0
+
+    // Drift calculation constants
+    static constexpr float drift_threshold_pixels_per_second = 50.0f;              // Minimum lateral speed to count as drifting
+    static constexpr float speed_multiplier_threshold_pixels_per_second = 100.0f;  // Speed at which drift score multiplier reaches 1.0
+    static constexpr float max_speed_multiplier = 2.0f;                            // Maximum multiplier for drift score
+    static constexpr float base_drift_points_per_second = 100.0f;                  // Base drift points per second when drifting
 
     if (lateral_speed > drift_threshold_pixels_per_second && current_speed > drift_threshold_pixels_per_second) {
         // Calculate drift score multiplier based on forward speed (faster = more points)
-        const float speed_multiplier = std::min(current_speed / speed_multiplier_threshold_pixels_per_second, 2.0f);
+        const float speed_multiplier = std::min(current_speed / speed_multiplier_threshold_pixels_per_second, max_speed_multiplier);
 
         // Calculate drift angle factor (more sideways = more points)
         const float drift_angle_factor = lateral_speed / (current_speed + 1.0f);  // Avoid division by zero
-
-        // Base drift points per second when drifting
-        const float base_drift_points_per_second = 100.0f;
 
         // Calculate final drift score increment
         const float drift_score_increment = base_drift_points_per_second * speed_multiplier * drift_angle_factor * dt;
@@ -666,11 +662,11 @@ void Car::update_waypoint_tracking()
     // Calculate distance to current waypoint
     const sf::Vector2f vector_to_current_waypoint = current_waypoint.position - car_position;
     const float distance_to_current_waypoint = std::hypot(vector_to_current_waypoint.x, vector_to_current_waypoint.y);
-    const float waypoint_reach_distance = tile_size * waypoint_reach_factor_;
+    const float waypoint_reach_distance = tile_size * this->waypoint_reach_factor_;
 
     // Apply random variation to waypoint reach distance for more natural behavior
-    std::uniform_real_distribution<float> random_distribution(random_variation_minimum_, random_variation_maximum_);
-    const float distance_random_variation = random_distribution(this->rng_);
+    std::uniform_real_distribution<float> waypoint_random_distribution(this->random_variation_minimum_, this->random_variation_maximum_);
+    const float distance_random_variation = waypoint_random_distribution(this->rng_);
     const float randomized_waypoint_reach_distance = waypoint_reach_distance * distance_random_variation;
 
     // Advance waypoint if close enough
