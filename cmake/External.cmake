@@ -20,7 +20,7 @@ function(fetch_and_link_external_dependencies target)
   FetchContent_Declare(
     sfml
     #URL https://github.com/SFML/SFML/releases/download/3.0.0/SFML-3.0.0-sources.zip
-    URL https://github.com/SFML/SFML/archive/refs/tags/3.0.1.zip
+    URL https://github.com/SFML/SFML/archive/refs/tags/3.0.2.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
@@ -29,7 +29,7 @@ function(fetch_and_link_external_dependencies target)
 
   FetchContent_Declare(
     imgui
-    URL https://github.com/ocornut/imgui/archive/refs/tags/v1.91.9b.zip
+    URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.3.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
@@ -38,7 +38,7 @@ function(fetch_and_link_external_dependencies target)
 
   FetchContent_Declare(
     imgui-sfml
-    URL https://github.com/SFML/imgui-sfml/archive/refs/tags/v3.0.zip
+    URL https://github.com/SFML/imgui-sfml/archive/refs/tags/v3.0.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
@@ -49,7 +49,7 @@ function(fetch_and_link_external_dependencies target)
 
   FetchContent_Declare(
     spdlog
-    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.15.2.zip
+    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
@@ -58,7 +58,7 @@ function(fetch_and_link_external_dependencies target)
 
   FetchContent_Declare(
     tomlplusplus
-    URL https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.zip
+    URL https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
@@ -100,7 +100,7 @@ function(fetch_and_link_external_test_dependencies target)
 
   FetchContent_Declare(
     snitch
-    URL https://github.com/snitch-org/snitch/archive/refs/tags/v1.3.2.zip
+    URL https://github.com/snitch-org/snitch/archive/refs/tags/v1.3.2.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
