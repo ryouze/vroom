@@ -568,11 +568,11 @@ class Car final {
     static constexpr float ai_update_rate = 1.0f / 30.0f;
 
     /**
-     * @brief Target interval for tire mark fade-out updates in seconds (1/20 = 0.05 seconds for 20Hz).
+     * @brief Target interval for tire mark fade-out updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
      *
      * Tire mark fade calculations will only be performed when tire_despawn_timer_ exceeds this interval.
      */
-    static constexpr float tire_despawn_rate = 1.0f / 20.0f;
+    static constexpr float tire_despawn_rate = 1.0f / 30.0f;
 
     /**
      * @brief Initial lifetime in seconds for newly spawned tire marks before they fully fade out.

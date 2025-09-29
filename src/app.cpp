@@ -708,7 +708,7 @@ void run()
                             ui_sound.play_ok();
                         }
                         ImGui::BeginDisabled(!settings::current::tire_marks);
-                        if (ImGui::SliderInt("Tire Marks Rate (Hz)", &settings::current::tire_marks_rate, 10, 240, "%d Hz")) {
+                        if (ImGui::SliderInt("Tire Marks Rate (Hz)", &settings::current::tire_marks_rate, 30, 240, "%d Hz")) {
                             ui_sound.play_ok();
                         }
                         ImGui::EndDisabled();
