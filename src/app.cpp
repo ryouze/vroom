@@ -372,6 +372,12 @@ void run()
             ImGui::Text("Handbrake: %.2f", static_cast<double>(player_input.handbrake));
             ImGui::End();
 #endif
+            // Set active car for visual effects (tire marks, particles, etc.)
+            player_car.set_active(&player_car == selected_vehicle_pointer);
+            for (auto &ai : ai_cars) {
+                ai.set_active(&ai == selected_vehicle_pointer);
+            }
+
             player_car.apply_input(player_input);
             player_car.update(dt);
             for (auto &ai : ai_cars) {

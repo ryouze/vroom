@@ -254,6 +254,23 @@ struct CarState final {
 };
 
 /**
+ * @brief Struct representing a single tire mark left by a car wheel.
+ *
+ * Tire marks are small dark circles that fade out over time to show where cars have been drifting or braking hard.
+ */
+struct TireMark final {
+    /**
+     * @brief Circle representing the tire mark.
+     */
+    sf::CircleShape circle;
+
+    /**
+     * @brief Remaining lifetime in seconds before this tire mark disappears.
+     */
+    float life_remaining;
+};
+
+/**
  * @brief Unified car class that supports both player and AI control modes.
  *
  * Provides core physics simulation, rendering, collision handling, and AI navigation in a single class.
@@ -334,6 +351,15 @@ class Car final {
      */
     void draw(sf::RenderTarget &target) const;
 
+    /**
+     * @brief Set whether this car is the active/selected car for visual effects.
+     *
+     * @param active True if this is the currently selected car, false otherwise.
+     *
+     * @note Active cars show visual effects like tire marks, particles, etc. for performance.
+     */
+    void set_active(const bool active);
+
     // Disable move semantics
     Car(Car &&) = delete;
     Car &operator=(Car &&) = delete;
@@ -371,6 +397,24 @@ class Car final {
     void update_waypoint_tracking();
 
     /**
+     * @brief Spawn tire marks at the four wheel positions when drifting.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note This is called automatically during physics simulation when drift conditions are met.
+     */
+    void spawn_tire_marks(const float dt);
+
+    /**
+     * @brief Update tire marks by reducing their lifetime and removing expired ones.
+     *
+     * @param dt Time passed since the previous frame, in seconds.
+     *
+     * @note This is called automatically during the update loop to manage tire mark cleanup.
+     */
+    void update_tire_marks(const float dt);
+
+    /**
      * @brief Car sprite object for rendering. Also used for motion and rotation.
      *
      * The sprite handles visual representation, position tracking, and rotation for physics calculations.
@@ -381,6 +425,13 @@ class Car final {
      * @brief Shadow sprite for the car, drawn behind the main sprite.
      */
     sf::Sprite shadow_sprite_;
+
+    /**
+     * @brief Container of tire marks left by this car's wheels.
+     *
+     * Tire marks are spawned when drifting or braking hard and automatically fade out over time.
+     */
+    std::vector<TireMark> tire_marks_;
 
     /**
      * @brief Reference to the race track for collision detection and waypoint data.
@@ -494,11 +545,55 @@ class Car final {
     float ai_update_timer_ = 0.0f;
 
     /**
+     * @brief Time accumulator for tire update throttling.
+     *
+     * This tracks elapsed time since last tire spawn update to limit tire calculations to maximum 30Hz for performance.
+     */
+    float tire_update_timer_ = 0.0f;
+
+    /**
+     * @brief Time accumulator for tire despawn throttling.
+     *
+     * This tracks elapsed time since last tire spawn update to limit tire calculations to maximum 30Hz for performance.
+     */
+    float tire_despawn_timer_ = 0.0f;
+
+    /**
      * @brief Target interval for AI updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
      *
      * AI behavior will only be recalculated when ai_update_timer_ exceeds this interval.
      */
     static constexpr float ai_update_rate = 1.0f / 30.0f;
+
+    /**
+     * @brief Target interval for tire spawn updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
+     *
+     * Tire behavior will only be recalculated when tire_update_timer_ exceeds this interval.
+     */
+    static constexpr float tire_update_rate = 1.0f / 120.0f;
+
+    /**
+     * @brief Target interval for tire despawn updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
+     *
+     * Tire behavior will only be recalculated when tire_update_timer_ exceeds this interval.
+     */
+    static constexpr float tire_despawn_rate = 1.0f / 20.0f;
+
+    /**
+     * @brief How long (in seconds) a tire mark lasts before fully fading out.
+     *
+     * Longer looks better but impacts performance.
+     */
+    static constexpr float initial_tire_lifetime_ = 0.5f;
+
+    // static constexpr float tire_mark_spawn_rate_ = 0.02f;
+
+    /**
+     * @brief Whether this car is currently active (selected) for visual effects.
+     *
+     * Active cars show tire marks, particles, and other visual effects for better performance.
+     */
+    bool is_active_ = true;
 };
 
 }  // namespace game::entities

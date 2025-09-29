@@ -5,6 +5,7 @@
 #include <algorithm>  // for std::clamp, std::max, std::min
 #include <cmath>      // for std::atan2, std::hypot, std::remainder, std::copysign, std::cos, std::sin, std::lerp
 #include <cstddef>    // for std::size_t
+#include <cstdint>    // for std::uint8_t
 #include <cstdlib>    // for std::abs
 #include <numbers>    // for std::numbers
 #include <random>     // for std::mt19937, std::uniform_real_distribution
@@ -37,7 +38,8 @@ Car::Car(const sf::Texture &texture,
       current_lateral_slip_velocity_(0.0f),
       just_hit_wall_(false),
       last_wall_hit_speed_(0.0f),
-      ai_update_timer_(0.0f)
+      ai_update_timer_(0.0f),
+      tire_update_timer_(0.0f)
 {
     this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
 
@@ -146,11 +148,26 @@ void Car::update(const float dt)
 
 void Car::draw(sf::RenderTarget &target) const
 {
-    // Draw shadow first (so it appears behind the car)
+    // Draw tire marks first (so they appear behind everything)
+    for (const auto &tire_mark : this->tire_marks_) {
+        target.draw(tire_mark.circle);
+    }
+
+    // Draw shadow (behind the car but above tire marks)
     target.draw(this->shadow_sprite_);
 
-    // Draw the actual car on top of the shadow
+    // Draw the actual car on top of everything
     target.draw(this->sprite_);
+}
+
+void Car::set_active(const bool active)
+{
+    this->is_active_ = active;
+
+    // If deactivating, clear existing visual effects immediately
+    if (!active) {
+        this->tire_marks_.clear();
+    }
 }
 
 void Car::update_ai_behavior(const float dt)
@@ -328,6 +345,111 @@ void Car::update_ai_behavior(const float dt)
     }
 }
 
+void Car::spawn_tire_marks(const float dt)
+{
+    if (!this->is_active_) {
+        return;
+    }
+
+    // Accumulate the delta time
+    this->tire_update_timer_ += dt;
+
+    // If the accumulated time does not the update rate, ignore to save performance
+    if (this->tire_update_timer_ < this->tire_update_rate) {
+        return;
+    }
+
+    // Reset timer for next AI update cycle
+    this->tire_update_timer_ -= this->tire_update_rate;  // Keep any overshoot
+
+    // Constants for tire mark appearance and positioning
+    static constexpr float tire_mark_radius = 12.0f;
+    static constexpr sf::Color tire_mark_color{60, 40, 20};  // Dark brown color for sand tracks
+
+    // Get car dimensions and position for wheel positioning
+    const sf::Vector2f car_position = this->sprite_.getPosition();
+    const float car_rotation_radians = this->sprite_.getRotation().asRadians();
+
+    // Approximate wheel positions based on car sprite size (71x131 pixels as per docs)
+    // We'll place wheels at corners of a smaller rectangle inside the car sprite
+    static constexpr float wheel_offset_forward = 40.0f;  // Distance from center to front/rear wheels
+    static constexpr float wheel_offset_side = 20.0f;     // Distance from center to left/right wheels
+
+    // Calculate wheel positions relative to car center
+    // Note: Car sprite faces right (0 degrees), so forward is +X direction
+    const float cos_rotation = std::cos(car_rotation_radians);
+    const float sin_rotation = std::sin(car_rotation_radians);
+
+    // Front-left wheel (forward in car's local +X, left in car's local -Y)
+    const sf::Vector2f front_left_offset = {wheel_offset_forward * cos_rotation - (-wheel_offset_side) * sin_rotation,
+                                            wheel_offset_forward * sin_rotation + (-wheel_offset_side) * cos_rotation};
+
+    // Front-right wheel (forward in car's local +X, right in car's local +Y)
+    const sf::Vector2f front_right_offset = {wheel_offset_forward * cos_rotation - wheel_offset_side * sin_rotation,
+                                             wheel_offset_forward * sin_rotation + wheel_offset_side * cos_rotation};
+
+    // Rear-left wheel (backward in car's local -X, left in car's local -Y)
+    const sf::Vector2f rear_left_offset = {(-wheel_offset_forward) * cos_rotation - (-wheel_offset_side) * sin_rotation,
+                                           (-wheel_offset_forward) * sin_rotation + (-wheel_offset_side) * cos_rotation};
+
+    // Rear-right wheel (backward in car's local -X, right in car's local +Y)
+    const sf::Vector2f rear_right_offset = {(-wheel_offset_forward) * cos_rotation - wheel_offset_side * sin_rotation,
+                                            (-wheel_offset_forward) * sin_rotation + wheel_offset_side * cos_rotation};
+
+    // Create tire marks at each wheel position
+    const std::array<sf::Vector2f, 4> wheel_offsets = {front_left_offset, front_right_offset, rear_left_offset, rear_right_offset};
+
+    for (const auto &offset : wheel_offsets) {
+        TireMark tire_mark;
+        tire_mark.circle.setRadius(tire_mark_radius);
+        tire_mark.circle.setOrigin({tire_mark_radius, tire_mark_radius});  // Cente
+        tire_mark.circle.setPosition(car_position + offset);
+        tire_mark.circle.setFillColor(tire_mark_color);
+        tire_mark.life_remaining = this->initial_tire_lifetime_;
+
+        this->tire_marks_.emplace_back(tire_mark);
+    }
+}
+
+void Car::update_tire_marks(const float dt)
+{
+    if (!this->is_active_) {
+        return;
+    }
+
+    // Accumulate the delta time
+    this->tire_despawn_timer_ += dt;
+
+    // If the accumulated time does not the update rate, ignore to save performance
+    if (this->tire_despawn_timer_ < this->tire_despawn_rate) {
+        return;
+    }
+
+    // Reset timer for next AI update cycle
+    this->tire_despawn_timer_ -= this->tire_despawn_rate;  // Keep any overshoot
+
+    // Update lifetime and fade alpha for all tire marks
+    for (auto &tire_mark : this->tire_marks_) {
+        tire_mark.life_remaining -= this->tire_despawn_rate;
+
+        // Fade out tire mark as it ages
+        if (tire_mark.life_remaining > 0.0f) {
+            const float alpha_ratio = tire_mark.life_remaining / this->initial_tire_lifetime_;
+            const std::uint8_t alpha = static_cast<std::uint8_t>(alpha_ratio * 255);
+
+            sf::Color current_color = tire_mark.circle.getFillColor();
+            current_color.a = alpha;
+            tire_mark.circle.setFillColor(current_color);
+        }
+    }
+
+    // Remove expired tire marks
+    this->tire_marks_.erase(std::remove_if(
+                                this->tire_marks_.begin(), this->tire_marks_.end(),
+                                [](const TireMark &mark) { return mark.life_remaining <= 0.0f; }),
+                            this->tire_marks_.end());
+}
+
 void Car::apply_physics_step(const float dt)
 {
     // Reset collision state at the beginning of each physics step
@@ -426,7 +548,13 @@ void Car::apply_physics_step(const float dt)
 
         // Debug logging for drift detection (uncomment for testing)
         // SPDLOG_DEBUG("Drifting! Lateral speed: {:.1f}, Forward speed: {:.1f}, Score increment: {:.2f}, Total score: {:.1f}", lateral_speed, current_speed, drift_score_increment, this->drift_score_);
+
+        // Spawn tire marks at wheel positions when drifting
+        this->spawn_tire_marks(dt);
     }
+
+    // Update and cleanup tire marks
+    this->update_tire_marks(dt);
 
     // Update steering wheel angle from analog input
     if (std::abs(this->current_input_.steering) > 0.01f) {
