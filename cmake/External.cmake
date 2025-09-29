@@ -85,7 +85,7 @@ function(fetch_and_link_external_dependencies target)
     target_link_libraries(${target} PUBLIC SFML::Main)
   endif()
 
-  message(STATUS "Linked dependencies 'ImGui-SFML' and 'spdlog' to target '${target}'.")
+  message(STATUS "Linked dependencies 'ImGui-SFML::ImGui-SFML', 'SFML::Audio', 'spdlog::spdlog', and 'tomlplusplus::tomlplusplus' to target '${target}'.")
 endfunction()
 
 # Download and link test dependencies (automated testing)
@@ -110,5 +110,5 @@ function(fetch_and_link_external_test_dependencies target)
   # Link test dependencies to target
   target_link_libraries(${target} PRIVATE snitch::snitch)
 
-  message(STATUS "Linked test dependency 'snitch' to target '${target}'.")
+  message(STATUS "Linked test dependency 'snitch::snitch' to target '${target}'.")
 endfunction()
