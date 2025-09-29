@@ -371,7 +371,7 @@ void Car::spawn_tire_marks(const float dt)
 
     // Constants for tire mark appearance and positioning
     static constexpr float tire_mark_radius = 12.0f;
-    static constexpr sf::Color tire_mark_color{60, 40, 20};  // Dark brown color for sand tracks
+    static constexpr sf::Color tire_mark_color{122, 111, 85};  // Dark brown color for sand tracks
 
     // Get car dimensions and position for wheel positioning
     const sf::Vector2f car_position = this->sprite_.getPosition();
