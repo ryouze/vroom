@@ -484,9 +484,11 @@ class Car final {
     CarInput current_input_;
 
     /**
-     * @brief Current steering wheel angle in degrees. This emulates a steering wheel via "steer_left()" and "steer_right()". If they are not called, the steering wheel will return to center over time.
+     * @brief Current steering wheel angle in degrees ranging from -maximum_steering_angle_degrees to +maximum_steering_angle_degrees.
      *
-     * Positive values turn the car right, negative values turn it left. Auto-centers when no steering input is active.
+     * Positive values turn the car right, negative values turn it left.
+     * Auto-centers towards zero when no steering input is active, controlled by steering_autocenter_rate_degrees_per_second.
+     * Updated by steering input and clamped to the configured maximum steering angle limits.
      */
     float steering_wheel_angle_;
 
@@ -545,16 +547,16 @@ class Car final {
     float ai_update_timer_ = 0.0f;
 
     /**
-     * @brief Time accumulator for tire update throttling.
+     * @brief Time accumulator for tire mark spawning throttling.
      *
-     * This tracks elapsed time since last tire spawn update to limit tire calculations to maximum 30Hz for performance.
+     * This tracks elapsed time since the last tire mark spawn to limit tire mark generation to 120Hz for performance.
      */
     float tire_update_timer_ = 0.0f;
 
     /**
-     * @brief Time accumulator for tire despawn throttling.
+     * @brief Time accumulator for tire mark fade-out throttling.
      *
-     * This tracks elapsed time since last tire spawn update to limit tire calculations to maximum 30Hz for performance.
+     * This tracks elapsed time since the last tire mark fade update to limit fade calculations to 20Hz for performance.
      */
     float tire_despawn_timer_ = 0.0f;
 
@@ -566,23 +568,25 @@ class Car final {
     static constexpr float ai_update_rate = 1.0f / 30.0f;
 
     /**
-     * @brief Target interval for tire spawn updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
+     * @brief Target interval for tire mark spawning in seconds (1/120 = ~0.0083 seconds for 120Hz).
      *
-     * Tire behavior will only be recalculated when tire_update_timer_ exceeds this interval.
+     * Tire marks will only be spawned when tire_update_timer_ exceeds this interval.
      */
     static constexpr float tire_update_rate = 1.0f / 120.0f;
 
     /**
-     * @brief Target interval for tire despawn updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
+     * @brief Target interval for tire mark fade-out updates in seconds (1/20 = 0.05 seconds for 20Hz).
      *
-     * Tire behavior will only be recalculated when tire_update_timer_ exceeds this interval.
+     * Tire mark fade calculations will only be performed when tire_despawn_timer_ exceeds this interval.
      */
     static constexpr float tire_despawn_rate = 1.0f / 20.0f;
 
     /**
-     * @brief How long (in seconds) a tire mark lasts before fully fading out.
+     * @brief Initial lifetime in seconds for newly spawned tire marks before they fully fade out.
      *
-     * Longer looks better but impacts performance.
+     * Tire marks start with this lifetime and gradually fade as their remaining time decreases to zero.
+     *
+     * Longer values provide more persistent visual trails but can impact performance with many tire marks.
      */
     static constexpr float initial_tire_lifetime_ = 0.5f;
 
