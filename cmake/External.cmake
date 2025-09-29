@@ -29,7 +29,7 @@ function(fetch_and_link_external_dependencies target)
 
   FetchContent_Declare(
     imgui
-    URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.3.tar.gz
+    URL https://github.com/ocornut/imgui/archive/refs/tags/v1.91.9b.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
