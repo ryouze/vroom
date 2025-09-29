@@ -254,12 +254,38 @@ void run()
     const std::array<game::entities::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
     int selected_vehicle_index = 0;
 
-    // Function to draw the game entities (race track and cars) in the window and minimap
+    // Function to draw the game entities (race track and cars) in the window
     const auto draw_game_entities = [&race_track, &player_car, &ai_cars](sf::RenderTarget &rt) {
         race_track.draw(rt);
         player_car.draw(rt);
         for (const auto &ai_car : ai_cars) {
             ai_car.draw(rt);
+        }
+    };
+
+    // Create minimap blips
+    static constexpr float blip_radius = 200.0f;
+    std::array<sf::CircleShape, 5> minimap_blips;
+    for (std::size_t i = 0; i < minimap_blips.size(); ++i) {
+        minimap_blips[i].setRadius(blip_radius);
+        minimap_blips[i].setOrigin({blip_radius, blip_radius});  // Center
+    }
+    // Function to draw the game entities (race track and cars as blips) in the minimap
+    const auto draw_minimap_entities = [&race_track, &player_car, &ai_cars, &minimap_blips](sf::RenderTarget &rt) {
+        race_track.draw(rt);
+
+        // Update and draw player car blip (black)
+        const auto player_state = player_car.get_state();
+        minimap_blips[0].setPosition(player_state.position);
+        minimap_blips[0].setFillColor({0, 0, 0});
+        rt.draw(minimap_blips[0]);
+
+        // Update and draw AI car blips (red)
+        for (std::size_t i = 0; i < ai_cars.size(); ++i) {
+            const auto ai_state = ai_cars[i].get_state();
+            minimap_blips[i + 1].setPosition(ai_state.position);
+            minimap_blips[i + 1].setFillColor({255, 0, 0});
+            rt.draw(minimap_blips[i + 1]);
         }
     };
 
@@ -278,10 +304,10 @@ void run()
     }
 
     // Widgets
-    core::widgets::FpsCounter fps_counter{window.raw()};                                          // FPS counter in the top-left corner
-    core::widgets::Minimap minimap{window.raw(), core::colors::window.game, draw_game_entities};  // Minimap in the top-right corner
-    core::widgets::Speedometer speedometer{window.raw()};                                         // Speedometer in the bottom-right corner
-    core::widgets::Leaderboard leaderboard{window.raw()};                                         // Leaderboard in the top-right corner
+    core::widgets::FpsCounter fps_counter{window.raw()};                                             // FPS counter in the top-left corner
+    core::widgets::Minimap minimap{window.raw(), core::colors::window.game, draw_minimap_entities};  // Minimap in the top-right corner
+    core::widgets::Speedometer speedometer{window.raw()};                                            // Speedometer in the bottom-right corner
+    core::widgets::Leaderboard leaderboard{window.raw()};                                            // Leaderboard in the top-right corner
 
     const auto on_event = [&](const sf::Event &event) {
         // Let ImGui handle the event
