@@ -266,26 +266,26 @@ void run()
     // Create minimap blips
     static constexpr float blip_radius = 200.0f;
     std::array<sf::CircleShape, 5> minimap_blips;
-    for (std::size_t i = 0; i < minimap_blips.size(); ++i) {
-        minimap_blips[i].setRadius(blip_radius);
-        minimap_blips[i].setOrigin({blip_radius, blip_radius});  // Center
+    for (auto &blip : minimap_blips) {
+        blip.setRadius(blip_radius);
+        blip.setOrigin({blip_radius, blip_radius});  // Center
+        blip.setFillColor({255, 0, 0});              // Red by default
     }
+    minimap_blips[0].setFillColor({0, 0, 0});  // Player as black
+
     // Function to draw the game entities (race track and cars as blips) in the minimap
     const auto draw_minimap_entities = [&race_track, &player_car, &ai_cars, &minimap_blips](sf::RenderTarget &rt) {
         race_track.draw(rt);
 
-        // Update and draw player car blip (black)
-        const auto player_state = player_car.get_state();
-        minimap_blips[0].setPosition(player_state.position);
-        minimap_blips[0].setFillColor({0, 0, 0});
+        // Update and draw player car blip
+        minimap_blips[0].setPosition(player_car.get_state().position);
         rt.draw(minimap_blips[0]);
 
-        // Update and draw AI car blips (red)
-        for (std::size_t i = 0; i < ai_cars.size(); ++i) {
-            const auto ai_state = ai_cars[i].get_state();
-            minimap_blips[i + 1].setPosition(ai_state.position);
-            minimap_blips[i + 1].setFillColor({255, 0, 0});
-            rt.draw(minimap_blips[i + 1]);
+        // Update and draw AI car blips
+        for (std::size_t i = 1; i <= 4; ++i) {
+            // AI cars are 0-indexed, so we use (i - 1)
+            minimap_blips[i].setPosition(ai_cars[i - 1].get_state().position);
+            rt.draw(minimap_blips[i]);
         }
     };
 
