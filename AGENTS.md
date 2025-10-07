@@ -1,86 +1,172 @@
-This is `vroom`, a cross-platform 2D racing game with arcade drift physics, procedurally-generated tracks, and waypoint AI.
+# AGENTS.md
+
+**vroom** is a cross-platform 2D racing game featuring arcade drift physics, procedural track generation, and waypoint-based AI opponents.
+It is built to be lightweight, portable, and educational, with a focus on clean C++ architecture and deterministic gameplay behavior.
+
+---
 
 ## Technology Stack
-- Language: C++20.
-- Graphics: SFML3.
-- UI: Dear ImGui.
-- Logging: spdlog.
-- Target Platforms (in order of importance): macOS, Linux, Windows.
-- Development Environment: macOS/Clang/CMake.
 
-## All Languages
-- Use plain ASCII in logs and comments; avoid Unicode.
-- Use American English spelling (e.g., `color`).
-- Prefer long, verbose variable names.
-- Do not split long lines across newlines, keep them long - even if it hurts readability. I especially hate when long comments are split across multiple lines.
-- The `timeout` command is not available on macOS.
+| Component                | Description                                |
+| ------------------------ | ------------------------------------------ |
+| **Language**             | C++20                                      |
+| **Graphics**             | SFML 3                                     |
+| **UI**                   | Dear ImGui + ImGui-SFML                    |
+| **Logging**              | spdlog                                     |
+| **Testing**              | snitch                                     |
+| **Config**               | toml++                                     |
+| **Build System**         | CMake (>= 3.28)                            |
+| **Supported OS**         | macOS (Clang), Linux (GCC), Windows (MSVC) |
+| **Primary Dev Platform** | macOS 15+                                  |
 
-## C++
-- Always prefix member variables with `this->`.
-- Use `snake_case` for all identifiers, except for class and struct names, which must use `CamelCase`. Avoid `pascalCase` at all costs.
-- Use `const`, `constexpr`, and `[[nodiscard]]` whenever possible.
-- Class member variables must have a trailing underscore (e.g., `zoom_ratio_`), while struct fields should not (e.g., `zoom_ratio`).
-- Use CMake from the `build` directory, e.g., `cmake --build . --parallel`.
-- All files in `src/core/` (e.g., `game.hpp`, `backend.hpp`, `ui.hpp`) must be completely independent - they cannot `#include` other core modules. Each core file should only depend on standard library, SFML, and external libraries. This creates a "flat" architecture where higher-level code (like `app.cpp`) can freely import any core modules without circular dependency issues. Think of core modules as independent building blocks that can be mixed and matched by the application layer.
-- All files `src/game/` (e.g., `entities.hpp`) can import code from `src/core` but they cannot import any code from `src/game` itself. That way, the modules in the `src/game` directory are independent of each other, but can still use the core modules.
-- Do not use `noexcept`.
-- Use modern C++20 features and SFML3. SFML3 uses C++17 and has the following differences from SFML2:
-```md
-### 1. Vectors, rects, sizes
-* Replace any `(x, y)` or `(w, h)` parameter pair with `sf::Vector2<T>{x, y}`.
-  * Example `circle.setPosition({10, 20});`
+---
+
+## Repository Layout
+
+```
+/.github/        # CI/CD workflows and automation
+/assets/         # Screenshots for README.md (irrelevant to AI agents)
+/build/          # Out-of-source build directory (ignored in git)
+/cmake/          # Extra CMake modules, icons for binaries
+/deps/           # External dependencies (CMake FetchContent)
+/src/            # Source code root (contains both .hpp and .cpp files)
+/src/assets/     # Embedded assets (raw .hpp files) and runtime asset loaders
+/src/core/       # Low-level source code
+/src/game/       # Gameplay logic
+/src/app.cpp     # Application entry point (runs the entire program)
+/src/main.cpp    # Main function (sets up basic logging, then calls app.run())
+/tests/          # Unit tests (mimics src/ structure, uses snitch)
+/CMakeLists.txt  # Root CMake build script (imports modules from cmake/)
+```
+
+---
+
+## Build and Run
+
+* Always build from within the `build/` directory using CMake:
+  ```sh
+  cd build
+  cmake ..
+  cmake --build . --parallel
+  open vroom.app
+  ```
+* Always run the compiled binary via `open vroom.app` (we are developing on macOS).
+* Unit tests are included in the project but are not built by default. You need to pass `-DBUILD_TESTS=ON` to enable them:
+  ```sh
+  cmake .. -DBUILD_TESTS=ON
+  cmake --build . --parallel
+  ctest --verbose
+  ```
+* The `timeout` command is **not available on macOS**.
+
+---
+
+## General Language Guidelines
+
+Applies to **all source files** regardless of language.
+
+* Use **plain ASCII** in logs, code, and comments. No Unicode.
+* Use **American English** spelling (`color`, not `colour`).
+* Prefer **long, explicit variable names** over abbreviations.
+* Never split long lines across newlines. Do not wrap comments.
+* Use spaces, not tabs.
+
+---
+
+## C++ Guidelines
+
+* Always access member variables with `this->`.
+* Use `snake_case` for functions, variables, and namespaces. Class and struct names must use `CamelCase`. Never use `pascalCase`.
+* All member variables in classes end with an underscore (`zoom_ratio_`). Struct fields have no trailing underscore (`zoom_ratio`).
+* Use `const`, `constexpr`, and `[[nodiscard]]` wherever possible.
+* Do **not** use `noexcept`.
+* Always initialize variables with `=` syntax:
+  ```cpp
+  sf::Vector2u resolution = {1280, 720};
+  unsigned fps = 144;
+  bool vsync = false;
+  ```
+* Always format function declarations so the **first parameter stays on the same line** as the function name, with each remaining parameter on its own line:
+  ```cpp
+  void run(const event_callback_type &on_event,
+           const update_callback_type &on_update,
+           const render_callback_type &on_render);
+  ```
+* Every member variable, struct field, and enum constant must include a concise `@brief` Doxygen comment.
+* Files in `src/core/` are **mutually independent**.
+  They may only depend on the standard library, SFML, or external libs.
+  No file in `src/core/` may `#include` another core module.
+* Files in `src/game/` may include headers from `src/core/` but **not from other `src/game/` modules**.
+  This enforces a one-way dependency from `game` -> `core`.
+* The application layer (e.g. `app.cpp`) is allowed to import any `core` or `game` module.
+
+---
+
+### SFML 3 Transition Notes
+
+SFML 3 introduces API changes from SFML 2. Follow these rules:
+
+**1. Vectors, rects, sizes**
+
+* Replace `(x, y)` or `(w, h)` pairs with `sf::Vector2<T>{x, y}`.
 * `sf::Rect<T>` now stores `position` and `size` vectors:
-  * `rect.left` → `rect.position.x` `rect.width` → `rect.size.x`
-  * Build with `sf::Rect<T>{{x, y},{w, h}}`.
-  * Intersection: `rect.findIntersection(other)` returns `std::optional<sf::Rect<T>>`.
+  `rect.left` -> `rect.position.x`, `rect.width` -> `rect.size.x`.
+* Intersection: `rect.findIntersection(other)` returns `std::optional<sf::Rect<T>>`.
 
-### 2. Angles
-* Every rotation/angle is an `sf::Angle`.
-  * Construct with `sf::degrees(f)` or `sf::radians(f)`.
-  * Retrieve with `.asDegrees()` / `.asRadians()`.
+**2. Angles**
 
-### 3. Events
-* `pollEvent` / `waitEvent` return `std::optional<sf::Event>`.
-* Query with
-  * `event->is<sf::Event::Closed>()` (no data)
-  * `event->getIf<sf::Event::KeyPressed>()` (returns pointer or `nullptr`).
-* Alternative: `window.handleEvents(callbacks...)` visitor.
+* All rotations/angles use `sf::Angle`.
+  Construct with `sf::degrees(f)` or `sf::radians(f)`.
 
-### 4. Enumerations and constants
-* All enums are **scoped**. Add the enum name:
-  * `sf::Keyboard::A` → `sf::Keyboard::Key::A`.
-* Window state: `sf::Style::Fullscreen` → `sf::State::Fullscreen`.
-* Primitive: `LinesStrip` → `LineStrip`, `TrianglesStrip` → `TriangleStrip`.
-* `PrimitiveType::Quads` no longer exists—draw two triangles.
+**3. Events**
 
-### 5. Functions & constructors
-| SFML 2                                      | SFML 3                    |
-|---------------------------------------------|---------------------------|
-| `Font::loadFromFile`                        | `Font::openFromFile`      |
-| `Texture::create(w,h)`                      | `Texture::resize(w,h)`    |
-| `Sound::getLoop / setLoop`                  | `isLooping / setLooping`  |
-| `Socket::getHandle`                         | `getNativeHandle`         |
-| `WindowBase::getSystemHandle`               | `getNativeHandle`         |
-| `RenderWindow::capture()`                   | `Texture tmp; tmp.update(window); Image img = tmp.copyToImage();` |
+* `pollEvent` and `waitEvent` return `std::optional<sf::Event>`.
+  Query using `event->is<sf::Event::Closed>()` or `event->getIf<sf::Event::KeyPressed>()`.
 
-* `Sound`, `Text`, `Sprite` **must** be constructed with their resource (`SoundBuffer`, `Font`, `Texture`)—no default constructor.
-* Resource classes (`SoundBuffer`, `Font`, `Image`, ...) provide throwing file constructors (`Class{"file.ext"}`).
+**4. Enumerations and constants**
 
-### 6. Types and threading
-* `sf::Int32`, `sf::Uint32`, ... → `std::int32_t`, `std::uint32_t`, ...
-* `sf::Lock`, `sf::Mutex`, `sf::Thread` → `<thread>` equivalents (`std::lock_guard`, `std::mutex`, `std::thread` or `std::jthread`).
-```
-- Always format function or method declarations so the first parameter stays on the same line as the function name, and all remaining parameters are placed on their own lines. For example:
-```cpp
-void run(const event_callback_type &on_event,
-         const update_callback_type &on_update,
-         const render_callback_type &on_render);
-```
-- Always use `=` for variable initialization, never brace-initialization. For example:
-```cpp
-sf::Vector2u resolution = {1280, 720};
-unsigned fps = 144;
-bool vsync = false;
-unsigned anti_aliasing = 8;
-```
-- Every member variable (whether within a struct, class, or enum) must always have a `@brief` doxygen explanation.
+* All enums are scoped (`sf::Keyboard::Key::A`).
+* `sf::Style::Fullscreen` -> `sf::State::Fullscreen`.
+* `PrimitiveType::Quads` removed; draw two triangles instead.
+
+**5. Constructors and methods**
+
+| SFML 2                        | SFML 3                 |
+| ----------------------------- | ---------------------- |
+| `Font::loadFromFile`          | `Font::openFromFile`   |
+| `Texture::create(w,h)`        | `Texture::resize(w,h)` |
+| `Sound::getLoop/setLoop`      | `isLooping/setLooping` |
+| `WindowBase::getSystemHandle` | `getNativeHandle`      |
+
+**6. Types and threading**
+
+* Replace `sf::Int32`/`sf::Uint32` with `<cstdint>` types.
+* Replace `sf::Thread`, `sf::Mutex`, `sf::Lock` with standard library equivalents (`std::jthread`, `std::mutex`, `std::lock_guard`).
+
+---
+
+### Logging and Diagnostics
+
+* Logging uses **spdlog**.
+  * Debug builds: runtime level = `debug`.
+  * Release builds: runtime level = `info`.
+
+---
+
+### Documentation Rules
+
+* All `.hpp` files must contain a Doxygen header block describing the module purpose.
+  ```cpp
+  /**
+   * @file app.hpp
+   *
+   * @brief Main application logic.
+   */
+  ```
+* The `.cpp` file should only contain the name of the module.
+  ```cpp
+  /**
+   * @file app.cpp
+   */
+  ```
+* Every class, struct, function, and constant requires at least a `@brief` tag.

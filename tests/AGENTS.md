@@ -1,112 +1,124 @@
-When generating tests for code, use the C++20 snitch library. Make sure the tag (2nd argument) follows the `[DIRECTORY][SUBDIRECTORY][HEADER.HPP]` format, e.g., `[src][assets][textures.hpp]`. The full docs can be found below:
+# AGENTS.md
 
-## Writing Tests
+**snitch** is a lightweight C++20 testing framework used for unit tests in this project. It provides a Catch2-like API (macros like `TEST_CASE`, `CHECK`, `REQUIRE`, etc.) but with faster compile times and no heap allocations. It's simple, efficient, and well suited for modern C++ projects.
 
-### Test Case Macros
+---
 
-- `TEST_CASE(NAME, TAGS) { ... }` — Standalone test case
-- `TEMPLATE_TEST_CASE(NAME, TAGS, TYPES...) { ... }` — Typed test case
-- `TEMPLATE_LIST_TEST_CASE(NAME, TAGS, TYPES) { ... }` — Typed test case with reusable type list
-- `TEST_CASE_METHOD(FIXTURE, NAME, TAGS) { ... }` — Test case with fixture
-- `TEMPLATE_TEST_CASE_METHOD(NAME, TAGS, TYPES...) { ... }` — Typed test case with fixture
-- `TEMPLATE_LIST_TEST_CASE_METHOD(NAME, TAGS, TYPES) { ... }` — Typed test case with fixture and type list
+## 1. Basic Usage
 
-#### Example
+Include Snitch in your test files:
+
 ```cpp
 #include <snitch/snitch.hpp>
-TEST_CASE("Factorials are computed", "[factorial]") {
-    REQUIRE(Factorial(0) == 1);
-    REQUIRE(Factorial(1) == 1);
-    REQUIRE(Factorial(2) == 2);
-}
 ```
 
-### Test Check Macros
+Snitch provides its own `main()` entry point, so **do not define a main function** in your test files.
 
-- **Run-time:**
-  - `REQUIRE(EXPR);` — Abort test on failure
-  - `CHECK(EXPR);` — Continue test on failure
-  - `REQUIRE_FALSE(EXPR);`, `CHECK_FALSE(EXPR);`
-  - `REQUIRE_THAT(EXPR, MATCHER);`, `CHECK_THAT(EXPR, MATCHER);`
-- **Compile-time:**
-  - `CONSTEVAL_REQUIRE(EXPR);`, `CONSTEVAL_CHECK(EXPR);`
-  - `CONSTEVAL_REQUIRE_FALSE(EXPR);`, `CONSTEVAL_CHECK_FALSE(EXPR);`
-  - `CONSTEVAL_REQUIRE_THAT(EXPR, MATCHER);`, `CONSTEVAL_CHECK_THAT(EXPR, MATCHER);`
-- **Run-time and Compile-time:**
-  - `CONSTEXPR_REQUIRE(EXPR);`, `CONSTEXPR_CHECK(EXPR);`
-  - `CONSTEXPR_REQUIRE_FALSE(EXPR);`, `CONSTEXPR_CHECK_FALSE(EXPR);`
-  - `CONSTEXPR_REQUIRE_THAT(EXPR, MATCHER);`, `CONSTEXPR_CHECK_THAT(EXPR, MATCHER);`
-- **Exception checks:**
-  - `REQUIRE_THROWS_AS(EXPR, EXCEPT);`, `CHECK_THROWS_AS(EXPR, EXCEPT);`
-  - `REQUIRE_THROWS_MATCHES(EXPR, EXCEPT, MATCHER);`, `CHECK_THROWS_MATCHES(EXPR, EXCEPT, MATCHER);`
-  - `REQUIRE_NOTHROW(EXPR);`, `CHECK_NOTHROW(EXPR);`
-- **Miscellaneous:**
-  - `FAIL(MSG);`, `FAIL_CHECK(MSG);`
-  - `SKIP(MSG);`, `SKIP_CHECK(MSG);`
+### Example
 
-
-## Advanced Features
-
-### Sections
-Use `SECTION("name")` to split a test case into multiple logical sections, sharing setup/teardown logic.
-
-### Captures
-Use `INFO(...)` and `CAPTURE(vars...)` to record contextual information for failed checks.
-
-### Tags
-Tags are assigned as a string in the test macro, e.g. `[fast][math]`. Special tags:
-- `[.]` — hidden test
-- `[!mayfail]` — allowed to fail
-- `[!shouldfail]` — must fail
-
-### Matchers
-Matchers are objects with a `match(obj)` and `describe_match(obj, status)` interface. Built-in matchers:
-- `snitch::matchers::contains_substring{"substring"}`
-- `snitch::matchers::with_what_contains{"substring"}`
-- `snitch::matchers::is_any_of{T...}`
-
-Custom matchers can be defined by implementing the required interface.
-
-### Custom String Serialization
-To display custom types in failure messages, define a free function `bool append(snitch::small_string_span, const T&)` in the same namespace as your type.
-
-
-## Reporters
-
-- Built-in: `console` (default), `teamcity`, `xml`
-- Custom reporters can be registered via `REGISTER_REPORTER(NAME, TYPE)` or `REGISTER_REPORTER_CALLBACKS(NAME, INIT, CONFIG, REPORT, FINISH)`
-- The main reporter callback signature: `void(const snitch::registry&, const snitch::event::data&) noexcept`
-
-
-## Command-Line API
-
-- `-h, --help` — Show help
-- `-l, --list-tests` — List all tests
-- `--list-tags` — List all tags
-- `--list-reporters` — List all reporters
-- `-r, --reporter <name>` — Select reporter
-- `-v, --verbosity <quiet|normal|high|full>` — Set verbosity
-- `-o, --output <path>` — Output to file
-- `--color <always|default|never>` — Enable/disable colors
-- Positional arguments filter tests by name/tag (wildcards supported)
-
-
-## Filtering Tests
-
-- Use wildcards (`*`) and negation (`~`) to select/exclude tests
-- Filters can apply to names or tags
-- Multiple filters: space = AND, comma = OR
-- Hidden tests (`[.]`) only run if explicitly selected
-
-
-## Using Your Own main()
-
-By default, snitch defines `main()`. To provide your own, set `SNITCH_DEFINE_MAIN` to `0` and call:
 ```cpp
-int main(int argc, char* argv[]) {
-    auto args = snitch::cli::parse_arguments(argc, argv);
-    if (!args) return 1;
-    snitch::tests.configure(*args);
-    return snitch::tests.run_tests(*args) ? 0 : 1;
+TEST_CASE("Factorials are computed correctly", "[math][factorial]") {
+    REQUIRE(factorial(0) == 1);
+    REQUIRE(factorial(5) == 120);
 }
 ```
+
+* The first argument is a descriptive test name.
+* The second is an optional tag list, used for filtering (e.g. `[core][math]`).
+
+You can use multiple `TEST_CASE`s per file. Each one runs independently.
+
+---
+
+## 2. Assertions
+
+| Macro                                | Description                              |
+| ------------------------------------ | ---------------------------------------- |
+| `REQUIRE(expr)`                      | Fails and aborts the test if false.      |
+| `CHECK(expr)`                        | Fails but continues running.             |
+| `REQUIRE_FALSE(expr)`                | Requires the expression to be false.     |
+| `REQUIRE_THROWS_AS(expr, Exception)` | Expects a specific exception type.       |
+| `REQUIRE_NOTHROW(expr)`              | Ensures no exception is thrown.          |
+| `FAIL("message")`                    | Fails immediately with a custom message. |
+| `SKIP("message")`                    | Marks the test as skipped.               |
+
+Use `REQUIRE` for critical checks and `CHECK` when you want to continue testing after a failure.
+
+---
+
+## 3. Sections
+
+Use `SECTION("name")` inside a `TEST_CASE` to separate related scenarios sharing setup code:
+
+```cpp
+TEST_CASE("Parsing integers from string", "[util][parse]") {
+    std::string input = "123";
+    SECTION("Valid input") {
+        REQUIRE(parse_int(input) == 123);
+    }
+    SECTION("Invalid input") {
+        input = "abc";
+        REQUIRE_THROWS_AS(parse_int(input), std::invalid_argument);
+    }
+}
+```
+
+Each section runs independently with the same setup.
+
+---
+
+## 4. Logging and Context
+
+Use these to add context to test failures:
+
+* `INFO("message")` – Adds contextual info, shown only on failure.
+* `CAPTURE(var)` – Logs variable name and value automatically.
+
+Example:
+
+```cpp
+for (int i = 0; i < 10; ++i) {
+    CAPTURE(i);
+    CHECK(compute_value(i) == expected[i]);
+}
+```
+
+---
+
+## 5. Fixtures
+
+For shared setup/teardown logic, use `TEST_CASE_METHOD`:
+
+```cpp
+struct ExampleFixture {
+    int base_value = 5;
+};
+
+TEST_CASE_METHOD(ExampleFixture, "Fixture test", "[fixture]") {
+    REQUIRE(this->base_value == 5);
+}
+```
+
+Each test gets a new fixture instance for isolation.
+
+---
+
+## 6. Compile-time Tests
+
+Snitch supports constexpr testing:
+
+```cpp
+CONSTEXPR_REQUIRE(square(4) == 16);
+```
+
+This validates at both compile time and runtime.
+
+---
+
+## 7. Test File Organization
+
+* Mirror the `src/` directory structure under `tests/`.
+  Example: `src/core/world.cpp` -> `tests/core/world.test.cpp`
+* Use tags that mirror the directory structure for easy filtering in `CMakeLists.txt`, e.g.:
+  * Tag `[src][game][entities.hpp]` in `tests/game/entities.test.cpp` file
+  * Tag `[src][assets][sounds.hpp]` in `tests/assets/sounds.test.cpp` file
