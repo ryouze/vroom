@@ -24,56 +24,56 @@ struct CarConfig final {
      *
      * Higher values make the car accelerate more quickly when the gas pedal is pressed.
      */
-    float throttle_acceleration_rate_pixels_per_second_squared = 700.0f;
+    float throttle_acceleration_rate_pixels_per_second_squared = 700.0F;
 
     /**
      * @brief The rate at which applying the foot brake decreases the car's velocity, expressed in pixels per second squared.
      *
      * Larger values cause the car to slow down more aggressively under normal braking.
      */
-    float brake_deceleration_rate_pixels_per_second_squared = 950.0f;
+    float brake_deceleration_rate_pixels_per_second_squared = 950.0F;
 
     /**
      * @brief The rate at which applying the hand brake (emergency brake) decelerates the car, in pixels per second squared.
      *
      * This is significantly stronger than the regular brake, enabling rapid stops or drifts.
      */
-    float handbrake_deceleration_rate_pixels_per_second_squared = 2200.0f;
+    float handbrake_deceleration_rate_pixels_per_second_squared = 2200.0F;
 
     /**
      * @brief The passive deceleration applied by engine drag when no input is given, in pixels per second squared.
      *
      * Lower values allow the car to coast longer before coming to a stop.
      */
-    float engine_braking_rate_pixels_per_second_squared = 80.0f;
+    float engine_braking_rate_pixels_per_second_squared = 80.0F;
 
     /**
      * @brief The maximum forward speed the car may attain, in pixels per second.
      *
      * Velocities above this threshold are clamped to prevent unrealistic top speeds.
      */
-    float maximum_movement_pixels_per_second = 2500.0f;
+    float maximum_movement_pixels_per_second = 2500.0F;
 
     /**
      * @brief The angular turn rate applied to the car's orientation when steering input is held, in degrees per second.
      *
      * Higher values permit sharper turns at a given speed.
      */
-    float steering_turn_rate_degrees_per_second = 520.0f;
+    float steering_turn_rate_degrees_per_second = 520.0F;
 
     /**
      * @brief The rate at which the steering wheel returns to center when no steering input is active, in degrees per second.
      *
      * Higher values cause the car to self-straighten more rapidly.
      */
-    float steering_autocenter_rate_degrees_per_second = 780.0f;
+    float steering_autocenter_rate_degrees_per_second = 780.0F;
 
     /**
      * @brief The maximum allowed steering wheel angle, in degrees.
      *
      * This determines the furthest angle the wheels (and thus the car) can turn from its forward axis.
      */
-    float maximum_steering_angle_degrees = 180.0f;
+    float maximum_steering_angle_degrees = 180.0F;
 
     /**
      * @brief Multiplier for steering effectiveness at zero speed (full responsiveness).
@@ -82,70 +82,70 @@ struct CarConfig final {
      *
      * @details You can't technically move the car at zero speed, but that's the easiest way to explain it.
      */
-    float steering_sensitivity_at_zero_speed = 1.0f;
+    float steering_sensitivity_at_zero_speed = 1.0F;
 
     /**
      * @brief Multiplier for steering effectiveness at maximum speed (reduced responsiveness).
      *
      * Values below 1.0 simulate less agile handling at high velocity.
      */
-    float steering_sensitivity_at_maximum_speed = 0.8f;
+    float steering_sensitivity_at_maximum_speed = 0.8F;
 
     /**
      * @brief Lateral slip damping coefficient per second.
      *
      * Higher values reduce sideways sliding more aggressively, promoting stable handling in turns. Less makes the car more prone to drifting.
      */
-    float lateral_slip_damping_coefficient_per_second = 3.0f;  // Make it drift
+    float lateral_slip_damping_coefficient_per_second = 3.0F;  // Make it drift
 
     /**
      * @brief Fraction of velocity retained after a collision bounce.
      *
      * 0.0 means a full stop on impact; 1.0 means a perfectly elastic bounce.
      */
-    float collision_velocity_retention_ratio = 0.25f;
+    float collision_velocity_retention_ratio = 0.25F;
 
     /**
      * @brief Minimum speed required (in pixels per second) for a bounce to occur.
      *
      * Below this threshold, collisions will simply halt the car to avoid jitter.
      */
-    float collision_minimum_bounce_speed_pixels_per_second = 50.0f;
+    float collision_minimum_bounce_speed_pixels_per_second = 50.0F;
 
     /**
      * @brief Minimum random angle offset (in degrees) applied to the car's rebound direction on collision at low speeds.
      *
      * This creates subtle direction changes at low speeds to prevent jitter while maintaining predictable handling.
      */
-    float collision_minimum_random_bounce_angle_degrees = 1.0f;
+    float collision_minimum_random_bounce_angle_degrees = 1.0F;
 
     /**
      * @brief Maximum random angle offset (in degrees) applied to the car's rebound direction on collision at high speeds.
      *
      * Higher values create more unpredictable bounces at high speeds, which helps prevent getting stuck in walls.
      */
-    float collision_maximum_random_bounce_angle_degrees = 35.0f;
+    float collision_maximum_random_bounce_angle_degrees = 35.0F;
 
     /**
      * @brief Speed threshold below which the car is considered stopped for physics calculations.
      *
      * This prevents jitter and unnecessary calculations at very low speeds.
      */
-    float stopped_speed_threshold_pixels_per_second = 0.01f;
+    float stopped_speed_threshold_pixels_per_second = 0.01F;
 
     /**
      * @brief Steering wheel angle threshold below which auto-centering snaps to zero.
      *
      * This prevents oscillation when the steering wheel is nearly centered.
      */
-    float steering_autocenter_epsilon_degrees = 0.1f;
+    float steering_autocenter_epsilon_degrees = 0.1F;
 
     /**
      * @brief Minimum forward speed required for sprite rotation during steering.
      *
      * Below this threshold, the car sprite will not rotate even if steering input is applied.
      */
-    float minimum_speed_for_rotation_pixels_per_second = 1.0f;
+    float minimum_speed_for_rotation_pixels_per_second = 1.0F;
 };
 
 /**
@@ -157,23 +157,23 @@ struct CarInput final {
     /**
      * @brief Gas/throttle input value. Range [0.0, 1.0] for analog, or 0.0/1.0 for digital.
      */
-    float throttle = 0.0f;
+    float throttle = 0.0F;
 
     /**
      * @brief Brake input value. Range [0.0, 1.0] for analog, or 0.0/1.0 for digital.
      */
-    float brake = 0.0f;
+    float brake = 0.0F;
 
     /**
      * @brief Steering input value. Range [-1.0, 1.0] for analog, or -1.0/0.0/1.0 for digital.
      * Negative values steer left, positive values steer right.
      */
-    float steering = 0.0f;
+    float steering = 0.0F;
 
     /**
      * @brief Handbrake input. Range [0.0, 1.0] for analog, or 0.0/1.0 for digital.
      */
-    float handbrake = 0.0f;
+    float handbrake = 0.0F;
 };
 
 /**
@@ -529,50 +529,50 @@ class Car final {
      *
      * Increase = reach waypoints from farther away, decrease = must get closer to reach waypoints.
      */
-    static constexpr float waypoint_reach_factor_ = 0.65f;
+    static constexpr float waypoint_reach_factor_ = 0.65F;
 
     /**
      * @brief Random variation parameters for waypoint tracking consistency.
      *
      * These provide consistent random variations for waypoint reach distance calculations.
      */
-    static constexpr float random_variation_minimum_ = 0.8f;
-    static constexpr float random_variation_maximum_ = 1.2f;
+    static constexpr float random_variation_minimum_ = 0.8F;
+    static constexpr float random_variation_maximum_ = 1.2F;
 
     /**
      * @brief Time accumulator for AI update throttling.
      *
      * This tracks elapsed time since last AI behavior update to limit AI calculations to maximum 30Hz for performance.
      */
-    float ai_update_timer_ = 0.0f;
+    float ai_update_timer_ = 0.0F;
 
     /**
      * @brief Time accumulator for tire mark spawning throttling.
      *
      * This tracks elapsed time since the last tire mark spawn to limit tire mark generation to 120Hz for performance.
      */
-    float tire_update_timer_ = 0.0f;
+    float tire_update_timer_ = 0.0F;
 
     /**
      * @brief Time accumulator for tire mark fade-out throttling.
      *
      * This tracks elapsed time since the last tire mark fade update to limit fade calculations to 20Hz for performance.
      */
-    float tire_despawn_timer_ = 0.0f;
+    float tire_despawn_timer_ = 0.0F;
 
     /**
      * @brief Target interval for AI updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
      *
      * AI behavior will only be recalculated when ai_update_timer_ exceeds this interval.
      */
-    static constexpr float ai_update_rate = 1.0f / 30.0f;
+    static constexpr float ai_update_rate = 1.0F / 30.0F;
 
     /**
      * @brief Target interval for tire mark fade-out updates in seconds (1/30 = ~0.0333 seconds for 30Hz).
      *
      * Tire mark fade calculations will only be performed when tire_despawn_timer_ exceeds this interval.
      */
-    static constexpr float tire_despawn_rate = 1.0f / 30.0f;
+    static constexpr float tire_despawn_rate = 1.0F / 30.0F;
 
     /**
      * @brief Initial lifetime in seconds for newly spawned tire marks before they fully fade out.
@@ -581,7 +581,7 @@ class Car final {
      *
      * Longer values provide more persistent visual trails but can impact performance with many tire marks.
      */
-    static constexpr float initial_tire_lifetime_ = 0.5f;
+    static constexpr float initial_tire_lifetime_ = 0.5F;
 
     // static constexpr float tire_mark_spawn_rate_ = 0.02f;
 

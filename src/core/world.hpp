@@ -47,14 +47,14 @@ struct TrackConfig final {
      *
      * @note A value of 0.0 disables detours entirely, while 1.0 maximizes detour frequency. Horizontal edges always remain straight regardless of this setting.
      */
-    float detour_probability = 0.7f;
+    float detour_probability = 0.7F;
 
     /**
      * @brief Equality comparison operator with epsilon-based float comparison.
      */
     [[nodiscard]] bool operator==(const TrackConfig &other) const noexcept
     {
-        constexpr float epsilon = 1e-6f;
+        constexpr float epsilon = 1e-6F;
         return this->horizontal_count == other.horizontal_count &&
                this->vertical_count == other.vertical_count &&
                this->size_px == other.size_px &&

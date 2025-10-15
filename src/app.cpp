@@ -61,7 +61,7 @@ void run()
     // Setup main camera view and zoom factor
     sf::View camera_view;
     // camera_view.setCenter({0.f, 0.f}); // Not needed, because we set it to car position later
-    float camera_zoom_factor = 2.5f;
+    float camera_zoom_factor = 2.5F;
     camera_view.setSize({window_size_f.x * camera_zoom_factor, window_size_f.y * camera_zoom_factor});  // Absolute size based on zoom
 
     // Create random number generator
@@ -134,7 +134,7 @@ void run()
     const auto reset_game = [&race_track, &reset_cars, &camera_zoom_factor]() {
         race_track.reset();  // Rebuild track with default settings
         reset_cars();
-        camera_zoom_factor = 2.5f;
+        camera_zoom_factor = 2.5F;
     };
 
     // Player input states
@@ -214,7 +214,7 @@ void run()
     };
 
     // Create minimap blips
-    static constexpr float blip_radius = 200.0f;
+    static constexpr float blip_radius = 200.0F;
     std::array<sf::CircleShape, 5> minimap_blips;
     for (auto &blip : minimap_blips) {
         blip.setRadius(blip_radius);
@@ -303,15 +303,15 @@ void run()
                 player_input.throttle = gamepad.get_gas();
                 player_input.brake = gamepad.get_brake();
                 player_input.steering = gamepad.get_steer();
-                player_input.handbrake = gamepad.get_handbrake() ? 1.0f : 0.0f;
+                player_input.handbrake = gamepad.get_handbrake() ? 1.0F : 0.0F;
             }
             else {
                 // Fallback to keyboard state
                 // SPDLOG_DEBUG("Controller not connected, using keyboard input!");
-                player_input.throttle = key_states.gas ? 1.0f : 0.0f;
-                player_input.brake = key_states.brake ? 1.0f : 0.0f;
-                player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
-                player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
+                player_input.throttle = key_states.gas ? 1.0F : 0.0F;
+                player_input.brake = key_states.brake ? 1.0F : 0.0F;
+                player_input.steering = (key_states.left ? -1.0F : 0.0F) + (key_states.right ? 1.0F : 0.0F);
+                player_input.handbrake = key_states.handbrake ? 1.0F : 0.0F;
             }
 #ifndef NDEBUG  // TODO: Use this debug window to test controller input
             ImGui::Begin("Input");
@@ -365,41 +365,41 @@ void run()
             tire_screech_sound.stop();
 
             // Common UI constants
-            constexpr float settings_window_width = 500.f;
-            constexpr float settings_window_height = 550.f;
-            constexpr float button_width = 140.f;
-            constexpr float item_width = -200.f;  // Negative width leaves space for labels
+            constexpr float settings_window_width = 500.F;
+            constexpr float settings_window_height = 550.F;
+            constexpr float button_width = 140.F;
+            constexpr float item_width = -200.F;  // Negative width leaves space for labels
 
             // Since no drawing for the cars and track is done here, only the background color remains
-            ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
+            ImGui::SetNextWindowPos({window_size_f.x * 0.5F, window_size_f.y * 0.5F}, ImGuiCond_Always, {0.5F, 0.5F});
             ImGui::SetNextWindowSize({settings_window_width, settings_window_height}, ImGuiCond_FirstUseEver);
             if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-                constexpr float button_count = 3.f;
+                constexpr float button_count = 3.F;
                 const float spacing = ImGui::GetStyle().ItemSpacing.x;
-                const float total_width = (button_width * button_count) + (spacing * (button_count - 1.f));
-                const float offset = (ImGui::GetContentRegionAvail().x - total_width) * 0.5f;
+                const float total_width = (button_width * button_count) + (spacing * (button_count - 1.F));
+                const float offset = (ImGui::GetContentRegionAvail().x - total_width) * 0.5F;
 
-                if (offset > 0.f) {
+                if (offset > 0.F) {
                     ImGui::Indent(offset);
                 }
 
-                if (ImGui::Button("Resume", {button_width, 0.f})) {
+                if (ImGui::Button("Resume", {button_width, 0.F})) {
                     ui_sound.play_ok();
                     current_state = core::states::GameState::Playing;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Main Menu", {button_width, 0.f})) {
+                if (ImGui::Button("Main Menu", {button_width, 0.F})) {
                     ui_sound.play_other();
                     reset_game();
                     current_state = core::states::GameState::Menu;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Quit", {button_width, 0.f})) {
+                if (ImGui::Button("Quit", {button_width, 0.F})) {
                     ui_sound.play_other();
                     window.raw().close();
                 }
 
-                if (offset > 0.f) {
+                if (offset > 0.F) {
                     ImGui::Unindent(offset);
                 }
 
@@ -451,9 +451,9 @@ void run()
                         }
 
                         // Technically this isn't a percentage, because we go from 0.f to 1.f, but this code will be removed later, and I don't care
-                        if (ImGui::SliderFloat("Detour Probability", &detour_probability, 0.0f, 1.0f, "%.1f")) {
+                        if (ImGui::SliderFloat("Detour Probability", &detour_probability, 0.0F, 1.0F, "%.1f")) {
                             ui_sound.play_ok();
-                            detour_probability = std::clamp(detour_probability, 0.0f, 1.0f);
+                            detour_probability = std::clamp(detour_probability, 0.0F, 1.0F);
                             track_config_changed = true;
                         }
 
@@ -464,7 +464,7 @@ void run()
                         }
 
                         ImGui::SeparatorText("Camera");
-                        if (ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.f, 15.f, "%.1fx")) {
+                        if (ImGui::SliderFloat("Zoom", &camera_zoom_factor, 1.F, 15.F, "%.1fx")) {
                             ui_sound.play_ok();
                         }
                         if (ImGui::Combo("Car", &selected_vehicle_index, vehicle_names.data(), static_cast<int>(vehicle_names.size()))) {
@@ -673,18 +673,18 @@ void run()
                             ui_sound.play_ok();
                         }
                         ImGui::BeginDisabled(!minimap.enabled);
-                        if (ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.f, 1.f, "%.2f s")) {
+                        if (ImGui::SliderFloat("Minimap Update Rate", &minimap.refresh_interval, 0.F, 1.F, "%.2f s")) {
                             ui_sound.play_ok();
                         }
 
                         // Minimap resolution setting
                         static constexpr const char *minimap_resolution_labels[] = {"128x128", "192x192", "256x256", "384x384", "512x512", "768x768", "1024x1024"};
-                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128u, 128u}, {192u, 192u}, {256u, 256u}, {384u, 384u}, {512u, 512u}, {768u, 768u}, {1024u, 1024u}};
+                        static constexpr sf::Vector2u minimap_resolution_values[] = {{128U, 128U}, {192U, 192U}, {256U, 256U}, {384U, 384U}, {512U, 512U}, {768U, 768U}, {1024U, 1024U}};
                         static constexpr std::size_t minimap_resolution_count = IM_ARRAYSIZE(minimap_resolution_values);
 
                         static int minimap_resolution_index = []() {
                             // Initialize to match the default resolution
-                            static constexpr sf::Vector2u default_res = {256u, 256u};
+                            static constexpr sf::Vector2u default_res = {256U, 256U};
                             for (int i = 0; i < static_cast<int>(minimap_resolution_count); ++i) {
                                 if (minimap_resolution_values[i] == default_res) {
                                     return i;
@@ -714,27 +714,27 @@ void run()
 
                         ImGui::SeparatorText("Volume");
                         // Use a temporary variable to handle percentage display properly
-                        float volume_percent = settings::current::engine_volume * 100.0f;
-                        if (ImGui::SliderFloat("Car Engine", &volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
-                            settings::current::engine_volume = volume_percent / 100.0f;
+                        float volume_percent = settings::current::engine_volume * 100.0F;
+                        if (ImGui::SliderFloat("Car Engine", &volume_percent, 0.0F, 100.0F, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::engine_volume = volume_percent / 100.0F;
                             ui_sound.play_ok();
                         }
 
-                        float tire_volume_percent = settings::current::tire_screech_volume * 100.0f;
-                        if (ImGui::SliderFloat("Tire Screeching", &tire_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
-                            settings::current::tire_screech_volume = tire_volume_percent / 100.0f;
+                        float tire_volume_percent = settings::current::tire_screech_volume * 100.0F;
+                        if (ImGui::SliderFloat("Tire Screeching", &tire_volume_percent, 0.0F, 100.0F, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::tire_screech_volume = tire_volume_percent / 100.0F;
                             ui_sound.play_ok();
                         }
 
-                        float wall_hit_volume_percent = settings::current::wall_hit_volume * 100.0f;
-                        if (ImGui::SliderFloat("Wall Hits", &wall_hit_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
-                            settings::current::wall_hit_volume = wall_hit_volume_percent / 100.0f;
+                        float wall_hit_volume_percent = settings::current::wall_hit_volume * 100.0F;
+                        if (ImGui::SliderFloat("Wall Hits", &wall_hit_volume_percent, 0.0F, 100.0F, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::wall_hit_volume = wall_hit_volume_percent / 100.0F;
                             ui_sound.play_ok();
                         }
 
-                        float ui_volume_percent = settings::current::ui_volume * 100.0f;
-                        if (ImGui::SliderFloat("UI Sounds", &ui_volume_percent, 0.0f, 100.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
-                            settings::current::ui_volume = ui_volume_percent / 100.0f;
+                        float ui_volume_percent = settings::current::ui_volume * 100.0F;
+                        if (ImGui::SliderFloat("UI Sounds", &ui_volume_percent, 0.0F, 100.0F, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                            settings::current::ui_volume = ui_volume_percent / 100.0F;
                             ui_sound.play_ok();  // Play a sound when the slider changes
                         }
 
@@ -783,40 +783,40 @@ void run()
             engine_sound.stop();
 
             // Main menu
-            constexpr float main_menu_width = 240.0f;
-            constexpr float button_width = 160.0f;
+            constexpr float main_menu_width = 240.0F;
+            constexpr float button_width = 160.0F;
 
             // Center the ImGui window inside the SFML window
-            ImGui::SetNextWindowPos({window_size_f.x * 0.5f, window_size_f.y * 0.5f}, ImGuiCond_Always, {0.5f, 0.5f});
-            ImGui::SetNextWindowSize({main_menu_width, 0.0f}, ImGuiCond_Always);
+            ImGui::SetNextWindowPos({window_size_f.x * 0.5F, window_size_f.y * 0.5F}, ImGuiCond_Always, {0.5F, 0.5F});
+            ImGui::SetNextWindowSize({main_menu_width, 0.0F}, ImGuiCond_Always);
 
             if (ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar)) {
                 const float window_width = ImGui::GetWindowWidth();
 
                 // Title and subtitle
-                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_NAME).x) * 0.5f);
+                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_NAME).x) * 0.5F);
                 ImGui::Text("%s", generated::PROJECT_NAME);
-                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("2D drift racing game").x) * 0.5f);
+                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("2D drift racing game").x) * 0.5F);
                 ImGui::TextUnformatted("2D drift racing game");
 
                 ImGui::Separator();
 
                 // Centered buttons
-                const float indent_amount = std::max(0.0f, (ImGui::GetContentRegionAvail().x - button_width) * 0.5f);
+                const float indent_amount = std::max(0.0F, (ImGui::GetContentRegionAvail().x - button_width) * 0.5F);
                 ImGui::Indent(indent_amount);
 
-                if (ImGui::Button("Play", {button_width, 0.0f})) {
+                if (ImGui::Button("Play", {button_width, 0.0F})) {
                     ui_sound.play_ok();
                     reset_game();
                     current_state = core::states::GameState::Playing;
                 }
 
-                if (ImGui::Button("Settings", {button_width, 0.0f})) {
+                if (ImGui::Button("Settings", {button_width, 0.0F})) {
                     ui_sound.play_ok();
                     current_state = core::states::GameState::Paused;
                 }
 
-                if (ImGui::Button("Quit", {button_width, 0.0f})) {
+                if (ImGui::Button("Quit", {button_width, 0.0F})) {
                     ui_sound.play_ok();
                     window.raw().close();
                 }
@@ -826,10 +826,10 @@ void run()
                 ImGui::Separator();
 
                 // Footer
-                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("Built with C++20 and SFML3").x) * 0.5f);
+                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize("Built with C++20 and SFML3").x) * 0.5F);
                 ImGui::TextUnformatted("Built with C++20 and SFML3");
 
-                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_VERSION).x) * 0.5f);
+                ImGui::SetCursorPosX((window_width - ImGui::CalcTextSize(generated::PROJECT_VERSION).x) * 0.5F);
                 ImGui::Text("%s", generated::PROJECT_VERSION);
 
                 ImGui::End();

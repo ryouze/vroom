@@ -103,52 +103,52 @@ class EngineSound final {
     /**
      * @brief Idle pitch when car is not moving.
      */
-    static constexpr float idle_pitch_ = 0.8f;
+    static constexpr float idle_pitch_ = 0.8F;
 
     /**
      * @brief Minimum pitch multiplier for driving engine sound.
      */
-    static constexpr float min_pitch_ = 1.0f;
+    static constexpr float min_pitch_ = 1.0F;
 
     /**
      * @brief Maximum pitch multiplier for redline engine sound.
      */
-    static constexpr float max_pitch_ = 2.7f;
+    static constexpr float max_pitch_ = 2.7F;
 
     /**
      * @brief Minimum RPM value for idle engine.
      */
-    static constexpr float min_rpm_ = 800.0f;
+    static constexpr float min_rpm_ = 800.0F;
 
     /**
      * @brief Maximum RPM value for redline engine.
      */
-    static constexpr float max_rpm_ = 7500.0f;
+    static constexpr float max_rpm_ = 7500.0F;
 
     /**
      * @brief Speed threshold for smooth idle-to-driving pitch transition.
      */
-    static constexpr float idle_blend_speed_ = 450.0f;
+    static constexpr float idle_blend_speed_ = 450.0F;
 
     /**
      * @brief Blending zone distance before gear shift for smooth transitions.
      */
-    static constexpr float gear_blend_zone_ = 50.0f;
+    static constexpr float gear_blend_zone_ = 50.0F;
 
     /**
      * @brief Multiplier for next gear RPM calculation during gear transitions.
      */
-    static constexpr float next_gear_rpm_multiplier_ = 1.2f * 0.2f;
+    static constexpr float next_gear_rpm_multiplier_ = 1.2F * 0.2F;
 
     /**
      * @brief Maximum car speed in pixels per second.
      */
-    static constexpr float max_car_speed_ = 2500.0f;
+    static constexpr float max_car_speed_ = 2500.0F;
 
     /**
      * @brief Overlap multiplier between gears for smoother RPM transitions.
      */
-    static constexpr float gear_overlap_multiplier_ = 1.2f;
+    static constexpr float gear_overlap_multiplier_ = 1.2F;
 
     /**
      * @brief Speed thresholds for gear shifts (pixels per second).
@@ -156,11 +156,11 @@ class EngineSound final {
      * @brief Better balanced gear shifts that don't change too frequently.
      */
     static constexpr std::array<float, 5> gear_shift_speeds_ = {
-        0.0f,     // 1st gear: 0 - 500 px/s
-        500.0f,   // 2nd gear: 500 - 1000 px/s
-        1000.0f,  // 3rd gear: 1000 - 1500 px/s
-        1500.0f,  // 4th gear: 1500 - 2000 px/s
-        2000.0f   // 5th gear: 2000 - 2500 px/s (max speed)
+        0.0F,     // 1st gear: 0 - 500 px/s
+        500.0F,   // 2nd gear: 500 - 1000 px/s
+        1000.0F,  // 3rd gear: 1000 - 1500 px/s
+        1500.0F,  // 4th gear: 1500 - 2000 px/s
+        2000.0F   // 5th gear: 2000 - 2500 px/s (max speed)
     };
 };
 
@@ -215,47 +215,47 @@ class TireScreechSound final {
     /**
      * @brief Minimum lateral slip velocity required to trigger tire screeching sound in pixels per second.
      */
-    static constexpr float drift_threshold_pixels_per_second_ = 150.0f;
+    static constexpr float drift_threshold_pixels_per_second_ = 150.0F;
 
     /**
      * @brief Minimum car speed required for tire screeching in pixels per second.
      */
-    static constexpr float minimum_speed_threshold_pixels_per_second_ = 250.0f;
+    static constexpr float minimum_speed_threshold_pixels_per_second_ = 250.0F;
 
     /**
      * @brief Lateral slip velocity at which tire screeching reaches maximum volume in pixels per second.
      */
-    static constexpr float max_volume_slip_velocity_pixels_per_second_ = 300.0f;
+    static constexpr float max_volume_slip_velocity_pixels_per_second_ = 300.0F;
 
     /**
      * @brief Lateral slip velocity at which tire screeching reaches maximum pitch in pixels per second.
      */
-    static constexpr float max_pitch_slip_velocity_pixels_per_second_ = 400.0f;
+    static constexpr float max_pitch_slip_velocity_pixels_per_second_ = 400.0F;
 
     /**
      * @brief Base pitch for tire screeching sound.
      */
-    static constexpr float base_pitch_ = 0.8f;
+    static constexpr float base_pitch_ = 0.8F;
 
     /**
      * @brief Maximum pitch multiplier for tire screeching sound.
      */
-    static constexpr float max_pitch_ = 1.5f;
+    static constexpr float max_pitch_ = 1.5F;
 
     /**
      * @brief Volume fade-in/fade-out smoothing factor per frame.
      */
-    static constexpr float volume_smoothing_factor_ = 0.1f;
+    static constexpr float volume_smoothing_factor_ = 0.1F;
 
     /**
      * @brief Current target volume for smooth transitions.
      */
-    float current_target_volume_ = 0.0f;
+    float current_target_volume_ = 0.0F;
 
     /**
      * @brief Current actual volume for smooth transitions.
      */
-    float current_actual_volume_ = 0.0f;
+    float current_actual_volume_ = 0.0F;
 };
 
 /**
@@ -303,22 +303,22 @@ class WallHitSound final {
     /**
      * @brief Minimum impact speed required to trigger wall hit sound in pixels per second.
      */
-    static constexpr float minimum_impact_speed_pixels_per_second_ = 100.0f;
+    static constexpr float minimum_impact_speed_pixels_per_second_ = 100.0F;
 
     /**
      * @brief Impact speed at which wall hit sound reaches maximum volume in pixels per second.
      */
-    static constexpr float max_volume_impact_speed_pixels_per_second_ = 1000.0f;
+    static constexpr float max_volume_impact_speed_pixels_per_second_ = 1000.0F;
 
     /**
      * @brief Base pitch for wall hit sound.
      */
-    static constexpr float base_pitch_ = 0.4f;
+    static constexpr float base_pitch_ = 0.4F;
 
     /**
      * @brief Maximum pitch multiplier for wall hit sound at high impact speeds.
      */
-    static constexpr float max_pitch_ = 1.0f;
+    static constexpr float max_pitch_ = 1.0F;
 };
 
 /**

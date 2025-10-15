@@ -223,7 +223,7 @@ inline bool gamepad_invert_brake = false;
  *
  * @note This defaults to 0.4 (40%).
  */
-inline float engine_volume = 0.4f;
+inline float engine_volume = 0.4F;
 
 /**
  * @brief Tire screeching sound volume as a float (0.0-1.0).
@@ -232,7 +232,7 @@ inline float engine_volume = 0.4f;
  *
  * @note This defaults to 0.6 (60%).
  */
-inline float tire_screech_volume = 0.6f;
+inline float tire_screech_volume = 0.6F;
 
 /**
  * @brief Wall hit sound volume as a float (0.0-1.0).
@@ -241,7 +241,7 @@ inline float tire_screech_volume = 0.6f;
  *
  * @note This defaults to 0.60 (60%).
  */
-inline float wall_hit_volume = 0.60f;
+inline float wall_hit_volume = 0.60F;
 
 /**
  * @brief UI sound volume as a float (0.0-1.0).
@@ -250,7 +250,7 @@ inline float wall_hit_volume = 0.60f;
  *
  * @note This defaults to 0.7 (70%).
  */
-inline float ui_volume = 0.7f;
+inline float ui_volume = 0.7F;
 
 }  // namespace current
 
