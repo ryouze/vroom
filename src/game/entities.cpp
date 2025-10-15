@@ -384,8 +384,8 @@ void Car::spawn_tire_marks(const float dt)
 
     // Pre-compute relative wheel positions in local coordinates
     static constexpr std::array<sf::Vector2f, 4> wheel_positions = {{
-        {wheel_offset_forward, -wheel_offset_side},   // Front-left
-        {wheel_offset_forward, wheel_offset_side},    // Front-right
+        // {wheel_offset_forward, -wheel_offset_side},   // Front-left
+        // {wheel_offset_forward, wheel_offset_side},    // Front-right
         {-wheel_offset_forward, -wheel_offset_side},  // Rear-left
         {-wheel_offset_forward, wheel_offset_side}    // Rear-right
     }};
