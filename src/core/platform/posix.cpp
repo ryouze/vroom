@@ -28,7 +28,7 @@ std::filesystem::path get_home_directory()
 
     if (const char *const home_env = std::getenv("HOME"); home_env && *home_env != '\0') [[likely]] {
         SPDLOG_DEBUG("Home directory successfully retrieved as '{}', returning it!", home_env);
-        return std::filesystem::path(home_env);
+        return {home_env};
     }
 
     // Note: The env variable works in most cases, whereas the passwd code below is NOT well tested, but should probably work
@@ -55,7 +55,7 @@ std::filesystem::path get_home_directory()
     const int ret = ::getpwuid_r(uid, &pwd, buffer.data(), buffer.size(), &result);
     if (ret == 0 && result && pwd.pw_dir && *pwd.pw_dir != '\0') [[likely]] {
         SPDLOG_DEBUG("Home directory successfully retrieved as '{}', returning it!", pwd.pw_dir);
-        return std::filesystem::path(pwd.pw_dir);
+        return {pwd.pw_dir};
     }
 
     // Use ret if it is non-zero; otherwise, no passwd entry (ENOENT)
