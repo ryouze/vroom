@@ -3,6 +3,7 @@
  */
 
 #include <algorithm>  // for std::clamp, std::max, std::min, std::erase_if
+#include <array>      // for std::array
 #include <cmath>      // for std::atan2, std::hypot, std::remainder, std::copysign, std::cos, std::sin, std::lerp
 #include <cstddef>    // for std::size_t
 #include <cstdint>    // for std::uint8_t

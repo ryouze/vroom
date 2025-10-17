@@ -8,7 +8,6 @@
 #include <format>     // for std::format
 #include <random>     // for std::mt19937, std::random_device
 #include <string>     // for std::string
-#include <tuple>      // for std::tuple
 #include <vector>     // for std::vector
 
 #include <SFML/Graphics.hpp>

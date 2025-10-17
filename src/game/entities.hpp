@@ -8,6 +8,7 @@
 
 #include <cstddef>  // for std::size_t
 #include <random>   // for std::mt19937
+#include <vector>   // for std::vector
 
 #include <SFML/Graphics.hpp>
 
