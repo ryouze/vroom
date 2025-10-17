@@ -8,7 +8,7 @@
 #include <string>     // for std::string
 #include <utility>    // for std::move
 
-#include <SFML/Audio.hpp>
+#include <SFML/Audio/SoundBuffer.hpp>
 #include <spdlog/spdlog.h>
 
 #include "sounds.hpp"

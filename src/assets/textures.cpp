@@ -8,7 +8,7 @@
 #include <string>     // for std::string
 #include <utility>    // for std::move
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Texture.hpp>
 #include <spdlog/spdlog.h>
 
 #include "textures.hpp"
