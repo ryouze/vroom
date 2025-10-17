@@ -10,10 +10,15 @@
 #include <string>     // for std::string
 #include <vector>     // for std::vector
 
-#include <SFML/Graphics.hpp>
 // #include <imgui-SFML.h>  // Required for some implicit conversions, e.g., "ImGui::Image(minimap_texture.getTexture(), ...);"
 #include <imgui.h>
-#include <spdlog/spdlog.h>
+#include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/View.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Event.hpp>
+#include <SFML/Window/Joystick.hpp>
+#include <SFML/Window/Keyboard.hpp>
 
 #include "app.hpp"
 #include "assets/builder.hpp"

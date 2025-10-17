@@ -6,6 +6,8 @@
 #include <cmath>      // for std::lerp
 #include <cstddef>    // for std::size_t
 
+#include <SFML/Audio/SoundBuffer.hpp>
+#include <SFML/Audio/SoundSource.hpp>
 #include <spdlog/spdlog.h>
 
 #include "settings.hpp"

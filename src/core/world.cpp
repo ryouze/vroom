@@ -7,8 +7,9 @@
 #include <random>   // for std::mt19937, std::uniform_real_distribution, std::uniform_int_distribution
 #include <vector>   // for std::vector
 
-#include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Sprite.hpp>
 
 #include "world.hpp"
 

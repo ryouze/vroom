@@ -13,9 +13,9 @@
 #include <utility>      // for std::move
 #include <vector>       // for std::vector
 
-#include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>
 #include <imgui.h>
+#include <SFML/Graphics/Color.hpp>
 #include <spdlog/spdlog.h>
 
 #include "widgets.hpp"

@@ -11,7 +11,9 @@
 #include <numbers>    // for std::numbers
 #include <random>     // for std::mt19937, std::uniform_real_distribution
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Texture.hpp>
+#include <SFML/System/Angle.hpp>
 #include <spdlog/spdlog.h>
 
 #include "core/world.hpp"  // We depend on the Track class for car collision detection and waypoints

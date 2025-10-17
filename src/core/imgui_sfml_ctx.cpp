@@ -4,9 +4,9 @@
 
 #include <stdexcept>  // for std::runtime_error
 
-#include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>
 #include <imgui.h>
+#include <SFML/System/Time.hpp>
 #include <spdlog/spdlog.h>
 
 #include "imgui_sfml_ctx.hpp"

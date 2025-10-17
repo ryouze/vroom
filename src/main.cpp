@@ -10,6 +10,7 @@
 #include <windows.h>         // for SetConsoleCP, SetConsoleOutputCP, CP_UTF8
 #endif
 
+#include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 
 #include "app.hpp"

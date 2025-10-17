@@ -21,6 +21,7 @@
 #else  // Assumption: if not Windows, then POSIX
 #include "platform/posix.hpp"
 #endif
+#include "generated.hpp"
 #include "io.hpp"
 #include "settings.hpp"
 

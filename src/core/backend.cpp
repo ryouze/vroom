@@ -7,7 +7,11 @@
 #include <format>     // for std::format
 #include <string>     // for std::string
 
-#include <SFML/Graphics.hpp>
+#include <SFML/System/Clock.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/Window/ContextSettings.hpp>
+#include <SFML/Window/VideoMode.hpp>
+#include <SFML/Window/WindowEnums.hpp>
 #include <spdlog/spdlog.h>
 
 #include "backend.hpp"
