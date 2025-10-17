@@ -128,7 +128,7 @@ class FpsCounter final : public IWidget {
      *
      * @note This is the time interval between FPS calculations. The FPS is recalculated only once per second, but the graphics are updated every frame.
      */
-    static constexpr float update_rate_ = 1.0F;
+    static constexpr float update_rate_ = 1.0f;
 
     /**
      * @brief Target window where the FPS counter will be drawn.
@@ -202,19 +202,19 @@ class Speedometer final : public IWidget {
     /**
      * @brief Size of the speedometer window in pixels (width, height).
      */
-    static constexpr ImVec2 window_size_ = {200.F, 30.F};
+    static constexpr ImVec2 window_size_ = {200.f, 30.f};
 
     /**
      * @brief Pixel-to-kilometer per hour conversion factor.
      *
      * @note The original factor was roughly modeled after the Nissan Silvia S14 real-world dimensions ({4.5f, 1.7f}) vs. in-game player car sprite (car_black_1), resulting in "0.1008f". However, that was deemed too high, so it was adjusted to "0.07f" for better scaling.
      */
-    static constexpr float px_to_kph_factor_ = 0.07F;
+    static constexpr float px_to_kph_factor_ = 0.07f;
 
     /**
      * @brief Maximum speed in kilometers per hour, for scaling the progress bar, in pixels.
      */
-    static constexpr float max_kph_ = 300.F;
+    static constexpr float max_kph_ = 300.f;
 
     /**
      * @brief Target window where the speedometer will be drawn.
@@ -336,19 +336,19 @@ class Minimap final : public IWidget {
     /**
      * @brief Default resolution of the internal render texture, in pixels.
      */
-    static constexpr sf::Vector2u default_resolution_ = {256U, 256U};
+    static constexpr sf::Vector2u default_resolution_ = {256u, 256u};
 
     /**
      * @brief Size of the view used for rendering into the internal texture, in pixels.
      *
      * @note This essentially the size of the world slice that is displayed in the minimap; think of it as a zoom factor, where a higher value means more world area is captured, hence it is more "zoomed out".
      */
-    static constexpr sf::Vector2f capture_size_ = {8000.F, -8000.F};
+    static constexpr sf::Vector2f capture_size_ = {8000.f, -8000.f};
 
     /**
      * @brief Size of the minimap window in pixels (width, height).
      */
-    static constexpr ImVec2 window_size_ = {150.F, 150.F};
+    static constexpr ImVec2 window_size_ = {150.f, 150.f};
 
     /**
      * @brief Target window where the minimap will be drawn.
@@ -394,7 +394,7 @@ class Minimap final : public IWidget {
     /**
      * @brief Accumulated time since the last texture refresh.
      */
-    float accumulation_ = 0.F;
+    float accumulation_ = 0.f;
 };
 
 /**
@@ -485,12 +485,12 @@ class Leaderboard final : public IWidget {
      *
      * @note This is set to 20Hz, as higher values (e.g., 60 Hz) are not visually distinguishable, per my own testing.
      */
-    static constexpr float update_rate_ = 1.0F / 20.0F;
+    static constexpr float update_rate_ = 1.0f / 20.0f;
 
     /**
      * @brief Size of the leaderboard window  in pixels (width, height).
      */
-    static constexpr ImVec2 window_size_ = {250.0F, 160.0F};
+    static constexpr ImVec2 window_size_ = {250.0f, 160.0f};
 
     /**
      * @brief Target window where the leaderboard will be drawn.
@@ -512,7 +512,7 @@ class Leaderboard final : public IWidget {
     /**
      * @brief Accumulated time since the last leaderboard data update.
      */
-    float accumulation_ = 0.0F;
+    float accumulation_ = 0.0f;
 
     /**
      * @brief Cached leaderboard entries updated at throttled rate.
