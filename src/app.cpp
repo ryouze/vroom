@@ -118,11 +118,17 @@ void run()
         entries.reserve(5);  // Reserve space for player + 4 AI cars
 
         // Add player car
-        entries.emplace_back(core::widgets::LeaderboardEntry{vehicle_names[0], player_car.get_state().drift_score, true});
+        entries.emplace_back(core::widgets::LeaderboardEntry{
+            .car_name = vehicle_names[0],
+            .drift_score = player_car.get_state().drift_score,
+            .is_player = true});
 
         // Add AI cars using shared names array
         for (std::size_t i = 0; i < ai_cars.size(); ++i) {
-            entries.emplace_back(core::widgets::LeaderboardEntry{vehicle_names[i + 1], ai_cars[i].get_state().drift_score, false});
+            entries.emplace_back(core::widgets::LeaderboardEntry{
+                .car_name = vehicle_names[i + 1],
+                .drift_score = ai_cars[i].get_state().drift_score,
+                .is_player = false});
         }
 
         return entries;
@@ -462,7 +468,11 @@ void run()
                         }
 
                         if (track_config_changed) {
-                            race_track.set_config({static_cast<std::size_t>(track_width_tiles), static_cast<std::size_t>(track_height_tiles), static_cast<std::size_t>(tile_size_pixels), detour_probability});
+                            race_track.set_config(
+                                {.horizontal_count = static_cast<std::size_t>(track_width_tiles),
+                                 .vertical_count = static_cast<std::size_t>(track_height_tiles),
+                                 .size_px = static_cast<std::size_t>(tile_size_pixels),
+                                 .detour_probability = detour_probability});
                             // Reset all cars to the new track spawn point
                             reset_cars();
                         }
