@@ -7,9 +7,9 @@
 #include <random>   // for std::mt19937, std::uniform_real_distribution, std::uniform_int_distribution
 #include <vector>   // for std::vector
 
-#include <spdlog/spdlog.h>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
+#include <spdlog/spdlog.h>
 
 #include "world.hpp"
 
@@ -233,7 +233,7 @@ void Track::build()
             if (detour_dist(this->rng_) < this->config_.detour_probability) {
                 // Determine which bubble heights fit
                 std::vector<std::size_t> viable;
-                for (std::size_t height : bubble_heights) {
+                for (const std::size_t height : bubble_heights) {
                     if (row + height < this->config_.vertical_count) {
                         viable.emplace_back(height);
                     }
@@ -305,7 +305,7 @@ void Track::build()
             if (detour_dist(this->rng_) < this->config_.detour_probability) {
                 // Determine which bubble heights fit
                 std::vector<std::size_t> viable;
-                for (std::size_t height : bubble_heights) {
+                for (const std::size_t height : bubble_heights) {
                     const std::ptrdiff_t height_signed = static_cast<std::ptrdiff_t>(height);
                     if (row >= height_signed) {
                         viable.emplace_back(height);

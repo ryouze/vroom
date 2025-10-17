@@ -49,7 +49,7 @@ void run()
     // Then, it loads the configuration from a TOML file, creating default values if the file is missing
     // And it sets values in "settings.hpp"
     // These values can be modified at runtime and on scope exit, the configuration is saved to the TOML file
-    core::io::ConfigContext config_context;
+    const core::io::ConfigContext config_context;
 
     // Create SFML window based on current settings from "settings.hpp"
     // If they were modified by ConfigContext, the window will indeed use these new settings
@@ -73,11 +73,11 @@ void run()
 
     // Setup texture manager and load textures
     // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
-    assets::textures::TextureManager textures = assets::builder::build_texture_manager();
+    const assets::textures::TextureManager textures = assets::builder::build_texture_manager();
 
     // Setup sound manager and load sounds
     // Note: This cannot be "static", because the destructor for static objects is called after "main()" has finished
-    assets::sounds::SoundManager sounds = assets::builder::build_sound_manager();
+    const assets::sounds::SoundManager sounds = assets::builder::build_sound_manager();
 
     // Create race track
     core::world::Track race_track(
@@ -295,7 +295,7 @@ void run()
         window_size_f = core::backend::to_vector2f(window_size_u);
 
         // Currently selected vehicle
-        game::entities::Car *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
+        game::entities::Car const *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
 
         // Check if gamepad is usable with current configuration
         const bool gamepad_available = gamepad.is_connected();
