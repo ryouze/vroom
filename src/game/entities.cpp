@@ -32,18 +32,7 @@ Car::Car(const sf::Texture &texture,
       track_(track),
       config_(config),
       rng_(rng),
-      control_mode_(control_mode),
-      last_position_({0.0f, 0.0f}),
-      velocity_({0.0f, 0.0f}),
-      current_input_(),
-      steering_wheel_angle_(0.0f),
-      current_waypoint_index_number_(1),
-      drift_score_(0.0f),
-      current_lateral_slip_velocity_(0.0f),
-      just_hit_wall_(false),
-      last_wall_hit_speed_(0.0f),
-      ai_update_timer_(0.0f),
-      tire_update_timer_(0.0f)
+      control_mode_(control_mode)
 {
     this->sprite_.setOrigin(this->sprite_.getLocalBounds().getCenter());
 

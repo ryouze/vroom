@@ -347,7 +347,7 @@ class Track final {
      *
      * This contains the world coordinates of the finish line tile center where cars are initially placed. Set during track building when the finish line tile is positioned on the top edge.
      */
-    sf::Vector2f finish_point_;
+    sf::Vector2f finish_point_ = {0.f, 0.f};
 };
 
 }  // namespace core::world

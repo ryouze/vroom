@@ -82,10 +82,7 @@ constexpr ImGuiWindowFlags base_overlay_flags =
 FpsCounter::FpsCounter(sf::RenderTarget &window,
                        const Corner corner)
     : window_(window),
-      pivot_(compute_pivot(corner)),
-      accumulation_(0.0f),
-      frames_(0),
-      fps_(144)  // Default value, will overwritten immediately by internal calculations
+      pivot_(compute_pivot(corner))
 {
     SPDLOG_DEBUG("FPS counter created at corner '{}', set pivot point to ('{}', '{}') successfully, exiting constructor!",
                  static_cast<std::underlying_type_t<Corner>>(corner),
@@ -180,7 +177,8 @@ void Speedometer::update_and_draw(const float speed) const
     ImGui::ProgressBar(
         // Cast again to ensure consistency with the "display_kph", then clamp to [0, 1]
         std::clamp(static_cast<float>(display_kph) / this->max_kph_, 0.0f, 1.0f),
-        this->window_size_, std::format("{} kp/h", display_kph).c_str());
+        this->window_size_,
+        std::format("{} kp/h", display_kph).c_str());
     ImGui::End();
 }
 
@@ -188,8 +186,7 @@ Minimap::Minimap(sf::RenderTarget &window,
                  const sf::Color &background_color,
                  GameEntitiesDrawer game_entities_drawer,
                  const Corner corner)
-    : refresh_interval(0.1f),  // 0.1 second; lower values = more frequent updates but worse performance
-      resolution_(default_resolution_),
+    : resolution_(default_resolution_),
       window_(window),
       background_color_(background_color),
       game_entities_drawer_(std::move(game_entities_drawer)),
@@ -321,10 +318,9 @@ void Leaderboard::update(const float dt,
         this->cached_entries_ = data_collector();
 
         // Sort the cached entries for display (highest score first)
-        std::sort(this->cached_entries_.begin(), this->cached_entries_.end(),
-                  [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
-                      return a.drift_score > b.drift_score;  // Descending order
-                  });
+        std::sort(this->cached_entries_.begin(), this->cached_entries_.end(), [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
+            return a.drift_score > b.drift_score;  // Descending order
+        });
 
         this->accumulation_ -= this->update_rate_;  // Keep any overshoot
     }

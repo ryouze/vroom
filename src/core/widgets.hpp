@@ -145,17 +145,19 @@ class FpsCounter final : public IWidget {
     /**
      * @brief Accumulated time since the last FPS calculation.
      */
-    float accumulation_;
+    float accumulation_ = 0.0f;
 
     /**
      * @brief Number of frames counted within the current accumulation period.
      */
-    std::uint32_t frames_;
+    std::uint32_t frames_ = 0;
 
     /**
      * @brief Most recently computed FPS value.
+     *
+     * @note 144 FPS is used as the default (sane) value, but it will be overwritten immediately by internal calculations.
      */
-    std::uint32_t fps_;
+    std::uint32_t fps_ = 144;
 };
 
 /**
@@ -288,8 +290,10 @@ class Minimap final : public IWidget {
 
     /**
      * @brief Refresh interval in seconds; values ≤ 0 refresh every frame (default: 0.1 s).
+     *
+     * @note Lower values mean more frequent updates but worse performance.
      */
-    float refresh_interval;
+    float refresh_interval = 0.1f;
 
     /**
      * @brief Set the resolution of the internal render texture.
@@ -394,7 +398,7 @@ class Minimap final : public IWidget {
     /**
      * @brief Accumulated time since the last texture refresh.
      */
-    float accumulation_ = 0.f;
+    float accumulation_ = 0.0f;
 };
 
 /**

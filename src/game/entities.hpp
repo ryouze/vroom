@@ -467,14 +467,14 @@ class Car final {
      *
      * Stored for collision recovery when the car moves off-track and needs to be restored to a legal position.
      */
-    sf::Vector2f last_position_;
+    sf::Vector2f last_position_ {0.0f, 0.0f};
 
     /**
      * @brief Current velocity of the car in pixels per second.
      *
      * Two-dimensional velocity vector used for physics calculations including acceleration, braking, and collision response.
      */
-    sf::Vector2f velocity_;
+    sf::Vector2f velocity_ = {0.0f, 0.0f};
 
     /**
      * @brief Current input values for analog/digital control.
@@ -491,7 +491,7 @@ class Car final {
      * Auto-centers towards zero when no steering input is active, controlled by steering_autocenter_rate_degrees_per_second.
      * Updated by steering input and clamped to the configured maximum steering angle limits.
      */
-    float steering_wheel_angle_;
+    float steering_wheel_angle_ = 0.0f;
 
     /**
      * @brief Index of the current target waypoint for AI navigation.
@@ -499,31 +499,31 @@ class Car final {
      * Tracks which waypoint the AI car is currently navigating towards in the track's waypoint sequence.
      * Also used for race position tracking regardless of control mode.
      */
-    std::size_t current_waypoint_index_number_;
+    std::size_t current_waypoint_index_number_ = 1;
 
     /**
      * @brief Current accumulated drift score for this car.
      *
      * Score increases based on drift angle magnitude, speed, and duration while the car is sliding sideways.
      */
-    float drift_score_;
+    float drift_score_ = 0.0f;
 
     /**
      * @brief Current lateral slip velocity magnitude in pixels per second.
      *
      * This is calculated during physics updates and cached to avoid recalculation in get_state().
      */
-    float current_lateral_slip_velocity_;
+    float current_lateral_slip_velocity_ = 0.0f;
 
     /**
      * @brief True if the car hit a wall in the last physics update.
      */
-    bool just_hit_wall_;
+    bool just_hit_wall_ = false;
 
     /**
      * @brief Speed at which the last wall collision occurred in pixels per second.
      */
-    float last_wall_hit_speed_;
+    float last_wall_hit_speed_ = 0.0f;
 
     /**
      * @brief Distance factor for waypoint reach detection used by both AI and waypoint tracking.

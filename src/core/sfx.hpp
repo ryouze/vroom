@@ -93,7 +93,7 @@ class EngineSound final {
     /**
      * @brief Current gear (1-5).
      */
-    std::size_t current_gear_;
+    std::size_t current_gear_ = 1;
 
     /**
      * @brief Number of gears in the transmission.

@@ -20,8 +20,7 @@ Track::Track(const Textures tiles,
              const TrackConfig &config)
     : tiles_(tiles),  //  Copy the small struct to prevent segfaults
       rng_(rng),
-      config_(Track::validate_config(config)),
-      finish_point_(0.f, 0.f)
+      config_(Track::validate_config(config))
 {
     // Build the track immediately on construction
     this->build();

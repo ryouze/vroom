@@ -16,8 +16,7 @@
 namespace core::sfx {
 
 EngineSound::EngineSound(const sf::SoundBuffer &sound_buffer)
-    : engine_sound_(sound_buffer),
-      current_gear_(1)
+    : engine_sound_(sound_buffer)
 {
     this->engine_sound_.setLooping(true);
     this->engine_sound_.setPitch(this->idle_pitch_);  // Start with idle pitch
@@ -137,9 +136,7 @@ std::size_t EngineSound::determine_gear(const float speed) const
 }
 
 TireScreechSound::TireScreechSound(const sf::SoundBuffer &sound_buffer)
-    : tire_screech_sound_(sound_buffer),
-      current_target_volume_(0.0f),
-      current_actual_volume_(0.0f)
+    : tire_screech_sound_(sound_buffer)
 {
     this->tire_screech_sound_.setLooping(true);
     this->tire_screech_sound_.setPitch(this->base_pitch_);
@@ -232,7 +229,7 @@ void WallHitSound::play(const float impact_speed)
     const float final_volume = std::clamp(settings::current::wall_hit_volume * volume_ratio * 100.0f, 0.0f, 100.0f);
     this->wall_hit_sound_.setVolume(final_volume);
     this->wall_hit_sound_.setPitch(pitch);
-    this->wall_hit_sound_.play(); // play() restarts if already playing in SFML 3
+    this->wall_hit_sound_.play();  // play() restarts if already playing in SFML 3
 
     // SPDLOG_DEBUG("Wall hit sound played with impact speed '{}', volume ratio '{}', final volume '{}', pitch '{}'", impact_speed, volume_ratio, final_volume, pitch);
 }
