@@ -119,15 +119,15 @@ void run()
 
         // Add player car
         entries.emplace_back(core::widgets::LeaderboardEntry{
-            .car_name = vehicle_names[0],
+            .car_name = vehicle_names.at(0),
             .drift_score = player_car.get_state().drift_score,
             .is_player = true});
 
         // Add AI cars using shared names array
         for (std::size_t i = 0; i < ai_cars.size(); ++i) {
             entries.emplace_back(core::widgets::LeaderboardEntry{
-                .car_name = vehicle_names[i + 1],
-                .drift_score = ai_cars[i].get_state().drift_score,
+                .car_name = vehicle_names.at(i + 1),
+                .drift_score = ai_cars.at(i).get_state().drift_score,
                 .is_player = false});
         }
 
@@ -211,7 +211,12 @@ void run()
     };
 
     // List of vehicles and selected index
-    const std::array<game::entities::Car *, 5> vehicle_pointer_array = {&player_car, &ai_cars[0], &ai_cars[1], &ai_cars[2], &ai_cars[3]};
+    const std::array<game::entities::Car *, 5> vehicle_pointer_array = {
+        &player_car,
+        &ai_cars.at(0),
+        &ai_cars.at(1),
+        &ai_cars.at(2),
+        &ai_cars.at(3)};
     int selected_vehicle_index = 0;
 
     // Function to draw the game entities (race track and cars) in the window
@@ -231,21 +236,21 @@ void run()
         blip.setOrigin({blip_radius, blip_radius});  // Center
         blip.setFillColor({255, 0, 0});              // Red by default
     }
-    minimap_blips[0].setFillColor({0, 0, 0});  // Player as black
+    minimap_blips.at(0).setFillColor({0, 0, 0});  // Player as black
 
     // Function to draw the game entities (race track and cars as blips) in the minimap
     const auto draw_minimap_entities = [&race_track, &player_car, &ai_cars, &minimap_blips](sf::RenderTarget &rt) {
         race_track.draw(rt);
 
         // Update and draw player car blip
-        minimap_blips[0].setPosition(player_car.get_state().position);
-        rt.draw(minimap_blips[0]);
+        minimap_blips.at(0).setPosition(player_car.get_state().position);
+        rt.draw(minimap_blips.at(0));
 
         // Update and draw AI car blips
         for (std::size_t i = 1; i <= 4; ++i) {
             // AI cars are 0-indexed, so we use (i - 1)
-            minimap_blips[i].setPosition(ai_cars[i - 1].get_state().position);
-            rt.draw(minimap_blips[i]);
+            minimap_blips.at(i).setPosition(ai_cars.at(i - 1).get_state().position);
+            rt.draw(minimap_blips.at(i));
         }
     };
 
@@ -301,7 +306,7 @@ void run()
         window_size_f = core::backend::to_vector2f(window_size_u);
 
         // Currently selected vehicle
-        game::entities::Car const *const selected_vehicle_pointer = vehicle_pointer_array[static_cast<std::size_t>(selected_vehicle_index)];
+        game::entities::Car const *const selected_vehicle_pointer = vehicle_pointer_array.at(static_cast<std::size_t>(selected_vehicle_index));
 
         // Check if gamepad is usable with current configuration
         const bool gamepad_available = gamepad.is_connected();
@@ -627,10 +632,10 @@ void run()
                         }
 
                         ImGui::BeginDisabled(!settings::current::fullscreen);
-                        if (ImGui::BeginCombo("Resolution", mode_cstr[static_cast<std::size_t>(settings::current::mode_idx)])) {
+                        if (ImGui::BeginCombo("Resolution", mode_cstr.at(static_cast<std::size_t>(settings::current::mode_idx)))) {
                             for (int i = 0; i < static_cast<int>(window.available_fullscreen_modes.size()); ++i) {
                                 const bool is_selected = (i == settings::current::mode_idx);
-                                if (ImGui::Selectable(mode_cstr[static_cast<std::size_t>(i)], is_selected)) {
+                                if (ImGui::Selectable(mode_cstr.at(static_cast<std::size_t>(i)), is_selected)) {
                                     ui_sound.play_ok();
                                     settings::current::mode_idx = i;
                                     window.recreate();
