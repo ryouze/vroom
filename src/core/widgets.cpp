@@ -7,6 +7,7 @@
 #include <cstdint>      // for std::uint32_t
 #include <format>       // for std::format
 #include <functional>   // for std::function
+#include <ranges>       // for std::ranges
 #include <stdexcept>    // for std::runtime_error
 #include <string>       // for std::string
 #include <type_traits>  // for std::underlying_type_t
@@ -318,9 +319,10 @@ void Leaderboard::update(const float dt,
         this->cached_entries_ = data_collector();
 
         // Sort the cached entries for display (highest score first)
-        std::sort(this->cached_entries_.begin(), this->cached_entries_.end(), [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
-            return a.drift_score > b.drift_score;  // Descending order
-        });
+        std::ranges::sort(this->cached_entries_,
+                          [](const LeaderboardEntry &a, const LeaderboardEntry &b) {
+                              return a.drift_score > b.drift_score;  // Descending order
+                          });
 
         this->accumulation_ -= this->update_rate_;  // Keep any overshoot
     }
