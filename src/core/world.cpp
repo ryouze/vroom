@@ -209,10 +209,10 @@ void Track::build()
         }
 
         // Add waypoint to temporary collection in build order
-        temp_waypoints.emplace_back(TrackWaypoint{position,
-                                                  is_corner
-                                                      ? TrackWaypoint::DrivingType::Corner
-                                                      : TrackWaypoint::DrivingType::Straight});
+        temp_waypoints.emplace_back(TrackWaypoint{
+            .position = position,
+            .type = is_corner ? TrackWaypoint::DrivingType::Corner
+                              : TrackWaypoint::DrivingType::Straight});
     };
 
     // Define bubble sizes allowed for detours
