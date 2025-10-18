@@ -9,6 +9,7 @@
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <spdlog/spdlog.h>
 
 #include "world.hpp"
