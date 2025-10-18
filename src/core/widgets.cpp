@@ -2,7 +2,7 @@
  * @file widgets.cpp
  */
 
-#include <algorithm>    // for std::clamp, std::sort
+#include <algorithm>    // for std::clamp
 #include <cstddef>      // for std::size_t
 #include <cstdint>      // for std::uint32_t
 #include <format>       // for std::format
