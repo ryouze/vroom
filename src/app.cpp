@@ -328,15 +328,7 @@ void run()
                 player_input.steering = (key_states.left ? -1.0f : 0.0f) + (key_states.right ? 1.0f : 0.0f);
                 player_input.handbrake = key_states.handbrake ? 1.0f : 0.0f;
             }
-#ifndef NDEBUG  // TODO: Use this debug window to test controller input
-            ImGui::Begin("Input");
-            ImGui::Text("Controller: %s", gamepad_available ? "Yes" : "No");
-            ImGui::Text("Throttle: %.2f", static_cast<double>(player_input.throttle));
-            ImGui::Text("Brake: %.2f", static_cast<double>(player_input.brake));
-            ImGui::Text("Steering: %.2f", static_cast<double>(player_input.steering));
-            ImGui::Text("Handbrake: %.2f", static_cast<double>(player_input.handbrake));
-            ImGui::End();
-#endif
+
             // Set active car for visual effects (tire marks, particles, etc.)
             player_car.set_active(&player_car == selected_vehicle_pointer);
             for (auto &ai : ai_cars) {
@@ -619,11 +611,6 @@ void run()
                     if (ImGui::BeginTabItem("Graphics")) {
                         current_active_tab = 2;
                         ImGui::PushItemWidth(item_width);
-
-#ifndef NDEBUG
-                        ImGui::SeparatorText("Debug");
-                        ImGui::BulletText("Resolution: %dx%d", window_size_u.x, window_size_u.y);
-#endif
 
                         ImGui::SeparatorText("Display");
                         if (ImGui::Checkbox("Fullscreen", &settings::current::fullscreen)) {
