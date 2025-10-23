@@ -10,7 +10,6 @@
 #include <string>     // for std::string
 #include <vector>     // for std::vector
 
-// #include <imgui-SFML.h>  // Required for some implicit conversions, e.g., "ImGui::Image(minimap_texture.getTexture(), ...);"
 #include <imgui.h>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
