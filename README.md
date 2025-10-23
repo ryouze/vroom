@@ -245,14 +245,14 @@ ctest --verbose
 
 **Libraries:**
 - [Simple and Fast Multimedia Library](https://github.com/SFML/SFML) - Windowing, graphics, input, etc.
-- [Dear ImGui](https://github.com/ocornut/imgui) - Immediate‑mode GUI.
-- [ImGui‑SFML](https://github.com/SFML/imgui-sfml) - ImGui-to-SFML binding.
-- [snitch](https://github.com/snitch-org/snitch) - Unit‑testing framework.
+- [Dear ImGui](https://github.com/ocornut/imgui) - Immediate-mode GUI.
+- [ImGui-SFML](https://github.com/SFML/imgui-sfml) - ImGui-to-SFML binding.
+- [snitch](https://github.com/snitch-org/snitch) - Unit-testing framework.
 - [spdlog](https://github.com/gabime/spdlog) - Logging library.
 - [toml++](https://github.com/marzer/tomlplusplus) - TOML parser and serializer.
 
 **Graphics:**
-- [Moonlight](https://github.com/Madam-Herta/Moonlight) - CustomDear ImGui theme.
+- [Moonlight](https://github.com/Madam-Herta/Moonlight) - CustomDear ImGui theme.
 - [PlayCover](https://macosicons.com/#/u/helloman) - Application icon.
 - [Racing Pack](https://kenney.nl/assets/racing-pack) - Car sprites and track tile textures.
 - [Waifu2x](https://unlimited.waifu2x.net/) - Image upscaler (for the race track).
