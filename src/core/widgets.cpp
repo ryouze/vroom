@@ -4,7 +4,6 @@
 
 #include <algorithm>    // for std::clamp
 #include <cstddef>      // for std::size_t
-#include <cstdint>      // for std::uint32_t
 #include <format>       // for std::format
 #include <functional>   // for std::function
 #include <ranges>       // for std::ranges
@@ -112,7 +111,8 @@ void FpsCounter::update(const float dt)
 
     // If the accumulated time exceeds the update rate, calculate the FPS
     if (this->accumulation_ >= this->update_rate_) {
-        this->fps_ = static_cast<std::uint32_t>(this->frames_ / this->accumulation_);
+        const float fps_value = static_cast<float>(this->frames_) / this->accumulation_;
+        this->fps_ = static_cast<std::uint32_t>(fps_value);
         this->frames_ = 0;
         this->accumulation_ -= this->update_rate_;  // Keep any overshoot
     }
