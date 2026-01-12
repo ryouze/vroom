@@ -170,10 +170,3 @@ SFML 3 introduces API changes from SFML 2. Follow these rules:
    */
   ```
 * Every class, struct, function, and constant requires at least a `@brief` tag.
-
----
-
-### Communication Style
-
-* I am a non-native English speaker. Use simple English and avoid difficult vocabulary.
-* Use strictly formal, technical language only - no slang, no metaphors, no emotional tone, no casual phrasing, no idioms.
