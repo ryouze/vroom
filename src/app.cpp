@@ -61,11 +61,8 @@ void run()
     sf::Vector2u window_size_u = window.raw().getSize();
     sf::Vector2f window_size_f = core::backend::to_vector2f(window_size_u);
 
-    // Setup main camera view and zoom factor
-    sf::View camera_view;
-    // camera_view.setCenter({0.f, 0.f}); // Not needed, because we set it to car position later
+    // Setup main camera zoom factor
     float camera_zoom_factor = 2.5f;
-    camera_view.setSize({window_size_f.x * camera_zoom_factor, window_size_f.y * camera_zoom_factor});  // Absolute size based on zoom
 
     // Create random number generator
     std::mt19937 rng{std::random_device{}()};
@@ -282,14 +279,6 @@ void run()
             window.raw().close();
         }
 
-        // Note: we no longer need this, because we set the view size and zoom on every frame
-        // // Window was resized
-        // else if (event.is<sf::Event::Resized>()) [[unlikely]] {
-        //     // macOS fullscreen fix: query the actual size after resizing
-        //     camera_view.setSize(core::backend::to_vector2f(window->getSize()));
-        //     camera_view.zoom(camera_zoom_factor);
-        // }
-
         else if (const auto *pressed = event.getIf<sf::Event::KeyPressed>())
             onKeyPressed(*pressed);
         else if (const auto *released = event.getIf<sf::Event::KeyReleased>())
@@ -340,9 +329,10 @@ void run()
                 ai.update(dt);
             }
             const auto vehicle_state = selected_vehicle_pointer->get_state();
-            camera_view.setCenter(vehicle_state.position);
-            camera_view.setSize({window_size_f.x * camera_zoom_factor, window_size_f.y * camera_zoom_factor});  // Absolute size based on zoom
-            window.raw().setView(camera_view);
+            sf::View view = window.raw().getDefaultView();
+            view.setCenter(vehicle_state.position);
+            view.zoom(camera_zoom_factor);
+            window.raw().setView(view);
             speedometer.update_and_draw(vehicle_state.speed);
             minimap.update_and_draw(dt, vehicle_state.position);
             leaderboard.update_and_draw(dt, collect_leaderboard_data);
