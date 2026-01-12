@@ -329,9 +329,9 @@ void run()
                 ai.update(dt);
             }
             const auto vehicle_state = selected_vehicle_pointer->get_state();
-            sf::View view = window.raw().getDefaultView();
+            sf::View view;
             view.setCenter(vehicle_state.position);
-            view.zoom(camera_zoom_factor);
+            view.setSize({window_size_f.x * camera_zoom_factor, window_size_f.y * camera_zoom_factor});
             window.raw().setView(view);
             speedometer.update_and_draw(vehicle_state.speed);
             minimap.update_and_draw(dt, vehicle_state.position);
