@@ -1,9 +1,24 @@
-Checks:
-  # Greedily enable all flags
-  - '*'
-  # Then disable flags on a per-need basis
-  - '-llvm-*'      # We follow our own style, not LLVM's
-  - '-altera-*'    # We do not target Intel/Altera FPGA or HLS platforms
-  - '-abseil-*'    # We do not use Google's Abseil library
-  - '-fuchsia-*'   # We do not target Google's Fuchsia OS
-  - '-llvmlibc-*'  # We are not implementing LLVM's libc
+Checks: >
+  -*,
+
+  cert-*,
+  misc-*,
+  bugprone-*,
+  modernize-*,
+  concurrency-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+
+  -misc-no-recursion,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
+
+  -readability-uppercase-literal-suffix,
+  -readability-avoid-const-params-in-decls,
+  -readability-static-accessed-through-instance,
+  -bugprone-easily-swappable-parameters
