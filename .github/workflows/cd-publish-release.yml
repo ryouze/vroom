@@ -1,4 +1,4 @@
-name: Release
+name: "CD: Build and publish release binaries"
 
 on:
   release:
@@ -8,8 +8,10 @@ permissions:
   contents: write
 
 jobs:
-  build-and-upload:
+  build-and-publish:
     runs-on: ${{ matrix.os }}
+    # GitHub Actions can sometimes freeze, so stop if this job takes more than 5 minutes
+    timeout-minutes: 5
 
     strategy:
       # If true, cancel the workflow run if any matrix job fails.
@@ -38,17 +40,18 @@ jobs:
             archive_type: zip
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - name: Set reusable strings
-        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      - name: Set constants
+        # Turn repeated input strings (such as the build output directory) into step outputs
         id: strings
         shell: bash
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
           echo "deps-dir=${{ github.workspace }}/deps" >> "$GITHUB_OUTPUT"
 
-      - name: Cache CMake deps directory
+      - name: Cache CMake dependencies
         uses: actions/cache@v6
         with:
           path: ${{ steps.strings.outputs.deps-dir }}
@@ -61,10 +64,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev libharfbuzz-dev libmbedtls-dev libssh2-1-dev
 
       - name: Configure CMake
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as `make`
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        # Set the project version to the tag name instead of git commit.
-        # Set "-DCMAKE_C_COMPILER=${{ matrix.c_compiler }}" for C/C++ projects, otherwise use CXX for C++ only projects.
+        # We set the project version to the tag name instead of git commit
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -73,12 +75,11 @@ jobs:
           -S ${{ github.workspace }}
           ${{ runner.os == 'macOS' && '-DCMAKE_OSX_ARCHITECTURES=arm64' || '' }}
 
-      - name: Build
-        # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      - name: Build app
+        # `--config` is needed because the default Windows generator is a multi-config generator (Visual Studio generator)
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release --parallel
 
-      - name: Rename binary
-        # Rename the binary to match the platform.
+      - name: Rename binary for platform
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
         shell: bash
         run: |
@@ -93,8 +94,7 @@ jobs:
           directory: ${{ steps.strings.outputs.build-output-dir }}
           path: ${{ matrix.output_name }}
 
-      - name: Release
-        # Upload the binary to the release page.
+      - name: Publish release binary
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:

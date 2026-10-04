@@ -1,0 +1,76 @@
+name: "CI: Build and run automated tests"
+
+on:
+  # Run on push to `main` and allow manual runs from the `Actions` tab
+  push:
+  workflow_dispatch:
+
+# Ensure GITHUB_TOKEN is read-only; any unlisted permissions here are also disabled
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    # GitHub Actions can sometimes freeze, so stop if this job takes more than 5 minutes
+    timeout-minutes: 5
+
+    strategy:
+      # Continue to run the workflow and complete all matrix jobs, even if one or more jobs fail
+      fail-fast: false
+
+      matrix:
+        include:
+          - os: macos-latest
+            cpp_compiler: clang++
+          - os: ubuntu-latest
+            cpp_compiler: g++
+          - os: windows-latest
+            cpp_compiler: cl
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          # Do not store GITHUB_TOKEN in `$RUNNER_TEMP`
+          persist-credentials: false
+
+      - name: Set constants
+        # Turn repeated input strings (such as the build output directory) into step outputs
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "deps-dir=${{ github.workspace }}/deps" >> "$GITHUB_OUTPUT"
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.strings.outputs.deps-dir }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}-${{ hashFiles('cmake/**') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install GNU/Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev libharfbuzz-dev libmbedtls-dev libssh2-1-dev
+
+      - name: Configure CMake
+        # `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as `make`
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTS=ON
+          -S ${{ github.workspace }}
+          ${{ runner.os == 'macOS' && '-DCMAKE_OSX_ARCHITECTURES=arm64' || '' }}
+
+      - name: Build app and tests
+        # `--config` is needed because the default Windows generator is a multi-config generator (Visual Studio generator)
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release --parallel
+
+      - name: Run tests
+        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        # `--build-config` is needed because the default Windows generator is a multi-config generator (Visual Studio generator)
+        run: ctest --build-config Release --verbose --output-on-failure
