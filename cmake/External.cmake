@@ -20,7 +20,7 @@ function(fetch_and_link_external_dependencies target)
   FetchContent_Declare(
     sfml
     #URL https://github.com/SFML/SFML/releases/download/3.0.0/SFML-3.0.0-sources.zip
-    URL https://github.com/SFML/SFML/archive/refs/tags/3.0.2.tar.gz
+    URL https://github.com/SFML/SFML/archive/refs/tags/3.1.0.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     EXCLUDE_FROM_ALL
     SYSTEM
