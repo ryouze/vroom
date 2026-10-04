@@ -41,7 +41,7 @@ jobs:
             cpp_compiler: cl
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -52,7 +52,7 @@ jobs:
         echo "deps-dir=${{ github.workspace }}/deps" >> "$GITHUB_OUTPUT"
 
     - name: Cache CMake deps directory
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ${{ steps.strings.outputs.deps-dir }}
         key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}-${{ hashFiles('cmake/**') }}
