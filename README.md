@@ -1,7 +1,7 @@
 # vroom
 
-[![CI](https://github.com/ryouze/vroom/actions/workflows/ci.yml/badge.svg)](https://github.com/ryouze/vroom/actions/workflows/ci.yml)
-[![Release](https://github.com/ryouze/vroom/actions/workflows/release.yml/badge.svg)](https://github.com/ryouze/vroom/actions/workflows/release.yml)
+[![CI: Build and run automated tests](https://github.com/ryouze/vroom/actions/workflows/ci-tests.yml/badge.svg)](https://github.com/ryouze/vroom/actions/workflows/ci-tests.yml)
+[![CD: Build and publish release binaries](https://github.com/ryouze/vroom/actions/workflows/cd-publish-release.yml/badge.svg)](https://github.com/ryouze/vroom/actions/workflows/cd-publish-release.yml)
 ![Release version](https://img.shields.io/github/v/release/ryouze/vroom)
 
 A cross-platform 2D racing game with arcade drift physics, procedurally generated tracks, and waypoint-based AI.
