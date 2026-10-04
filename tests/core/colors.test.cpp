@@ -8,7 +8,6 @@
 
 TEST_CASE("Color constants have valid RGB values", "[src][core][colors.hpp]")
 {
-    // Test that all colors have valid RGB values (0-255)
     CHECK(core::colors::window.menu.r <= 255);
     CHECK(core::colors::window.menu.g <= 255);
     CHECK(core::colors::window.menu.b <= 255);
